@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orchard
+  namespace: default
+  labels:
+    app.kubernetes.io/name: orchard
+    app.kubernetes.io/instance: orchard
+data:
+  PROJECT_ID: loupe-dev
+  SERVER_NAME: orchard
+  LOG_LEVEL: "info"
+  SENTRY_DSN: https://bcf02969cee648f8819d7cfdd973ce3f@sentry.io/1765772
+  GRPC_HOST: ''
+  GRPC_PORT: '50051'
+  ELASTICSEARCH_URL: https://6fd003b4cc344f64baf1055faf78a0df.us-central1.gcp.cloud.es.io:9243
+  ELASTICSEARCH_USERNAME: elastic
+  ELASTICSEARCH_PASSWORD: gufEHubgSuXS55QRXhiRNbSk
+  REDIS_ADDRESS: 10.0.0.3:6379
+  REDIS_PASSWORD: ''
+  EKG_POLICY_INTERVAL: "*/5 * * * *"
+  EKG_POLICY_FAILURE_CONDITION: "count"
+  EKG_POLICY_COUNT_THRESHOLD: '1'
+  EKG_POLICY_RETRY_POLICY: "random"
+  EKG_POLICY_MAX_RETRIES: '3'
+  EKG_POLICY_FAILURE_STATUS_THRESHOLD: "partialfailure"
+  EKG_POLICY_STATUS_RETENTION: '12'

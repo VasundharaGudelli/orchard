@@ -1,0 +1,8 @@
+[psql]
+  dbname = "tenant"
+  host   = "35.245.37.78"
+  port   = 5432
+  user   = "postgres"
+  pass = "jLariybb1oe5FbDz"
+  blacklist = ["migrations", "bulk_export", "object_export", "object_settings"]
+  sslmode = "disable"

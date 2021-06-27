@@ -1,0 +1,77 @@
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: 'Prepare'
+  args:
+  - kms
+  - decrypt
+  - --ciphertext-file=builds_rsa.enc
+  - --plaintext-file=/root/.ssh/id_rsa
+  - --location=global
+  - --keyring=builds-keyring
+  - --key=github-key
+  volumes:
+  - name: 'ssh'
+    path: /root/.ssh
+
+- name: "golang:1.14"
+  id: 'Build'
+  entrypoint: "bash"
+  args:
+    - "-c"
+    - |
+      ssh-keyscan github.com > /root/.ssh/known_hosts
+      git config --global --add url."git@github.com:".insteadOf "https://github.com/"
+      chmod 0600 /root/.ssh/id_rsa
+      GOOS=linux CGO_ENABLED=0 go build -a -installsuffix cgo -o ./go/bin/orchard
+  volumes:
+  - name: 'ssh'
+    path: /root/.ssh
+
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Docker Build'
+  args: ['build', '-f', 'Dockerfile', '--tag=gcr.io/loupe-dev/orchard', '.']
+
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Push'
+  args: ["push", "gcr.io/loupe-dev/orchard"]
+
+- name: 'gcr.io/cloud-builders/gke-deploy:stable'
+  id: 'Deploy'
+  args:
+  - 'run'
+  - '--filename=$_K8S_YAML_PATH'
+  - '--image=$_IMAGE_NAME:$_IMAGE_VERSION'
+  - '--app=$_K8S_APP_NAME'
+  - '--version=$_IMAGE_VERSION'
+  - '--namespace=$_K8S_NAMESPACE'
+  - '--label=gcb-build-id=$BUILD_ID'
+  - '--cluster=$_GKE_CLUSTER'
+  - '--location=$_GKE_LOCATION'
+
+images:
+- '$_IMAGE_NAME:$_IMAGE_VERSION'
+artifacts:
+  objects:
+    location: 'gs://$_OUTPUT_BUCKET/$BUILD_ID/expanded'
+    paths: ['output/expanded/*']
+substitutions:
+  _IMAGE_NAME: 'gcr.io/loupe-dev/orchard'
+  _IMAGE_VERSION: 'latest'
+  _GKE_CLUSTER: 'dev-cluster-01'
+  _GKE_LOCATION: 'us-east4-c'
+  _K8S_YAML_PATH: './kubernetes-manifests.gke-dev'
+  _K8S_APP_NAME: 'tenant-manager'
+  _K8S_NAMESPACE: 'default'
+  _OUTPUT_BUCKET: 'loupe-dev_cloudbuild'
+options:
+  substitution_option: 'ALLOW_LOOSE'
+  env:
+  - GO111MODULE=on
+  volumes:
+  - name: go-modules
+    path: /go
+tags: ['gcp-cloud-build-deploy', '$_K8S_APP_NAME']
+
+
+
+
