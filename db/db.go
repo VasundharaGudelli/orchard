@@ -12,6 +12,11 @@ import (
 )
 
 const DefaultDBTimeout = 30 * time.Second
+const DefaultTenantID = "00000000-0000-0000-0000-000000000000"
+
+var (
+	Global *sql.DB
+)
 
 func Init(cfg config.Config) error {
 	password := ""
@@ -24,6 +29,7 @@ func Init(cfg config.Config) error {
 	if err != nil {
 		return err
 	}
+	Global = db
 	maxConns := minInt(maxInt(cfg.DBMaxConnections, 10), 80)
 	maxIdleConns := maxConns / 2
 	db.SetMaxOpenConns(maxConns)

@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/friendsofgo/errors v0.9.2
+	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.2.0
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/lib/pq v1.10.2
@@ -11,7 +12,7 @@ require (
 	github.com/loupe-co/go-elasticsearch-client v0.0.0-20210623153109-e53a1e1f47d4 // indirect
 	github.com/loupe-co/go-loupe-logger v0.0.0-20201016121042-920bce7c0a29
 	github.com/loupe-co/notes v0.0.0-20200810202043-af87a4438f79 // indirect
-	github.com/loupe-co/protos v0.0.0-20210627190849-6fd2f989c8bb
+	github.com/loupe-co/protos v0.0.0-20210628150415-8b5b1268486a
 	github.com/loupe-co/tenant-service v0.0.0-20210624140557-8397b29e5bc5 // indirect
 	github.com/spf13/viper v1.6.3
 	github.com/volatiletech/null/v8 v8.1.2
