@@ -112,12 +112,18 @@ func (svc *SystemRoleService) GetByID(ctx context.Context, id string) (*models.S
 func (svc *SystemRoleService) Search(ctx context.Context, tenantID, query string) ([]*models.SystemRole, error) {
 	queryParts := []qm.QueryMod{}
 
-	if tenantID != "" {
-		queryParts = append(queryParts, qm.Where("tenant_id=?", tenantID))
+	paramIdx := 1
+	if tenantID == "" {
+		queryParts = append(queryParts, qm.Where("tenant_id IN ($1)", DefaultTenantID))
+		paramIdx++
+	} else {
+		queryParts = append(queryParts, qm.Where("tenant_id IN ($1, $2)", DefaultTenantID, tenantID))
+		paramIdx += 2
 	}
 
 	if query != "" {
-		queryParts = append(queryParts, qm.Where("LOWER(name) LIKE ?", "%"+strings.ToLower(query)+"%"))
+		queryParts = append(queryParts, qm.Where(fmt.Sprintf("LOWER(name) LIKE $%d", paramIdx), "%"+strings.ToLower(query)+"%"))
+		paramIdx++ // NOTE: not actually necessary, but just in case we add any more params
 	}
 
 	systemRoles, err := models.SystemRoles(queryParts...).All(ctx, Global)
