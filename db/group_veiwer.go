@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries"
 )
 
 // TODO: Add tracing
@@ -66,6 +68,38 @@ var (
 
 func (svc *GroupViewerService) Insert(ctx context.Context, gv *models.GroupViewer) error {
 	return gv.Insert(ctx, Global, boil.Whitelist(groupViewerInsertWhitelist...))
+}
+
+const (
+	getGroupViewersQuery = `SELECT p.*
+	FROM group_viewer gv INNER JOIN person p ON p.id = gv.person_id AND p.tenant_id = gv.tenant_id
+	WHERE gv.group_id = $1 AND gv.tenant_id = $2;`
+)
+
+func (svc *GroupViewerService) GetGroupViewers(ctx context.Context, tenantID, groupID string) ([]*models.Person, error) {
+	results := []*models.Person{}
+	err := queries.Raw(getGroupViewersQuery, groupID, tenantID).Bind(ctx, Global, results)
+	if err != nil {
+		log.WithTenantID(tenantID).WithCustom("groupId", groupID).WithCustom("query", getGroupViewersQuery)
+		return nil, err
+	}
+	return results, nil
+}
+
+const (
+	getPersonViewableGroupsQuery = `SELECT g.*
+	FROM group_viewer gv INNER JOIN group g ON g.id = gv.group_id AND g.tenant_id = gv.tenant_id
+	WHERE gv.person_id = $1 AND gv.tenant_id = $2;`
+)
+
+func (svc *GroupViewerService) GetPersonViewableGroups(ctx context.Context, tenantID, personID string) ([]*models.Group, error) {
+	results := []*models.Group{}
+	err := queries.Raw(getPersonViewableGroupsQuery, personID, tenantID).Bind(ctx, Global, results)
+	if err != nil {
+		log.WithTenantID(tenantID).WithCustom("personId", personID).WithCustom("query", getPersonViewableGroupsQuery)
+		return nil, err
+	}
+	return results, nil
 }
 
 var (
