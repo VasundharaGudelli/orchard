@@ -32,7 +32,7 @@
     "systemRole": null
   },
   "TestGetSystemRoleByID": {
-    "id": ""
+    "id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
   },
   "TestGetSystemRoleByIDBadRequestEmptyID": {},
   "TestGetSystemRoles": {},
@@ -43,9 +43,9 @@
     "search": "not_even_real"
   },
   "TestUpdateSystemRole": {
-    "id": "",
+    "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
     "systemRole": {
-      "id": "",
+      "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
       "tenantId": "00000000-0000-0000-0000-000000000000",
       "name": "Test Role",
       "description": "under construction",
@@ -58,16 +58,16 @@
     }
   },
   "TestUpdateSystemRoleWithOnlyFields": {
-    "id": "",
+    "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
     "systemRole": {
-      "id": "",
+      "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
       "tenantId": "00000000-0000-0000-0000-000000000000",
       "status": 0
     },
     "onlyFields": ["status"]
   },
   "TestUpdateSystemRoleBadRequestNilSystemRole": {
-    "id": "",
+    "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
     "systemRole": null
   },
   "TestUpdateSystemRoleBadRequestEmptyID": {
@@ -78,9 +78,9 @@
     }
   },
   "TestDeleteSystemRoleByID": {
-    "id": ""
+    "id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
   },
   "TestDeleteSystemRoleByIdNOOP": {
-    "id": ""
+    "id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
   }
 }
