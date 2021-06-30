@@ -1,0 +1,207 @@
+package grpchandlers
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/loupe-co/go-loupe-logger/log"
+	"github.com/loupe-co/orchard/db"
+	"github.com/loupe-co/orchard/models"
+	orchardPb "github.com/loupe-co/protos/src/common/orchard"
+	servicePb "github.com/loupe-co/protos/src/services/orchard"
+)
+
+func (server *OrchardGRPCServer) UpsertPeople(ctx context.Context, in *servicePb.UpsertPeopleRequest) (*servicePb.UpsertPeopleResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "UpsertPeople")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	if in.TenantId == "" {
+		logger.Warn("Bad Request: tenantId can't be empty")
+		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+	}
+
+	if len(in.People) == 0 {
+		return &servicePb.UpsertPeopleResponse{}, nil
+	}
+
+	svc := db.NewPersonService()
+
+	upsertablePeople := make([]*models.Person, len(in.People))
+	for i, p := range in.People {
+		upsertablePeople[i] = svc.FromProto(p)
+	}
+
+	if err := svc.UpsertAll(spanCtx, upsertablePeople); err != nil {
+		logger.Errorf("error upserting one or more person records: %s", err.Error())
+		return nil, err
+	}
+
+	return &servicePb.UpsertPeopleResponse{}, nil
+}
+
+func (server *OrchardGRPCServer) GetPersonById(ctx context.Context, in *servicePb.IdRequest) (*orchardPb.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "GetPersonById")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+
+	if in.TenantId == "" || in.PersonId == "" {
+		logger.Warn("Bad Request: tenantId and personId can't be empty")
+		return nil, fmt.Errorf("Bad Request: tenantId and personId can't be empty")
+	}
+
+	svc := db.NewPersonService()
+
+	p, err := svc.GetByID(spanCtx, in.PersonId, in.TenantId)
+	if err != nil {
+		logger.Errorf("error getting person by id: %s", err.Error())
+		return nil, err
+	}
+
+	person, err := svc.ToProto(p)
+	if err != nil {
+		logger.Errorf("error converting person db model to proto: %s", err.Error())
+		return nil, err
+	}
+
+	return person, nil
+}
+
+func (server *OrchardGRPCServer) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleRequest) (*servicePb.SearchPeopleResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "SearchPeople")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId).WithCustom("search", in.Search).WithCustom("page", in.Page).WithCustom("pageSize", in.PageSize)
+
+	if in.TenantId == "" {
+		logger.Warn("Bad Request: tenantId can't be empty")
+		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+	}
+
+	limit := 20
+	if in.PageSize > 0 {
+		limit = int(in.PageSize)
+	}
+	offset := 0
+	if in.Page > 0 {
+		offset = (int(in.Page) - 1) * limit
+	}
+
+	svc := db.NewPersonService()
+
+	peeps, total, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset)
+	if err != nil {
+		logger.Errorf("error searching people: %s", err.Error())
+		return nil, err
+	}
+
+	people := make([]*orchardPb.Person, len(peeps))
+	for i, peep := range peeps {
+		p, err := svc.ToProto(peep)
+		if err != nil {
+			logger.Errorf("error converting person db model to proto: %s", err.Error())
+			return nil, err
+		}
+		people[i] = p
+	}
+
+	return &servicePb.SearchPeopleResponse{
+		People: people,
+		Total:  int32(total),
+	}, nil
+}
+
+func (server *OrchardGRPCServer) GetGroupMembers(ctx context.Context, in *servicePb.GetGroupMembersRequest) (*servicePb.GetGroupMembersResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "GetGroupMembers")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+
+	if in.TenantId == "" || in.GroupId == "" {
+		logger.Warn("Bad Request: tenantId and groupId can't be empty")
+		return nil, fmt.Errorf("Bad Request: tenantId and groupId can't be empty")
+	}
+
+	svc := db.NewPersonService()
+
+	peeps, err := svc.GetPeopleByGroupId(spanCtx, in.TenantId, in.GroupId)
+	if err != nil {
+		logger.Errorf("error getting person records by group id: %s", err.Error())
+		return nil, err
+	}
+
+	people := make([]*orchardPb.Person, len(peeps))
+	for i, peep := range peeps {
+		p, err := svc.ToProto(peep)
+		if err != nil {
+			logger.Errorf("error converting person db model to proto: %s", err.Error())
+			return nil, err
+		}
+		people[i] = p
+	}
+
+	return &servicePb.GetGroupMembersResponse{
+		GroupId: in.GroupId,
+		Members: people,
+	}, nil
+}
+
+func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonRequest) (*servicePb.UpdatePersonResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "UpdatePerson")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	if in.TenantId == "" {
+		logger.Warn("Bad Request: tenantId can't be empty")
+		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+	}
+
+	if in.Person == nil {
+		return &servicePb.UpdatePersonResponse{}, nil
+	}
+
+	logger = logger.WithCustom("personId", in.Person.Id)
+
+	svc := db.NewPersonService()
+
+	updatePerson := svc.FromProto(in.Person)
+
+	if err := svc.Update(spanCtx, updatePerson, in.OnlyFields); err != nil {
+		logger.Errorf("error updating person record: %s", err.Error())
+		return nil, err
+	}
+
+	person, err := svc.ToProto(updatePerson)
+	if err != nil {
+		logger.Errorf("error converting person db model to proto: %s", err.Error())
+		return nil, err
+	}
+
+	return &servicePb.UpdatePersonResponse{
+		Person: person,
+	}, nil
+}
+
+func (server *OrchardGRPCServer) DeletePersonById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
+	spanCtx, span := log.StartSpan(ctx, "DeletePersonById")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+
+	if in.TenantId == "" || in.PersonId == "" {
+		logger.Warn("Bad Request: tenantId and personId can't be empty")
+		return nil, fmt.Errorf("Bad Request: tenantId and personId can't be empty")
+	}
+
+	svc := db.NewPersonService()
+
+	if err := svc.DeleteByID(spanCtx, in.PersonId, in.TenantId); err != nil {
+		logger.Errorf("error deleting person by id: %s", err.Error())
+		return nil, err
+	}
+
+	return &servicePb.Empty{}, nil
+}

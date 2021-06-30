@@ -390,6 +390,7 @@ github.com/loupe-co/go-common v0.0.0-20210609151309-8fa84b7d7334/go.mod h1:UQ2Mt
 github.com/loupe-co/go-common v0.0.0-20210623120934-f0442d26caee/go.mod h1:UQ2MtdrD32uw7VfE8B9yfkHxsWVh1oj45LYf4wNDfq4=
 github.com/loupe-co/go-common v0.0.0-20210624162437-b799f6f259b3 h1:2tpYt80KgNOCA/IJexqW/JzzlCjUKf9bzBPApQDhpJw=
 github.com/loupe-co/go-common v0.0.0-20210624162437-b799f6f259b3/go.mod h1:FM08JjL9ggEPoiG9DmOd3gLPdTuexXUAaw6wuWVLyUw=
+github.com/loupe-co/go-common v0.0.0-20210628174137-8267564b7801 h1:CuUlITQ690Za1KwY4B6g0g3yN24fd4suYh/Lnba6/4Y=
 github.com/loupe-co/go-elasticsearch-client v0.0.0-20210623153109-e53a1e1f47d4/go.mod h1:XiK5kBRsguPRZznWnqgWT3WlK2R6z3mw7b3M9gMG3qI=
 github.com/loupe-co/go-hubspot v0.0.0-20210503190949-e69dd16cf8c9/go.mod h1:ozFCN9EHL01hDzyESgN+Oz2eZLjD4q0fRrXj8ceqSvg=
 github.com/loupe-co/go-loupe-auth v0.0.0-20191003154911-74f1200c6e80/go.mod h1:B6h8MRiPQ2a+ayCKwvEdN/lmeiWwo3LgBa5OX8l1zPk=
@@ -432,6 +433,8 @@ github.com/loupe-co/protos v0.0.0-20210628165407-0c8050e82767 h1:j9ot6rntRvo4AxK
 github.com/loupe-co/protos v0.0.0-20210628165407-0c8050e82767/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/loupe-co/protos v0.0.0-20210628193126-6878406e9a39 h1:eTpH74elwmJhsKrKmu6uE49FI5WUGX805YLipUGLnyU=
 github.com/loupe-co/protos v0.0.0-20210628193126-6878406e9a39/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
+github.com/loupe-co/protos v0.0.0-20210629184312-d2e4b77f92f1 h1:Syuz+vfQAzASRIdBompl1TfH1KviOVBikwF1YLHODz0=
+github.com/loupe-co/protos v0.0.0-20210629184312-d2e4b77f92f1/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/loupe-co/reporting v0.0.0-20200624214422-71b5daa49e95/go.mod h1:jKfMWN/80IT0ch1LwVCi5V16MUcGz5GD+DaEU2oua+I=
 github.com/loupe-co/setting-service v0.0.0-20200620163229-f5b11d294f7d/go.mod h1:vFPyVtilbt8dW2Yiql9dFZEFdgkBYwfSNq2T6WDKB/I=
 github.com/loupe-co/signal-evaluator v0.0.0-20200207182452-feb402a25fad/go.mod h1:sz9GKO4/C+XaPpE0bcfH9f6ZyyEnzRskxIngXazvU3c=
