@@ -1,0 +1,86 @@
+{
+  "TestCreateSystemRole": {
+    "tenantId": "00000000-0000-0000-0000-000000000000",
+    "systemRole": {
+      "tenantId": "00000000-0000-0000-0000-000000000000",
+      "name": "testRole",
+      "description": "This is just a test system role.",
+      "type": 2,
+      "permissions": 0,
+      "priority": 100,
+      "status": 1,
+      "createdBy": "00000000-0000-0000-0000-000000000000",
+      "updatedBy": "00000000-0000-0000-0000-000000000000"
+    }
+  },
+  "TestCreateSystemRoleBadRequestNonEmptyID": {
+    "tenantId": "00000000-0000-0000-0000-000000000000",
+    "systemRole": {
+      "tenantId": "00000000-0000-0000-0000-000000000000",
+      "name": "testRole 2",
+      "description": "This is just a test system role.",
+      "type": 2,
+      "permissions": 0,
+      "priority": 100,
+      "status": 1,
+      "createdBy": "00000000-0000-0000-0000-000000000000",
+      "updatedBy": "00000000-0000-0000-0000-000000000000"
+    }
+  },
+  "TestCreateSystemRoleBadRequestNilSystemRole": {
+    "tenantId": "00000000-0000-0000-0000-000000000000",
+    "systemRole": null
+  },
+  "TestGetSystemRoleByID": {
+    "id": ""
+  },
+  "TestGetSystemRoleByIDBadRequestEmptyID": {},
+  "TestGetSystemRoles": {},
+  "TestGetSystemRolesWithSearch": {
+    "search": "test"
+  },
+  "TestGetSystemRolesNoResults": {
+    "search": "not_even_real"
+  },
+  "TestUpdateSystemRole": {
+    "id": "",
+    "systemRole": {
+      "id": "",
+      "tenantId": "00000000-0000-0000-0000-000000000000",
+      "name": "Test Role",
+      "description": "under construction",
+      "type": 1,
+      "permissions": 63,
+      "priority": 1,
+      "status": 1,
+      "createdBy": "00000000-0000-0000-0000-000000000000",
+      "updatedBy": "00000000-0000-0000-0000-000000000000"
+    }
+  },
+  "TestUpdateSystemRoleWithOnlyFields": {
+    "id": "",
+    "systemRole": {
+      "id": "",
+      "tenantId": "00000000-0000-0000-0000-000000000000",
+      "status": 0
+    },
+    "onlyFields": ["status"]
+  },
+  "TestUpdateSystemRoleBadRequestNilSystemRole": {
+    "id": "",
+    "systemRole": null
+  },
+  "TestUpdateSystemRoleBadRequestEmptyID": {
+    "id": "",
+    "systemRole": {
+      "id": "",
+      "tenantId": "00000000-0000-0000-0000-000000000000"
+    }
+  },
+  "TestDeleteSystemRoleByID": {
+    "id": ""
+  },
+  "TestDeleteSystemRoleByIdNOOP": {
+    "id": ""
+  }
+}

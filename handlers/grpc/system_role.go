@@ -16,6 +16,16 @@ func (server *OrchardGRPCServer) CreateSystemRole(ctx context.Context, in *servi
 
 	logger := log.WithTenantID(in.TenantId)
 
+	if in.TenantId == "" {
+		logger.Warn("Bad Request: tenantId can't be empty")
+		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+	}
+
+	if in.SystemRole == nil {
+		logger.Warn("Bad Request: can't insert null system role")
+		return nil, fmt.Errorf("Bad Request: can't insert null system role")
+	}
+
 	if in.SystemRole.Id != "" {
 		logger.Warn("Bad Request: can't insert new record with existing id")
 		return nil, grpcError(spanCtx, fmt.Errorf("Bad Request: can't insert new systemRole with non-empty id"))
@@ -107,6 +117,10 @@ func (server *OrchardGRPCServer) UpdateSystemRole(ctx context.Context, in *servi
 
 	if in.SystemRole.Id == "" {
 		in.SystemRole.Id = in.Id
+	}
+	if in.SystemRole.Id == "" {
+		log.Warn("Bad Request: id can't be empty")
+		return nil, fmt.Errorf("Bad Request: id can't be empty")
 	}
 
 	logger := log.WithTenantID(in.SystemRole.TenantId).WithCustom("id", in.Id)
