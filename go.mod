@@ -3,6 +3,7 @@ module github.com/loupe-co/orchard
 go 1.13
 
 require (
+	github.com/buger/jsonparser v1.1.1
 	github.com/friendsofgo/errors v0.9.2
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.2.0

@@ -3,8 +3,10 @@ package grpchandlers
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
+	"github.com/buger/jsonparser"
 	configUtil "github.com/loupe-co/go-common/config"
 	"github.com/loupe-co/go-common/fixtures"
 	"github.com/loupe-co/orchard/config"
@@ -19,6 +21,7 @@ func setup() (*OrchardGRPCServer, error) {
 		&cfg,
 		configUtil.FromENV(),
 		configUtil.SetDefaultENV("project", "local"),
+		configUtil.SetDefaultENV("SERVER_NAME", "orchard"),
 		configUtil.SetDefaultENV("PROJECT_ID", "loupe-dev"),
 		configUtil.SetDefaultENV("DB_HOST", "35.245.37.78"),
 		configUtil.SetDefaultENV("DB_PASSWORD", "jLariybb1oe5FbDz"),
@@ -41,7 +44,13 @@ func TestCreateSystemRole(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestCreateSystemRole"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestCreateSystemRole")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.CreateSystemRoleRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -52,6 +61,18 @@ func TestCreateSystemRole(t *testing.T) {
 	res, err := server.CreateSystemRole(context.Background(), req)
 	if err != nil {
 		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if res == nil || res.SystemRole == nil {
+		t.Log("expected response to be non-nil, but got nil")
+		t.Fail()
+		return
+	}
+
+	if res.SystemRole.Id == "" {
+		t.Log("expected systemRole id to be not empty, but is empty")
 		t.Fail()
 		return
 	}
@@ -78,7 +99,13 @@ func TestCreateSystemRoleBadRequestNonEmptyID(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestCreateSystemRoleBadRequestNonEmptyID"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestCreateSystemRoleBadRequestNonEmptyID")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.CreateSystemRoleRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -86,14 +113,20 @@ func TestCreateSystemRoleBadRequestNonEmptyID(t *testing.T) {
 		return
 	}
 
-	res, err := server.CreateSystemRole(context.Background(), req)
-	if err != nil {
-		t.Log(err)
+	_, err = server.CreateSystemRole(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
 		t.Fail()
 		return
 	}
 
-	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if !strings.Contains(err.Error(), "Bad Request") {
+		t.Log("expected error to contain 'Bad Request', but didn't")
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -115,7 +148,13 @@ func TestCreateSystemRoleBadRequestNilSystemRole(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestCreateSystemRoleBadRequestNilSystemRole"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestCreateSystemRoleBadRequestNilSystemRole")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.CreateSystemRoleRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -123,14 +162,25 @@ func TestCreateSystemRoleBadRequestNilSystemRole(t *testing.T) {
 		return
 	}
 
-	res, err := server.CreateSystemRole(context.Background(), req)
+	_, err = server.CreateSystemRole(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
+		t.Fail()
+		return
+	}
+
+	if !strings.Contains(err.Error(), "Bad Request") {
+		t.Log("expected error to contain 'Bad Request', but didn't")
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 		return
 	}
-
-	rawResult, err := json.MarshalIndent(res, "", "  ")
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -152,7 +202,13 @@ func TestGetSystemRoleByID(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestGetSystemRoleByID"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestGetSystemRoleByID")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.IdRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -189,7 +245,13 @@ func TestGetSystemRoleByIDBadRequestEmptyID(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestGetSystemRoleByIDBadRequestEmptyID"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestGetSystemRoleByIDBadRequestEmptyID")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.IdRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -197,14 +259,20 @@ func TestGetSystemRoleByIDBadRequestEmptyID(t *testing.T) {
 		return
 	}
 
-	res, err := server.GetSystemRoleById(context.Background(), req)
-	if err != nil {
-		t.Log(err)
+	_, err = server.GetSystemRoleById(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
 		t.Fail()
 		return
 	}
 
-	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if !strings.Contains(err.Error(), "Bad Request") {
+		t.Log("expected error to contain 'Bad Request', but didn't")
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -226,7 +294,13 @@ func TestGetSystemRoles(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestGetSystemRoles"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestGetSystemRoles")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.GetSystemRolesRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -263,7 +337,13 @@ func TestGetSystemRolesWithSearch(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestGetSystemRolesWithSearch"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestGetSystemRolesWithSearch")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.GetSystemRolesRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -300,7 +380,13 @@ func TestGetSystemRolesNoResults(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestGetSystemRolesNoResults"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestGetSystemRolesNoResults")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.GetSystemRolesRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -337,7 +423,13 @@ func TestUpdateSystemRole(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestUpdateSystemRole"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestUpdateSystemRole")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.UpdateSystemRoleRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -374,7 +466,13 @@ func TestUpdateSystemRoleWithOnlyFields(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestUpdateSystemRoleWithOnlyFields"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestUpdateSystemRoleWithOnlyFields")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.UpdateSystemRoleRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -411,7 +509,13 @@ func TestUpdateSystemRoleBadRequestNilSystemRole(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestUpdateSystemRoleBadRequestNilSystemRole"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestUpdateSystemRoleBadRequestNilSystemRole")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.UpdateSystemRoleRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -419,14 +523,20 @@ func TestUpdateSystemRoleBadRequestNilSystemRole(t *testing.T) {
 		return
 	}
 
-	res, err := server.UpdateSystemRole(context.Background(), req)
-	if err != nil {
-		t.Log(err)
+	_, err = server.UpdateSystemRole(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
 		t.Fail()
 		return
 	}
 
-	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if !strings.Contains(err.Error(), "Bad Request") {
+		t.Log("expected error to contain 'Bad Request', but didn't")
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -448,7 +558,13 @@ func TestUpdateSystemRoleBadRequestEmptyID(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestUpdateSystemRoleBadRequestEmptyID"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestUpdateSystemRoleBadRequestEmptyID")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.UpdateSystemRoleRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -456,14 +572,20 @@ func TestUpdateSystemRoleBadRequestEmptyID(t *testing.T) {
 		return
 	}
 
-	res, err := server.UpdateSystemRole(context.Background(), req)
-	if err != nil {
-		t.Log(err)
+	_, err = server.UpdateSystemRole(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
 		t.Fail()
 		return
 	}
 
-	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if !strings.Contains(err.Error(), "Bad Request") {
+		t.Log("expected error to contain 'Bad Request', but didn't")
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -485,7 +607,13 @@ func TestDeleteSystemRoleByID(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestDeleteSystemRoleByID"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestDeleteSystemRoleByID")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.IdRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -522,7 +650,13 @@ func TestDeleteSystemRoleByIdNOOP(t *testing.T) {
 		return
 	}
 
-	testData := fixtures.Data["TestDeleteSystemRoleByIdNOOP"]
+	testData, _, _, err := jsonparser.Get(fixtures.Data["system_roles"], "TestDeleteSystemRoleByIdNOOP")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
 	req := &servicePb.IdRequest{}
 	if err := json.Unmarshal(testData, req); err != nil {
 		t.Log(err)
@@ -530,14 +664,20 @@ func TestDeleteSystemRoleByIdNOOP(t *testing.T) {
 		return
 	}
 
-	res, err := server.DeleteSystemRoleById(context.Background(), req)
-	if err != nil {
-		t.Log(err)
+	_, err = server.DeleteSystemRoleById(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
 		t.Fail()
 		return
 	}
 
-	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if !strings.Contains(err.Error(), "affected 0") {
+		t.Log("expected error to contain 'affected 0', but didn't")
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
 	if err != nil {
 		t.Log(err)
 		t.Fail()

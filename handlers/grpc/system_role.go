@@ -46,7 +46,13 @@ func (server *OrchardGRPCServer) CreateSystemRole(ctx context.Context, in *servi
 		return nil, err
 	}
 
-	return nil, nil
+	systemRole, err := svc.ToProto(sr)
+	if err != nil {
+		logger.Errorf("error converting systemRole db model to proto: %s", err.Error())
+		return nil, err
+	}
+
+	return &servicePb.CreateSystemRoleResponse{SystemRole: systemRole}, nil
 }
 
 func (server *OrchardGRPCServer) GetSystemRoleById(ctx context.Context, in *servicePb.IdRequest) (*orchardPb.SystemRole, error) {

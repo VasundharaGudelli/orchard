@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/orchard/models"
@@ -98,6 +99,9 @@ var (
 )
 
 func (svc *SystemRoleService) Insert(ctx context.Context, sr *models.SystemRole) error {
+	now := time.Now().UTC()
+	sr.CreatedAt = now
+	sr.UpdatedAt = now
 	return sr.Insert(ctx, Global, boil.Whitelist(systemRoleInsertWhitelist...))
 }
 
@@ -155,6 +159,8 @@ func (svc *SystemRoleService) Update(ctx context.Context, sr *models.SystemRole,
 	if !hasUpdatedAt {
 		whitelist = append(whitelist, "updated_at")
 	}
+
+	sr.UpdatedAt = time.Now().UTC()
 
 	numAffected, err := sr.Update(ctx, Global, boil.Whitelist(whitelist...))
 	if err != nil {
