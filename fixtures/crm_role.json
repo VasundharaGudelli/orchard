@@ -1,0 +1,14 @@
+{
+  "TestUpsertCRMRoles": {},
+  "TestUpsertCRMRolesBadRequestEmptyTenantID": {},
+  "TestUpsertCRMRolesNoRecords": {},
+  "TestGetCRMRoleById": {},
+  "TestGetCRMRoleByIdBadRequestEmptyID": {},
+  "TestGetCRMRoleByIdBadRequestEmptyTenantID": {},
+  "TestGetCRMRoles": {},
+  "TestGetCRMRolesWithSearch": {},
+  "TestGetCRMRolesBadRequestEmptyTenantID": {},
+  "TestDeleteCRMRoleById": {},
+  "TestDeleteCRMRoleByIdBadRequestEmptyID": {},
+  "TestDeleteCRMRoleByIdBadRequestEmptyTenantID": {}
+}

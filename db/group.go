@@ -63,7 +63,7 @@ func (svc *GroupService) FromProto(g *orchardPb.Group) *models.Group {
 		RoleIds:    types.StringArray(g.RoleIds),
 		CRMRoleIds: types.StringArray(g.CrmRoleIds),
 		ParentID:   null.NewString(g.ParentId, g.ParentId != ""),
-		GroupPath:  g.GroupPath,
+		GroupPath:  strings.ReplaceAll(g.GroupPath, "-", "_"),
 		Order:      int(g.Order),
 		CreatedAt:  createdAt,
 		CreatedBy:  g.CreatedBy,
@@ -108,7 +108,7 @@ func (svc *GroupService) ToProto(g *models.Group) (*orchardPb.Group, error) {
 		RoleIds:    []string(g.RoleIds),
 		CrmRoleIds: []string(g.CRMRoleIds),
 		ParentId:   g.ParentID.String,
-		GroupPath:  g.GroupPath,
+		GroupPath:  strings.ReplaceAll(g.GroupPath, "_", "-"),
 		Order:      int32(g.Order),
 		CreatedAt:  createdAt,
 		CreatedBy:  g.CreatedBy,
@@ -126,6 +126,7 @@ var (
 )
 
 func (svc *GroupService) Insert(ctx context.Context, g *models.Group) error {
+	g.GroupPath = strings.ReplaceAll(g.GroupPath, "-", "_")
 	if svc.tx != nil {
 		return g.Insert(ctx, svc.tx, boil.Whitelist(groupInsertWhitelist...))
 	}
@@ -162,8 +163,8 @@ func (svc *GroupService) Search(ctx context.Context, tenantID, query string) ([]
 }
 
 type GroupTreeNode struct {
-	Group    *models.Group    `boil:"group,bind"`
-	Members  []*models.Person `boil:"members,bind"`
+	Group    models.Group     `boil:"group,bind"`
+	Members  []models.Person  `boil:"members,bind"`
 	Children []*GroupTreeNode `boil:"-"`
 }
 
@@ -184,13 +185,13 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		maxDepth = 1000000
 	}
 	personSelect := "(p.id)"
-	if hydrateUsers {
+	if hydrateUsers || true {
 		personSelect = "p"
 	}
 	query := strings.ReplaceAll(getGroupSubTreeQuery, "{PERSON_SELECT}", personSelect)
 
 	results := []*GroupTreeNode{}
-	if err := queries.Raw(query, groupID, tenantID, maxDepth).Bind(ctx, Global, results); err != nil {
+	if err := queries.Raw(query, groupID, tenantID, maxDepth).Bind(ctx, Global, &results); err != nil {
 		log.WithTenantID(tenantID).WithCustom("groupId", groupID).WithCustom("maxDepth", maxDepth).WithCustom("hydrateUsers", hydrateUsers).WithCustom("query", query).Error(err)
 		return nil, err
 	}
@@ -220,6 +221,8 @@ func (svc *GroupService) Update(ctx context.Context, g *models.Group, onlyFields
 		whitelist = append(whitelist, "updated_at")
 	}
 
+	g.GroupPath = strings.ReplaceAll(g.GroupPath, "-", "_")
+
 	x := boil.ContextExecutor(Global)
 	if svc.tx != nil {
 		x = svc.tx
@@ -237,11 +240,11 @@ func (svc *GroupService) Update(ctx context.Context, g *models.Group, onlyFields
 
 const (
 	updateGroupPathsQuery = `WITH RECURSIVE group_tree AS (
-		SELECT id, tenant_id, parent_id, CONCAT($1, '.', id) as group_path
+		SELECT id, tenant_id, parent_id, CONCAT(REPLACE($1, '-', '_'), '.', REPLACE(id, '-', '_')) as group_path
 		FROM "group"
 		WHERE tenant_id = $1 AND parent_id IS NULL
 		UNION
-		SELECT g.id, g.tenant_id, g.parent_id, CONCAT(gt.group_path, '.', g.id) as group_path
+		SELECT g.id, g.tenant_id, g.parent_id, CONCAT(gt.group_path, '.', REPLACE(g.id, '-', '_')) as group_path
 		FROM "group" g
 		INNER JOIN group_tree gt ON gt.id = g.parent_id AND gt.tenant_id = g.tenant_id
 		WHERE g.tenant_id = $1

@@ -153,7 +153,7 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 	// Convert db models to protos
 	flatProtos := make([]*servicePb.GroupWithMembers, len(flatGroups))
 	for i, g := range flatGroups {
-		group, err := svc.ToProto(g.Group)
+		group, err := svc.ToProto(&g.Group)
 		if err != nil {
 			logger.Errorf("error converting group db model to proto: %s", err.Error())
 			return nil, err
@@ -162,7 +162,7 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 		if in.HydrateUsers {
 			members = make([]*orchardPb.Person, len(g.Members))
 			for j, p := range g.Members {
-				members[j], err = personSvc.ToProto(p)
+				members[j], err = personSvc.ToProto(&p)
 				if err != nil {
 					logger.Errorf("error converting person db model to proto: %s", err.Error())
 					return nil, err

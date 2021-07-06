@@ -1,0 +1,28 @@
+{
+  "TestCreateGroup": {},
+  "TestCreateGroupBadRequestEmptyTenantID": {},
+  "TestCreateGroupBadRequestNilGroup": {},
+  "TestCreateGroupBadRequestNonEmptyID": {},
+  "TestGetGroupById": {},
+  "TestGetGroupByIdBadRequestEmptyID": {},
+  "TestGetGroupByIdBadRequestEmptyTenantID": {},
+  "TestGetGroups": {},
+  "TestGetGroupsWithSearch": {},
+  "TestGetGroupsBadRequestEmptyTenantID": {},
+  "TestGetGroupSubTree": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "group_id": "ffa46973-1f28-41d8-9cee-dfadb51eeae2"
+  },
+  "TestGetGroupSubTreeWithDepth": {},
+  "TestGetGroupSubTreeWithHydrateUsers": {},
+  "TestGetGroupSubTreeBadRequestEmptyTenantID": {},
+  "TestGetGroupSubTreeBadRequestEmptyGroupID": {},
+  "TestUpdateGroup": {},
+  "TestUpdateGroupWithOnlyFields": {},
+  "TestUpdateGroupBadRequestEmptyTenantID": {},
+  "TestUpdateGroupBadRequestEmptyID": {},
+  "TestUpdateGroupBadRequestNilGroup": {},
+  "TestDeleteGroup": {},
+  "TestDeleteGroupBadRequestEmptyTenantID": {},
+  "TestDeleteGroupBadRequestEmptyID": {}
+}
