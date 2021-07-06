@@ -850,7 +850,7 @@ func TestDeleteGroup(t *testing.T) {
 		return
 	}
 
-	res, err := testServer.DeleteGroup(context.Background(), req)
+	res, err := testServer.DeleteGroupById(context.Background(), req)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -886,7 +886,7 @@ func TestDeleteGroupBadRequestEmptyTenantID(t *testing.T) {
 		return
 	}
 
-	_, err = testServer.DeleteGroup(context.Background(), req)
+	_, err = testServer.DeleteGroupById(context.Background(), req)
 	if err == nil {
 		t.Log("expected server to return an error, but got nil error")
 		t.Fail()
@@ -928,7 +928,7 @@ func TestDeleteGroupBadRequestEmptyID(t *testing.T) {
 		return
 	}
 
-	_, err = testServer.DeleteGroup(context.Background(), req)
+	_, err = testServer.DeleteGroupById(context.Background(), req)
 	if err == nil {
 		t.Log("expected server to return an error, but got nil error")
 		t.Fail()

@@ -568,7 +568,7 @@ func testGroupsSelect(t *testing.T) {
 }
 
 var (
-	groupDBTypes = map[string]string{`ID`: `text`, `TenantID`: `uuid`, `Name`: `text`, `Type`: `enum.group_type('internal','manager','ic')`, `Status`: `enum.group_status('active','inactive')`, `RoleIds`: `ARRAYtext`, `CRMRoleIds`: `ARRAYtext`, `ParentID`: `text`, `GroupPath`: `USER-DEFINED`, `Order`: `integer`, `CreatedBy`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedBy`: `text`, `UpdatedAt`: `timestamp without time zone`}
+	groupDBTypes = map[string]string{`ID`: `text`, `TenantID`: `uuid`, `Name`: `text`, `Type`: `enum.group_type('internal','manager','ic')`, `Status`: `enum.group_status('active','inactive')`, `RoleIds`: `ARRAYtext`, `CRMRoleIds`: `ARRAYtext`, `ParentID`: `text`, `GroupPath`: `USER-DEFINED`, `Order`: `integer`, `CreatedBy`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedBy`: `text`, `UpdatedAt`: `timestamp without time zone`, `SyncFilter`: `text`, `OpportunityFilter`: `text`}
 	_            = bytes.MinRead
 )
 

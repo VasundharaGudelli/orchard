@@ -282,7 +282,7 @@ func (server *OrchardGRPCServer) UpdateGroup(ctx context.Context, in *servicePb.
 	return &servicePb.UpdateGroupResponse{Group: group}, nil
 }
 
-func (server *OrchardGRPCServer) DeleteGroup(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
+func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
 	spanCtx, span := log.StartSpan(ctx, "DeleteGroupById")
 	defer span.End()
 

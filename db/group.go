@@ -56,20 +56,22 @@ func (svc *GroupService) FromProto(g *orchardPb.Group) *models.Group {
 	updatedAt := g.UpdatedAt.AsTime()
 
 	return &models.Group{
-		ID:         g.Id,
-		TenantID:   g.TenantId,
-		Name:       g.Name,
-		Type:       strings.ToLower(g.Type.String()),
-		Status:     strings.ToLower(g.Status.String()),
-		RoleIds:    types.StringArray(g.RoleIds),
-		CRMRoleIds: types.StringArray(g.CrmRoleIds),
-		ParentID:   null.NewString(g.ParentId, g.ParentId != ""),
-		GroupPath:  strings.ReplaceAll(g.GroupPath, "-", "_"),
-		Order:      int(g.Order),
-		CreatedAt:  createdAt,
-		CreatedBy:  g.CreatedBy,
-		UpdatedAt:  updatedAt,
-		UpdatedBy:  g.UpdatedBy,
+		ID:                g.Id,
+		TenantID:          g.TenantId,
+		Name:              g.Name,
+		Type:              strings.ToLower(g.Type.String()),
+		Status:            strings.ToLower(g.Status.String()),
+		RoleIds:           types.StringArray(g.RoleIds),
+		CRMRoleIds:        types.StringArray(g.CrmRoleIds),
+		ParentID:          null.NewString(g.ParentId, g.ParentId != ""),
+		GroupPath:         strings.ReplaceAll(g.GroupPath, "-", "_"),
+		Order:             int(g.Order),
+		SyncFilter:        null.NewString(g.SyncFilter, g.SyncFilter != ""),
+		OpportunityFilter: null.NewString(g.OpportunityFilter, g.OpportunityFilter != ""),
+		CreatedAt:         createdAt,
+		CreatedBy:         g.CreatedBy,
+		UpdatedAt:         updatedAt,
+		UpdatedBy:         g.UpdatedBy,
 	}
 }
 
@@ -101,20 +103,22 @@ func (svc *GroupService) ToProto(g *models.Group) (*orchardPb.Group, error) {
 	}
 
 	return &orchardPb.Group{
-		Id:         g.ID,
-		TenantId:   g.TenantID,
-		Name:       g.Name,
-		Type:       typ,
-		Status:     status,
-		RoleIds:    []string(g.RoleIds),
-		CrmRoleIds: []string(g.CRMRoleIds),
-		ParentId:   g.ParentID.String,
-		GroupPath:  strings.ReplaceAll(g.GroupPath, "_", "-"),
-		Order:      int32(g.Order),
-		CreatedAt:  createdAt,
-		CreatedBy:  g.CreatedBy,
-		UpdatedAt:  updatedAt,
-		UpdatedBy:  g.UpdatedBy,
+		Id:                g.ID,
+		TenantId:          g.TenantID,
+		Name:              g.Name,
+		Type:              typ,
+		Status:            status,
+		RoleIds:           []string(g.RoleIds),
+		CrmRoleIds:        []string(g.CRMRoleIds),
+		ParentId:          g.ParentID.String,
+		GroupPath:         strings.ReplaceAll(g.GroupPath, "_", "-"),
+		Order:             int32(g.Order),
+		SyncFilter:        g.SyncFilter.String,
+		OpportunityFilter: g.OpportunityFilter.String,
+		CreatedAt:         createdAt,
+		CreatedBy:         g.CreatedBy,
+		UpdatedAt:         updatedAt,
+		UpdatedBy:         g.UpdatedBy,
 	}, nil
 }
 
@@ -122,7 +126,8 @@ var (
 	groupInsertWhitelist = []string{
 		"id", "tenant_id", "name", "type", "status",
 		"role_ids", "crm_role_ids", "parent_id", "group_path",
-		"order", "created_at", "created_by", "updated_at", "updated_by",
+		"order", "sync_filter", "opportunity_filter",
+		"created_at", "created_by", "updated_at", "updated_by",
 	}
 )
 
@@ -174,8 +179,8 @@ const (
 	getGroupSubTreeQuery = `SELECT
 	"group".id as "group.id", "group".tenant_id as "group.tenant_id", "group".name as "group.name", "group".type as "group.type",
 	"group".status as "group.status", "group".role_ids as "group.role_ids", "group".crm_role_ids as "group.crm_role_ids", "group".parent_id as "group.parent_id",
-	"group".group_path as "group.group_path", "group".order as "group.order", "group".created_at as "group.created_at", "group".created_by as "group.created_by",
-	"group".updated_at as "group.updated_at", "group".updated_by as "group.updated_by",
+	"group".group_path as "group.group_path", "group".order as "group.order", "group".sync_filter as "group.sync_filter", "group".opportunity_filter as "group.opportunity_filter",
+	"group".created_at as "group.created_at", "group".created_by as "group.created_by", "group".updated_at as "group.updated_at", "group".updated_by as "group.updated_by",
 	ARRAY_AGG({PERSON_SELECT}) as "members_raw"
 FROM "group" INNER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id
 WHERE (
@@ -186,7 +191,7 @@ WHERE (
 ) AND "group".tenant_id = $2
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
-	"group".group_path, "group".order, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by`
+	"group".group_path, "group".order, "group".sync_filter, "group".opportunity_filter, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by`
 )
 
 func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool) ([]*GroupTreeNode, error) {
@@ -232,7 +237,8 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 var (
 	defaultGroupUpdateWhitelist = []string{
 		"name", "type", "status", "role_ids", "crm_role_ids",
-		"parent_id", "group_path", "order", "updated_at", "updated_by",
+		"parent_id", "group_path", "order", "sync_filter",
+		"opportunity_filter", "updated_at", "updated_by",
 	}
 )
 

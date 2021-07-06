@@ -25,87 +25,97 @@ import (
 
 // Group is an object representing the database table.
 type Group struct {
-	ID         string            `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TenantID   string            `boil:"tenant_id" json:"tenant_id" toml:"tenant_id" yaml:"tenant_id"`
-	Name       string            `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Type       string            `boil:"type" json:"type" toml:"type" yaml:"type"`
-	Status     string            `boil:"status" json:"status" toml:"status" yaml:"status"`
-	RoleIds    types.StringArray `boil:"role_ids" json:"role_ids,omitempty" toml:"role_ids" yaml:"role_ids,omitempty"`
-	CRMRoleIds types.StringArray `boil:"crm_role_ids" json:"crm_role_ids,omitempty" toml:"crm_role_ids" yaml:"crm_role_ids,omitempty"`
-	ParentID   null.String       `boil:"parent_id" json:"parent_id,omitempty" toml:"parent_id" yaml:"parent_id,omitempty"`
-	GroupPath  string            `boil:"group_path" json:"group_path" toml:"group_path" yaml:"group_path"`
-	Order      int               `boil:"order" json:"order" toml:"order" yaml:"order"`
-	CreatedBy  string            `boil:"created_by" json:"created_by" toml:"created_by" yaml:"created_by"`
-	CreatedAt  time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedBy  string            `boil:"updated_by" json:"updated_by" toml:"updated_by" yaml:"updated_by"`
-	UpdatedAt  time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID                string            `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TenantID          string            `boil:"tenant_id" json:"tenant_id" toml:"tenant_id" yaml:"tenant_id"`
+	Name              string            `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Type              string            `boil:"type" json:"type" toml:"type" yaml:"type"`
+	Status            string            `boil:"status" json:"status" toml:"status" yaml:"status"`
+	RoleIds           types.StringArray `boil:"role_ids" json:"role_ids,omitempty" toml:"role_ids" yaml:"role_ids,omitempty"`
+	CRMRoleIds        types.StringArray `boil:"crm_role_ids" json:"crm_role_ids,omitempty" toml:"crm_role_ids" yaml:"crm_role_ids,omitempty"`
+	ParentID          null.String       `boil:"parent_id" json:"parent_id,omitempty" toml:"parent_id" yaml:"parent_id,omitempty"`
+	GroupPath         string            `boil:"group_path" json:"group_path" toml:"group_path" yaml:"group_path"`
+	Order             int               `boil:"order" json:"order" toml:"order" yaml:"order"`
+	CreatedBy         string            `boil:"created_by" json:"created_by" toml:"created_by" yaml:"created_by"`
+	CreatedAt         time.Time         `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedBy         string            `boil:"updated_by" json:"updated_by" toml:"updated_by" yaml:"updated_by"`
+	UpdatedAt         time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	SyncFilter        null.String       `boil:"sync_filter" json:"sync_filter,omitempty" toml:"sync_filter" yaml:"sync_filter,omitempty"`
+	OpportunityFilter null.String       `boil:"opportunity_filter" json:"opportunity_filter,omitempty" toml:"opportunity_filter" yaml:"opportunity_filter,omitempty"`
 
 	R *groupR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L groupL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var GroupColumns = struct {
-	ID         string
-	TenantID   string
-	Name       string
-	Type       string
-	Status     string
-	RoleIds    string
-	CRMRoleIds string
-	ParentID   string
-	GroupPath  string
-	Order      string
-	CreatedBy  string
-	CreatedAt  string
-	UpdatedBy  string
-	UpdatedAt  string
+	ID                string
+	TenantID          string
+	Name              string
+	Type              string
+	Status            string
+	RoleIds           string
+	CRMRoleIds        string
+	ParentID          string
+	GroupPath         string
+	Order             string
+	CreatedBy         string
+	CreatedAt         string
+	UpdatedBy         string
+	UpdatedAt         string
+	SyncFilter        string
+	OpportunityFilter string
 }{
-	ID:         "id",
-	TenantID:   "tenant_id",
-	Name:       "name",
-	Type:       "type",
-	Status:     "status",
-	RoleIds:    "role_ids",
-	CRMRoleIds: "crm_role_ids",
-	ParentID:   "parent_id",
-	GroupPath:  "group_path",
-	Order:      "order",
-	CreatedBy:  "created_by",
-	CreatedAt:  "created_at",
-	UpdatedBy:  "updated_by",
-	UpdatedAt:  "updated_at",
+	ID:                "id",
+	TenantID:          "tenant_id",
+	Name:              "name",
+	Type:              "type",
+	Status:            "status",
+	RoleIds:           "role_ids",
+	CRMRoleIds:        "crm_role_ids",
+	ParentID:          "parent_id",
+	GroupPath:         "group_path",
+	Order:             "order",
+	CreatedBy:         "created_by",
+	CreatedAt:         "created_at",
+	UpdatedBy:         "updated_by",
+	UpdatedAt:         "updated_at",
+	SyncFilter:        "sync_filter",
+	OpportunityFilter: "opportunity_filter",
 }
 
 var GroupTableColumns = struct {
-	ID         string
-	TenantID   string
-	Name       string
-	Type       string
-	Status     string
-	RoleIds    string
-	CRMRoleIds string
-	ParentID   string
-	GroupPath  string
-	Order      string
-	CreatedBy  string
-	CreatedAt  string
-	UpdatedBy  string
-	UpdatedAt  string
+	ID                string
+	TenantID          string
+	Name              string
+	Type              string
+	Status            string
+	RoleIds           string
+	CRMRoleIds        string
+	ParentID          string
+	GroupPath         string
+	Order             string
+	CreatedBy         string
+	CreatedAt         string
+	UpdatedBy         string
+	UpdatedAt         string
+	SyncFilter        string
+	OpportunityFilter string
 }{
-	ID:         "group.id",
-	TenantID:   "group.tenant_id",
-	Name:       "group.name",
-	Type:       "group.type",
-	Status:     "group.status",
-	RoleIds:    "group.role_ids",
-	CRMRoleIds: "group.crm_role_ids",
-	ParentID:   "group.parent_id",
-	GroupPath:  "group.group_path",
-	Order:      "group.order",
-	CreatedBy:  "group.created_by",
-	CreatedAt:  "group.created_at",
-	UpdatedBy:  "group.updated_by",
-	UpdatedAt:  "group.updated_at",
+	ID:                "group.id",
+	TenantID:          "group.tenant_id",
+	Name:              "group.name",
+	Type:              "group.type",
+	Status:            "group.status",
+	RoleIds:           "group.role_ids",
+	CRMRoleIds:        "group.crm_role_ids",
+	ParentID:          "group.parent_id",
+	GroupPath:         "group.group_path",
+	Order:             "group.order",
+	CreatedBy:         "group.created_by",
+	CreatedAt:         "group.created_at",
+	UpdatedBy:         "group.updated_by",
+	UpdatedAt:         "group.updated_at",
+	SyncFilter:        "group.sync_filter",
+	OpportunityFilter: "group.opportunity_filter",
 }
 
 // Generated where
@@ -157,35 +167,39 @@ func (w whereHelperint) NIN(slice []int) qm.QueryMod {
 }
 
 var GroupWhere = struct {
-	ID         whereHelperstring
-	TenantID   whereHelperstring
-	Name       whereHelperstring
-	Type       whereHelperstring
-	Status     whereHelperstring
-	RoleIds    whereHelpertypes_StringArray
-	CRMRoleIds whereHelpertypes_StringArray
-	ParentID   whereHelpernull_String
-	GroupPath  whereHelperstring
-	Order      whereHelperint
-	CreatedBy  whereHelperstring
-	CreatedAt  whereHelpertime_Time
-	UpdatedBy  whereHelperstring
-	UpdatedAt  whereHelpertime_Time
+	ID                whereHelperstring
+	TenantID          whereHelperstring
+	Name              whereHelperstring
+	Type              whereHelperstring
+	Status            whereHelperstring
+	RoleIds           whereHelpertypes_StringArray
+	CRMRoleIds        whereHelpertypes_StringArray
+	ParentID          whereHelpernull_String
+	GroupPath         whereHelperstring
+	Order             whereHelperint
+	CreatedBy         whereHelperstring
+	CreatedAt         whereHelpertime_Time
+	UpdatedBy         whereHelperstring
+	UpdatedAt         whereHelpertime_Time
+	SyncFilter        whereHelpernull_String
+	OpportunityFilter whereHelpernull_String
 }{
-	ID:         whereHelperstring{field: "\"group\".\"id\""},
-	TenantID:   whereHelperstring{field: "\"group\".\"tenant_id\""},
-	Name:       whereHelperstring{field: "\"group\".\"name\""},
-	Type:       whereHelperstring{field: "\"group\".\"type\""},
-	Status:     whereHelperstring{field: "\"group\".\"status\""},
-	RoleIds:    whereHelpertypes_StringArray{field: "\"group\".\"role_ids\""},
-	CRMRoleIds: whereHelpertypes_StringArray{field: "\"group\".\"crm_role_ids\""},
-	ParentID:   whereHelpernull_String{field: "\"group\".\"parent_id\""},
-	GroupPath:  whereHelperstring{field: "\"group\".\"group_path\""},
-	Order:      whereHelperint{field: "\"group\".\"order\""},
-	CreatedBy:  whereHelperstring{field: "\"group\".\"created_by\""},
-	CreatedAt:  whereHelpertime_Time{field: "\"group\".\"created_at\""},
-	UpdatedBy:  whereHelperstring{field: "\"group\".\"updated_by\""},
-	UpdatedAt:  whereHelpertime_Time{field: "\"group\".\"updated_at\""},
+	ID:                whereHelperstring{field: "\"group\".\"id\""},
+	TenantID:          whereHelperstring{field: "\"group\".\"tenant_id\""},
+	Name:              whereHelperstring{field: "\"group\".\"name\""},
+	Type:              whereHelperstring{field: "\"group\".\"type\""},
+	Status:            whereHelperstring{field: "\"group\".\"status\""},
+	RoleIds:           whereHelpertypes_StringArray{field: "\"group\".\"role_ids\""},
+	CRMRoleIds:        whereHelpertypes_StringArray{field: "\"group\".\"crm_role_ids\""},
+	ParentID:          whereHelpernull_String{field: "\"group\".\"parent_id\""},
+	GroupPath:         whereHelperstring{field: "\"group\".\"group_path\""},
+	Order:             whereHelperint{field: "\"group\".\"order\""},
+	CreatedBy:         whereHelperstring{field: "\"group\".\"created_by\""},
+	CreatedAt:         whereHelpertime_Time{field: "\"group\".\"created_at\""},
+	UpdatedBy:         whereHelperstring{field: "\"group\".\"updated_by\""},
+	UpdatedAt:         whereHelpertime_Time{field: "\"group\".\"updated_at\""},
+	SyncFilter:        whereHelpernull_String{field: "\"group\".\"sync_filter\""},
+	OpportunityFilter: whereHelpernull_String{field: "\"group\".\"opportunity_filter\""},
 }
 
 // GroupRels is where relationship names are stored.
@@ -205,8 +219,8 @@ func (*groupR) NewStruct() *groupR {
 type groupL struct{}
 
 var (
-	groupAllColumns            = []string{"id", "tenant_id", "name", "type", "status", "role_ids", "crm_role_ids", "parent_id", "group_path", "order", "created_by", "created_at", "updated_by", "updated_at"}
-	groupColumnsWithoutDefault = []string{"id", "tenant_id", "name", "role_ids", "crm_role_ids", "parent_id", "group_path"}
+	groupAllColumns            = []string{"id", "tenant_id", "name", "type", "status", "role_ids", "crm_role_ids", "parent_id", "group_path", "order", "created_by", "created_at", "updated_by", "updated_at", "sync_filter", "opportunity_filter"}
+	groupColumnsWithoutDefault = []string{"id", "tenant_id", "name", "role_ids", "crm_role_ids", "parent_id", "group_path", "sync_filter", "opportunity_filter"}
 	groupColumnsWithDefault    = []string{"type", "status", "order", "created_by", "created_at", "updated_by", "updated_at"}
 	groupPrimaryKeyColumns     = []string{"id"}
 )
