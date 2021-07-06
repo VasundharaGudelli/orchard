@@ -1,0 +1,52 @@
+{
+  "TestUpsertPeople": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "people": [
+      {
+        "id": "bc739427-ba29-4cac-993c-0fe7296d5514",
+        "tenant_id": "00000000-0000-0000-0000-000000000000",
+        "name": "Alex Hester",
+        "first_name": "Alexander",
+        "last_name": "Hester",
+        "email": "alex@outreach.com",
+        "manager_id": "",
+        "group_id": "76fbf5a2-d513-414a-b97e-900e0fbcd90d",
+        "role_ids": ["6f71019d-25cf-4c6a-a31e-bdd25472ba26"],
+        "crm_role_ids": ["3bf9a083-c78b-4f4d-a03c-3fbfec8261ab"],
+        "is_provisioned": true,
+        "is_synced": true,
+        "status": 1,
+        "created_by": "00000000-0000-0000-0000-000000000000",
+        "updated_by": "00000000-0000-0000-0000-000000000000"
+      }
+    ]
+  },
+  "TestUpsertPeopleNoPeople": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000"
+  },
+  "TestUpsertPeopleBadRequestEmptyTenantID": {},
+  "TestSearchPeople": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000"
+  },
+  "TestSearchPeopleWithSearch": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "search": "alex"
+  },
+  "TestSearchPeopleWithPaging": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "search": "canopy",
+    "page": 2,
+    "page_size": 2
+  },
+  "TestSearchPeopleBadRequestEmptyTenantID": {},
+  "TestGetGroupMembers": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "group_id": "76fbf5a2-d513-414a-b97e-900e0fbcd90d"
+  },
+  "TestGetGroupMembersBadRequestEmptyTenantID": {
+    "group_id": "76fbf5a2-d513-414a-b97e-900e0fbcd90d"
+  },
+  "TestGetGroupMembersBadRequestEmptyGroupID": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000"
+  }
+}

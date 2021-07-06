@@ -15,6 +15,11 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-.vscode/
+# workspace vscode settings; commenting out to keep launch configs for testing
+# .vscode/
+
+# Test output
 fixtures/results/
+
+# default go build binary
 orchard

@@ -77,7 +77,7 @@ func (svc *CRMRoleService) UpsertAll(ctx context.Context, crmRoles []*models.CRM
 
 	query := strings.ReplaceAll(crmRoleUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 
-	_, err := queries.Raw(query, vals).ExecContext(ctx, Global)
+	_, err := queries.Raw(query, vals...).ExecContext(ctx, Global)
 	if err != nil {
 		argsRaw, _ := json.Marshal(vals)
 		fmt.Println("QUERY", query)

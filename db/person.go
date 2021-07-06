@@ -101,7 +101,7 @@ func (svc *PersonService) Insert(ctx context.Context, p *models.Person) error {
 }
 
 const (
-	personUpsertAllQuery = `INSERT INTO crm_role (id, tenant_id, name, first_name, last_name, email, manager_id, group_id, role_ids, crm_role_ids, is_provisioned, is_synced, status, created_at, created_by, updated_at, updated_by) VALUES
+	personUpsertAllQuery = `INSERT INTO person (id, tenant_id, "name", first_name, last_name, email, manager_id, group_id, role_ids, crm_role_ids, is_provisioned, is_synced, status, created_at, created_by, updated_at, updated_by) VALUES
 	{SUBS}
 ON CONFLICT (tenant_id, id) DO
 	UPDATE SET name = EXCLUDED.name, first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name, email = EXCLUDED.email, manager_id = EXCLUDED.manager_id, group_id = EXCLUDED.group_id, role_ids = EXCLUDED.role_ids, crm_role_ids = EXCLUDED.crm_role_ids, is_provisioned = EXCLUDED.is_provisioned, is_synced = EXCLUDED.is_synced, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by;`
@@ -128,11 +128,11 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 
 	query := strings.ReplaceAll(personUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 
-	_, err := queries.Raw(query, vals).ExecContext(ctx, Global)
+	_, err := queries.Raw(query, vals...).ExecContext(ctx, Global)
 	if err != nil {
 		argsRaw, _ := json.Marshal(vals)
 		fmt.Println("QUERY", query)
-		fmt.Println("ARGS", argsRaw)
+		fmt.Println("ARGS", string(argsRaw))
 		return err
 	}
 
