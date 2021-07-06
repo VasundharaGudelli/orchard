@@ -37,6 +37,7 @@ func setup() (*OrchardGRPCServer, error) {
 		configUtil.SetDefaultENV("DB_HOST", "35.245.37.78"),
 		configUtil.SetDefaultENV("DB_PASSWORD", "jLariybb1oe5FbDz"),
 		configUtil.SetDefaultENV("DB_MAX_CONNECTIONS", "10"),
+		configUtil.SetDefaultENV("DB_DEBUG", "true"),
 	)
 	if err != nil {
 		panic("Error parsing config from environment")

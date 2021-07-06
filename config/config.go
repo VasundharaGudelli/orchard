@@ -10,4 +10,5 @@ type Config struct {
 	DBUser           string `env:"DB_USER" envDefault:"postgres"`
 	DBName           string `env:"DB_NAME" envDefault:"tenant"`
 	DBMaxConnections int    `env:"DB_MAX_CONNECTIONS" envDefault:"25"`
+	DBDebug          bool   `env:"DB_DEBUG" envDefault:"false"`
 }

@@ -36,7 +36,7 @@ func Init(cfg config.Config) error {
 	db.SetMaxIdleConns(maxIdleConns)
 	db.SetConnMaxLifetime(30 * time.Minute)
 	boil.SetDB(db)
-	boil.DebugMode = true
+	boil.DebugMode = cfg.DBDebug
 	return nil
 }
 

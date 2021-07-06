@@ -158,15 +158,16 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 			logger.Errorf("error converting group db model to proto: %s", err.Error())
 			return nil, err
 		}
-		members := []*orchardPb.Person{}
-		if in.HydrateUsers {
-			members = make([]*orchardPb.Person, len(g.Members))
-			for j, p := range g.Members {
-				members[j], err = personSvc.ToProto(&p)
-				if err != nil {
-					logger.Errorf("error converting person db model to proto: %s", err.Error())
-					return nil, err
-				}
+		members := make([]*orchardPb.Person, len(g.Members))
+		for j, p := range g.Members {
+			if !in.HydrateUsers {
+				members[j] = &orchardPb.Person{Id: p.ID}
+				continue
+			}
+			members[j], err = personSvc.ToProto(&p)
+			if err != nil {
+				logger.Errorf("error converting person db model to proto: %s", err.Error())
+				return nil, err
 			}
 		}
 		flatProtos[i] = &servicePb.GroupWithMembers{
@@ -183,7 +184,14 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 			root = g
 		}
 	}
-	depth := recursivelyGetGroupChildren(root, flatProtos, 0)
+	if root == nil {
+		return &servicePb.GetGroupSubTreeResponse{
+			GroupId: in.GroupId,
+			Depth:   0,
+			SubTree: nil,
+		}, nil
+	}
+	depth := recursivelyGetGroupChildren(root, flatProtos, 1)
 
 	return &servicePb.GetGroupSubTreeResponse{
 		GroupId: in.GroupId,

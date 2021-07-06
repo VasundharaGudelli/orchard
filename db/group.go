@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -163,30 +164,43 @@ func (svc *GroupService) Search(ctx context.Context, tenantID, query string) ([]
 }
 
 type GroupTreeNode struct {
-	Group    models.Group     `boil:"group,bind"`
-	Members  []models.Person  `boil:"members,bind"`
-	Children []*GroupTreeNode `boil:"-"`
+	models.Group `boil:",bind"`
+	MembersRaw   types.StringArray `boil:"members_raw"`
+	Members      []models.Person   `boil:"-"`
+	Children     []*GroupTreeNode  `boil:"-"`
 }
 
 const (
-	getGroupSubTreeQuery = `SELECT g as "group", ARRAY_AGG({PERSON_SELECT}) as "members"
-	FROM "group" g INNER JOIN person p ON p.group_id = g.id AND p.tenant_id = g.tenant_id
-	WHERE (
-		g.id = $1 OR (
-			g.group_path <@ (SELECT group_path FROM "group" WHERE id = $1 AND tenant_id = $2)
-			AND (nlevel(group_path) - (SELECT nlevel(group_path) FROM "group" WHERE id = $1 AND tenant_id = $2)) <= $3
-		)
-	) AND g.tenant_id = $2
-	GROUP BY "group"`
+	getGroupSubTreeQuery = `SELECT
+	"group".id as "group.id", "group".tenant_id as "group.tenant_id", "group".name as "group.name", "group".type as "group.type",
+	"group".status as "group.status", "group".role_ids as "group.role_ids", "group".crm_role_ids as "group.crm_role_ids", "group".parent_id as "group.parent_id",
+	"group".group_path as "group.group_path", "group".order as "group.order", "group".created_at as "group.created_at", "group".created_by as "group.created_by",
+	"group".updated_at as "group.updated_at", "group".updated_by as "group.updated_by",
+	ARRAY_AGG({PERSON_SELECT}) as "members_raw"
+FROM "group" INNER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id
+WHERE (
+	"group".id = $1 OR (
+		"group".group_path <@ (SELECT group_path FROM "group" WHERE id = $1 AND tenant_id = $2)
+		AND (nlevel(group_path) - (SELECT nlevel(group_path) FROM "group" WHERE id = $1 AND tenant_id = $2)) <= $3
+	)
+) AND "group".tenant_id = $2
+GROUP BY
+	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
+	"group".group_path, "group".order, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by`
 )
 
 func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool) ([]*GroupTreeNode, error) {
 	if maxDepth < 0 {
 		maxDepth = 1000000
 	}
-	personSelect := "(p.id)"
-	if hydrateUsers || true {
-		personSelect = "p"
+	personSelect := "p.id"
+	if hydrateUsers {
+		personSelect = `JSON_BUILD_OBJECT(
+			'id', p.id, 'tenant_id', p.tenant_id, 'name', p."name", 'first_name', p.first_name, 'last_name', p.last_name, 'email', p.email, 'manager_id', p.manager_id,
+			'role_ids', p.role_ids, 'crm_role_ids', p.crm_role_ids, 'is_provisioned', p.is_provisioned, 'is_synced', p.is_synced, 'status', p.status,
+			'created_at', TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH:MI:SS"Z"'), 'created_by', p.created_by,
+			'updated_at', TO_CHAR(p.updated_at, 'YYYY-MM-DD"T"HH:MI:SS"Z"'), 'updated_by', p.updated_by
+		)`
 	}
 	query := strings.ReplaceAll(getGroupSubTreeQuery, "{PERSON_SELECT}", personSelect)
 
@@ -194,6 +208,22 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	if err := queries.Raw(query, groupID, tenantID, maxDepth).Bind(ctx, Global, &results); err != nil {
 		log.WithTenantID(tenantID).WithCustom("groupId", groupID).WithCustom("maxDepth", maxDepth).WithCustom("hydrateUsers", hydrateUsers).WithCustom("query", query).Error(err)
 		return nil, err
+	}
+
+	for i, node := range results {
+		results[i].Members = make([]models.Person, len(node.MembersRaw))
+		for j, memberRaw := range node.MembersRaw {
+			member := models.Person{}
+			if !hydrateUsers {
+				member.ID = memberRaw
+				results[i].Members[j] = member
+				continue
+			}
+			if err := json.Unmarshal([]byte(memberRaw), &member); err != nil {
+				return nil, err
+			}
+			results[i].Members[j] = member
+		}
 	}
 
 	return results, nil
