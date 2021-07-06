@@ -261,6 +261,12 @@ func (server *OrchardGRPCServer) UpdateGroup(ctx context.Context, in *servicePb.
 		}
 	}
 
+	if err := svc.Reload(spanCtx, updateableGroup); err != nil {
+		logger.Errorf("error reloading group from sql: %s", err.Error())
+		svc.Rollback()
+		return nil, err
+	}
+
 	group, err := svc.ToProto(updateableGroup)
 	if err != nil {
 		logger.Errorf("error converting group db model to proto: %s", err.Error())

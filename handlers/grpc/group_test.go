@@ -646,7 +646,20 @@ func TestUpdateGroup(t *testing.T) {
 		return
 	}
 
-	rawResult, err := json.MarshalIndent(res, "", "  ")
+	results := map[string]interface{}{
+		"updateGroup": res,
+	}
+
+	treeRes, err := testServer.GetGroupSubTree(context.Background(), &servicePb.GetGroupSubTreeRequest{GroupId: "f2cee8e5-10b7-4566-ad6a-6bc5750ba7f7", TenantId: req.TenantId, MaxDepth: -1})
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	results["updatedTree"] = treeRes
+
+	rawResult, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
 		t.Log(err)
 		t.Fail()

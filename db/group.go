@@ -272,12 +272,12 @@ const (
 	updateGroupPathsQuery = `WITH RECURSIVE group_tree AS (
 		SELECT id, tenant_id, parent_id, CONCAT(REPLACE($1, '-', '_'), '.', REPLACE(id, '-', '_')) as group_path
 		FROM "group"
-		WHERE tenant_id = $1 AND parent_id IS NULL
+		WHERE tenant_id::TEXT = $1 AND parent_id IS NULL
 		UNION
 		SELECT g.id, g.tenant_id, g.parent_id, CONCAT(gt.group_path, '.', REPLACE(g.id, '-', '_')) as group_path
 		FROM "group" g
 		INNER JOIN group_tree gt ON gt.id = g.parent_id AND gt.tenant_id = g.tenant_id
-		WHERE g.tenant_id = $1
+		WHERE g.tenant_id::TEXT = $1
 	)
 	UPDATE "group"
 	SET group_path = gt.group_path::ltree
@@ -295,6 +295,13 @@ func (svc *GroupService) UpdateGroupPaths(ctx context.Context, tenantID string) 
 		return err
 	}
 	return nil
+}
+
+func (svc *GroupService) Reload(ctx context.Context, group *models.Group) error {
+	if svc.tx != nil {
+		return group.Reload(ctx, svc.tx)
+	}
+	return group.Reload(ctx, Global)
 }
 
 func (svc *GroupService) DeleteByID(ctx context.Context, id, tenantID string) error {
