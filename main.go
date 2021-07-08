@@ -8,6 +8,7 @@ import (
 	common "github.com/loupe-co/go-common"
 	configUtil "github.com/loupe-co/go-common/config"
 	"github.com/loupe-co/go-loupe-logger/log"
+	"github.com/loupe-co/orchard/clients"
 	"github.com/loupe-co/orchard/config"
 	"github.com/loupe-co/orchard/db"
 	grpcHandlers "github.com/loupe-co/orchard/handlers/grpc"
@@ -33,8 +34,21 @@ func main() {
 		return
 	}
 
+	// Get service clients
+	tenantClient, err := clients.NewTenantClient(cfg)
+	if err != nil {
+		log.Errorf("error getting tenant-service client: %s", err.Error())
+		return
+	}
+
+	crmClient, err := clients.NewCRMClient(cfg)
+	if err != nil {
+		log.Errorf("error getting crm client: %s", err.Error())
+		return
+	}
+
 	// Create grpc server
-	orchardServer := grpcHandlers.NewOrchardGRPCServer(cfg)
+	orchardServer := grpcHandlers.NewOrchardGRPCServer(cfg, tenantClient, crmClient)
 	grpcServer := common.NewGRPCServer(cfg.GRPCHost, cfg.GRPCPort, grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32))
 	grpcServer.Register(func(server *grpc.Server) {
 		servicePb.RegisterOrchardServer(server, orchardServer)

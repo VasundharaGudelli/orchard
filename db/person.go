@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -18,10 +19,35 @@ import (
 
 // TODO: Add tracing
 
-type PersonService struct{}
+type PersonService struct {
+	tx *sql.Tx
+}
 
 func NewPersonService() *PersonService {
 	return &PersonService{}
+}
+
+func (svc *PersonService) WithTransaction(ctx context.Context) error {
+	tx, err := Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	svc.tx = tx
+	return nil
+}
+
+func (svc *PersonService) Rollback() error {
+	if svc.tx == nil {
+		return nil
+	}
+	return svc.tx.Rollback()
+}
+
+func (svc *PersonService) Commit() error {
+	if svc.tx == nil {
+		return nil
+	}
+	return svc.tx.Commit()
 }
 
 func (svc *PersonService) FromProto(p *orchardPb.Person) *models.Person {
@@ -128,7 +154,11 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 
 	query := strings.ReplaceAll(personUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 
-	_, err := queries.Raw(query, vals...).ExecContext(ctx, Global)
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	_, err := queries.Raw(query, vals...).ExecContext(ctx, x)
 	if err != nil {
 		argsRaw, _ := json.Marshal(vals)
 		fmt.Println("QUERY", query)
@@ -146,6 +176,14 @@ func (svc *PersonService) GetByID(ctx context.Context, id, tenantID string) (*mo
 	}
 
 	return person, nil
+}
+
+func (svc *PersonService) GetByIDs(ctx context.Context, tenantID string, ids ...string) ([]*models.Person, error) {
+	people, err := models.People(qm.Where("tenant_id = $1"), qm.AndIn("id IN ?", ids)).All(ctx, Global)
+	if err != nil {
+		return nil, err
+	}
+	return people, nil
 }
 
 func (svc *PersonService) Search(ctx context.Context, tenantID, query string, limit, offset int) ([]*models.Person, int64, error) {
@@ -204,7 +242,11 @@ func (svc *PersonService) Update(ctx context.Context, p *models.Person, onlyFiel
 		whitelist = append(whitelist, "updated_at")
 	}
 
-	numAffected, err := p.Update(ctx, Global, boil.Whitelist(whitelist...))
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	numAffected, err := p.Update(ctx, x, boil.Whitelist(whitelist...))
 	if err != nil {
 		return err
 	}
@@ -213,6 +255,29 @@ func (svc *PersonService) Update(ctx context.Context, p *models.Person, onlyFiel
 	}
 
 	return nil
+}
+
+const (
+	updatedPersonGroupsQuery = `WITH UpdatedPersonGroups AS (
+		SELECT
+			p.id, p.tenant_id, g.id as group_id
+		FROM person p
+		INNER JOIN "group" g ON p.crm_role_ids && g.crm_role_ids AND p.tenant_id = g.tenant_id
+		WHERE p.tenant_id = $1 AND p.is_synced
+	)
+	UPDATE person
+	SET group_id = g.group_id
+	FROM UpdatedPersonGroups g
+	WHERE person.id = g.id AND person.tenant_id = g.tenant_id`
+)
+
+func (svc *PersonService) UpdatePersonGroups(ctx context.Context, tenantID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	_, err := queries.Raw(updatedPersonGroupsQuery, tenantID).ExecContext(ctx, x)
+	return err
 }
 
 func (svc *PersonService) DeleteByID(ctx context.Context, id, tenantID string) error {

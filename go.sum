@@ -369,6 +369,7 @@ github.com/loupe-co/db-models v0.0.0-20210205000058-32a6f7144187/go.mod h1:MFM3+
 github.com/loupe-co/db-models v0.0.0-20210301021509-5ee67234b072/go.mod h1:smyhXbgcGpEMIg4JOZjUq+7TWFKBsM3AoiTeysR0t8w=
 github.com/loupe-co/db-models v0.0.0-20210421174014-17fc9184d1ab/go.mod h1:Hlt5H5tRnBZuK3mstW+WMUkDiXK6dcuCsJzl0x8GtoY=
 github.com/loupe-co/db-models v0.0.0-20210616150743-7c97b0e407f5/go.mod h1:9tjBDvsgDpDzJ1HnfoAGEK2ehMc6TvwMie5sTTpt9G4=
+github.com/loupe-co/forecast v0.0.0-20200221192948-fe0ac944a80e h1:DPwot4EpOmUoEmdVFAGHduD2VQpuGt1JVnuM13RkKvg=
 github.com/loupe-co/forecast v0.0.0-20200221192948-fe0ac944a80e/go.mod h1:12C5GktXXEZO4XnemEfcZZXbTdpwxBI4H12X00zsgTM=
 github.com/loupe-co/gml-parser v0.0.0-20210223210334-434d5e9a8dc0/go.mod h1:4iX18hS3ZPRNBw6WGz9lDWClkad7JkueYWKcNKJyDdo=
 github.com/loupe-co/go-bigquery-client v0.0.0-20200722161058-d00839ecf3fd/go.mod h1:C/KmhAMIFmrZVx2H8MBoYHAJ3qgUacTN2QA/RzmwgSM=
@@ -438,6 +439,10 @@ github.com/loupe-co/protos v0.0.0-20210629184312-d2e4b77f92f1 h1:Syuz+vfQAzASRId
 github.com/loupe-co/protos v0.0.0-20210629184312-d2e4b77f92f1/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/loupe-co/protos v0.0.0-20210706190125-39c24af261d6 h1:F5Zy8t4WsLMHv9/0+pgx5EL2Lid5HjZqo7sxnKVfYA8=
 github.com/loupe-co/protos v0.0.0-20210706190125-39c24af261d6/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
+github.com/loupe-co/protos v0.0.0-20210707120528-ac30c000b531 h1:97XOMTt9ei2MUfnlZNvo153B+dTyNyqWUum4fADmFXM=
+github.com/loupe-co/protos v0.0.0-20210707120528-ac30c000b531/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
+github.com/loupe-co/protos v0.0.0-20210707124843-0a48d2e2aaf1 h1:QnUMMx821qsxvKotdHq1Bu3a5kjtg71gG4cY9CjQLsM=
+github.com/loupe-co/protos v0.0.0-20210707124843-0a48d2e2aaf1/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/loupe-co/reporting v0.0.0-20200624214422-71b5daa49e95/go.mod h1:jKfMWN/80IT0ch1LwVCi5V16MUcGz5GD+DaEU2oua+I=
 github.com/loupe-co/setting-service v0.0.0-20200620163229-f5b11d294f7d/go.mod h1:vFPyVtilbt8dW2Yiql9dFZEFdgkBYwfSNq2T6WDKB/I=
 github.com/loupe-co/signal-evaluator v0.0.0-20200207182452-feb402a25fad/go.mod h1:sz9GKO4/C+XaPpE0bcfH9f6ZyyEnzRskxIngXazvU3c=
@@ -594,6 +599,7 @@ go.opencensus.io v0.23.0 h1:gqCw0LfLxScz8irSi8exQc7fyQ0fKQU/qnC/X8+V/1M=
 go.opencensus.io v0.23.0/go.mod h1:XItmlyltB5F7CS4xOC1DcqMoFqwtC6OG2xF7mCv7P7E=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/automaxprocs v1.4.0/go.mod h1:/mTEdr7LvHhs0v7mjdxDreTz1OG5zdZGqgOnhWiR/+Q=
+go.uber.org/goleak v1.1.10 h1:z+mqJhf6ss6BSfSM671tgKyZBFPTTJM+HLxnhPC3wu0=
 go.uber.org/goleak v1.1.10/go.mod h1:8a7PlsEVH3e/a/GLqe5IIrQx6GzcnRmZEufDUTk4A7A=
 go.uber.org/multierr v1.1.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
 go.uber.org/zap v1.10.0/go.mod h1:vwi/ZaCAaUcBkycHslxD9B2zi4UTXhF60s6SWpuDF0Q=
