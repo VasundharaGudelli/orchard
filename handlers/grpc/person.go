@@ -2,8 +2,8 @@ package grpchandlers
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
 	"github.com/loupe-co/orchard/models"
@@ -18,8 +18,9 @@ func (server *OrchardGRPCServer) UpsertPeople(ctx context.Context, in *servicePb
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if len(in.People) == 0 {
@@ -34,8 +35,9 @@ func (server *OrchardGRPCServer) UpsertPeople(ctx context.Context, in *servicePb
 	}
 
 	if err := svc.UpsertAll(spanCtx, upsertablePeople); err != nil {
-		logger.Errorf("error upserting one or more person records: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error upserting one or more person records")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.UpsertPeopleResponse{}, nil
@@ -48,22 +50,25 @@ func (server *OrchardGRPCServer) GetPersonById(ctx context.Context, in *serviceP
 	logger := log.WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.PersonId == "" {
-		logger.Warn("Bad Request: tenantId and personId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId and personId can't be empty")
+		err := ErrBadRequest.New("tenantId and personId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewPersonService()
 
 	p, err := svc.GetByID(spanCtx, in.PersonId, in.TenantId)
 	if err != nil {
-		logger.Errorf("error getting person by id: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting person by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	person, err := svc.ToProto(p)
 	if err != nil {
-		logger.Errorf("error converting person db model to proto: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error converting person db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return person, nil
@@ -76,8 +81,9 @@ func (server *OrchardGRPCServer) SearchPeople(ctx context.Context, in *servicePb
 	logger := log.WithTenantID(in.TenantId).WithCustom("search", in.Search).WithCustom("page", in.Page).WithCustom("pageSize", in.PageSize)
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	limit := 20
@@ -93,16 +99,18 @@ func (server *OrchardGRPCServer) SearchPeople(ctx context.Context, in *servicePb
 
 	peeps, total, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset)
 	if err != nil {
-		logger.Errorf("error searching people: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error searching people")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	people := make([]*orchardPb.Person, len(peeps))
 	for i, peep := range peeps {
 		p, err := svc.ToProto(peep)
 		if err != nil {
-			logger.Errorf("error converting person db model to proto: %s", err.Error())
-			return nil, err
+			err := errors.Wrap(err, "error converting person db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
 		}
 		people[i] = p
 	}
@@ -120,24 +128,27 @@ func (server *OrchardGRPCServer) GetGroupMembers(ctx context.Context, in *servic
 	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
-		logger.Warn("Bad Request: tenantId and groupId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId and groupId can't be empty")
+		err := ErrBadRequest.New("tenantId and groupId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewPersonService()
 
 	peeps, err := svc.GetPeopleByGroupId(spanCtx, in.TenantId, in.GroupId)
 	if err != nil {
-		logger.Errorf("error getting person records by group id: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting person records by group id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	people := make([]*orchardPb.Person, len(peeps))
 	for i, peep := range peeps {
 		p, err := svc.ToProto(peep)
 		if err != nil {
-			logger.Errorf("error converting person db model to proto: %s", err.Error())
-			return nil, err
+			err := errors.Wrap(err, "error converting person db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
 		}
 		people[i] = p
 	}
@@ -155,8 +166,9 @@ func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.Person == nil {
@@ -170,14 +182,16 @@ func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb
 	updatePerson := svc.FromProto(in.Person)
 
 	if err := svc.Update(spanCtx, updatePerson, in.OnlyFields); err != nil {
-		logger.Errorf("error updating person record: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error updating person record")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	person, err := svc.ToProto(updatePerson)
 	if err != nil {
-		logger.Errorf("error converting person db model to proto: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error converting person db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.UpdatePersonResponse{
@@ -192,8 +206,9 @@ func (server *OrchardGRPCServer) DeletePersonById(ctx context.Context, in *servi
 	logger := log.WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.PersonId == "" {
-		logger.Warn("Bad Request: tenantId and personId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId and personId can't be empty")
+		err := ErrBadRequest.New("tenantId and personId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewPersonService()

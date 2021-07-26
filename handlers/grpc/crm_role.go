@@ -2,8 +2,8 @@ package grpchandlers
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
 	"github.com/loupe-co/orchard/models"
@@ -18,8 +18,9 @@ func (server *OrchardGRPCServer) UpsertCRMRoles(ctx context.Context, in *service
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if len(in.CrmRoles) == 0 {
@@ -37,8 +38,9 @@ func (server *OrchardGRPCServer) UpsertCRMRoles(ctx context.Context, in *service
 	}
 
 	if err := svc.UpsertAll(spanCtx, crmRoles); err != nil {
-		logger.Errorf("error upserting crmRoles in sql: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error upserting crmRoles in sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.UpsertCRMRolesResponse{}, nil
@@ -51,27 +53,31 @@ func (server *OrchardGRPCServer) GetCRMRoleById(ctx context.Context, in *service
 	logger := log.WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
-		logger.Warn("Bad Request: id can't be empty")
-		return nil, fmt.Errorf("Bad Request: id can't be empty")
+		err := ErrBadRequest.New("id can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewCRMRoleService()
 
 	cr, err := svc.GetByID(spanCtx, in.Id, in.TenantId)
 	if err != nil {
-		logger.Errorf("error getting crmRole from sql by id: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting crmRole from sql by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	crmRole, err := svc.ToProto(cr)
 	if err != nil {
-		logger.Errorf("error converting crmRole from db model to proto: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error converting crmRole from db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return crmRole, nil
@@ -84,24 +90,27 @@ func (server *OrchardGRPCServer) GetCRMRoles(ctx context.Context, in *servicePb.
 	logger := log.WithTenantID(in.TenantId).WithCustom("search", in.Search)
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewCRMRoleService()
 
 	crs, err := svc.Search(spanCtx, in.TenantId, in.Search)
 	if err != nil {
-		logger.Errorf("error getting crmRole from sql by id: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting crmRole from sql by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	crmRoles := make([]*orchardPb.CRMRole, len(crs))
 	for i, cr := range crs {
 		role, err := svc.ToProto(cr)
 		if err != nil {
-			logger.Errorf("error converting crmRole from db model to proto: %s", err.Error())
-			return nil, err
+			err := errors.Wrap(err, "error converting crmRole from db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
 		}
 		crmRoles[i] = role
 	}
@@ -116,21 +125,24 @@ func (server *OrchardGRPCServer) DeleteCRMRoleById(ctx context.Context, in *serv
 	logger := log.WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
-		logger.Warn("Bad Request: id can't be empty")
-		return nil, fmt.Errorf("Bad Request: id can't be empty")
+		err := ErrBadRequest.New("id can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewCRMRoleService()
 
 	err := svc.DeleteByID(spanCtx, in.Id, in.TenantId)
 	if err != nil {
-		logger.Errorf("error deleting crmRole from sql by id: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error deleting crmRole from sql by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.Empty{}, nil

@@ -2,14 +2,77 @@ package grpchandlers
 
 import (
 	"context"
-	"fmt"
 
 	strUtils "github.com/loupe-co/go-common/data-structures/slice/string"
+	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
+
+func (server *OrchardGRPCServer) SyncGroups(ctx context.Context, in *servicePb.SyncGroupsRequest) (*servicePb.SyncGroupsResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "SyncGroups")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.String())
+		return nil, err.AsGRPC()
+	}
+
+	svc := db.NewGroupService()
+
+	isSynced, err := svc.IsCRMSynced(spanCtx, in.TenantId)
+	if err != nil {
+		err := errors.Wrap(err, "error checking if tenant crm roles are synced with groups")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if !isSynced {
+		logger.Info("tenant crm roles are not synced with groups, skipping group sync.")
+		return &servicePb.SyncGroupsResponse{}, nil
+	}
+
+	if err := svc.WithTransaction(spanCtx); err != nil {
+		err := errors.Wrap(err, "error starting transaction for syncing groups")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.SyncGroups(spanCtx, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error syncing groups with crm roles")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.DeleteUnSyncedGroups(spanCtx, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error deleting unsynced groups")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error updating group paths after sync")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting transaction, rolling back")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.SyncGroupsResponse{}, nil
+}
 
 func (server *OrchardGRPCServer) CreateGroup(ctx context.Context, in *servicePb.CreateGroupRequest) (*servicePb.CreateGroupResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "CreateGroup")
@@ -18,52 +81,60 @@ func (server *OrchardGRPCServer) CreateGroup(ctx context.Context, in *servicePb.
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.Group == nil {
-		logger.Warn("Bad Request: group is null")
-		return nil, fmt.Errorf("Bad Request: group is null")
+		err := ErrBadRequest.New("group can't be nil")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.Group.Id != "" {
-		logger.Warn("Bad Request: can't create new group with existing id")
-		return nil, fmt.Errorf("Bad Request: can't create new group with existing id")
+		err := ErrBadRequest.New("can't create new group with existing id")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	in.Group.Id = db.MakeID()
 
 	svc := db.NewGroupService()
 	if err := svc.WithTransaction(spanCtx); err != nil {
-		logger.Errorf("error getting sql transaction for inserting group: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting sql transaction for inserting group")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	insertableGroup := svc.FromProto(in.Group)
 
 	if err := svc.Insert(spanCtx, insertableGroup); err != nil {
-		logger.Errorf("error inserting group into sql: %s", err.Error())
+		err := errors.Wrap(err, "error inserting group into sql")
+		logger.Error(err)
 		svc.Rollback()
-		return nil, err
+		return nil, err.AsGRPC()
 	}
 
 	if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
-		logger.Errorf("error updating group paths in sql: %s", err.Error())
+		err := errors.Wrap(err, "error updating group paths in sql")
+		logger.Error(err)
 		svc.Rollback()
-		return nil, err
+		return nil, err.AsGRPC()
 	}
 
 	group, err := svc.ToProto(insertableGroup)
 	if err != nil {
-		logger.Errorf("error converting group db model to proto: %s", err.Error())
+		err := errors.Wrap(err, "error converting group db model to proto")
+		logger.Error(err)
 		svc.Rollback()
-		return nil, err
+		return nil, err.AsGRPC()
 	}
 
 	if err := svc.Commit(); err != nil {
-		logger.Errorf("error commiting transaction for inserting group: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error commiting transaction for inserting group")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.CreateGroupResponse{Group: group}, nil
@@ -76,22 +147,25 @@ func (server *OrchardGRPCServer) GetGroupById(ctx context.Context, in *servicePb
 	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
-		logger.Warn("Bad Request: tenantId and GroupId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId and groupId can't be empty")
+		err := ErrBadRequest.New("tenantId and groupId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupService()
 
 	g, err := svc.GetByID(spanCtx, in.GroupId, in.TenantId)
 	if err != nil {
-		logger.Errorf("error getting group by id: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting group by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	group, err := svc.ToProto(g)
 	if err != nil {
-		logger.Errorf("error converting group db model to proto: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error converting group db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return group, nil
@@ -104,24 +178,27 @@ func (server *OrchardGRPCServer) GetGroups(ctx context.Context, in *servicePb.Ge
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupService()
 
 	gs, err := svc.Search(spanCtx, in.TenantId, in.Search)
 	if err != nil {
-		logger.Errorf("error getting groups: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting groups")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	groups := make([]*orchardPb.Group, len(gs))
 	for i, g := range gs {
 		groups[i], err = svc.ToProto(g)
 		if err != nil {
-			logger.Errorf("error converting group from db model to proto: %s", err.Error())
-			return nil, err
+			err := errors.Wrap(err, "error converting group from db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
 		}
 	}
 
@@ -137,8 +214,9 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
-		logger.Warn("Bad Request: tenantId and GroupId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId and groupId can't be empty")
+		err := ErrBadRequest.New("tenantId and GroupId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupService()
@@ -146,8 +224,9 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 
 	flatGroups, err := svc.GetGroupSubTree(spanCtx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers)
 	if err != nil {
-		logger.Errorf("error getting group and all subtrees from sql: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting group and all subtrees from sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	// Convert db models to protos
@@ -155,8 +234,9 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 	for i, g := range flatGroups {
 		group, err := svc.ToProto(&g.Group)
 		if err != nil {
-			logger.Errorf("error converting group db model to proto: %s", err.Error())
-			return nil, err
+			err := errors.Wrap(err, "error converting group db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
 		}
 		members := make([]*orchardPb.Person, len(g.Members))
 		for j, p := range g.Members {
@@ -166,8 +246,9 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 			}
 			members[j], err = personSvc.ToProto(&p)
 			if err != nil {
-				logger.Errorf("error converting person db model to proto: %s", err.Error())
-				return nil, err
+				err := errors.Wrap(err, "error converting person db model to proto")
+				logger.Error(err)
+				return nil, err.AsGRPC()
 			}
 		}
 		flatProtos[i] = &servicePb.GroupWithMembers{
@@ -225,61 +306,93 @@ func (server *OrchardGRPCServer) UpdateGroup(ctx context.Context, in *servicePb.
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.Group == nil {
-		logger.Warn("Bad Request: group is null")
-		return nil, fmt.Errorf("Bad Request: group is null")
+		err := ErrBadRequest.New("group is null")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.Group.Id == "" && in.TenantId == "" {
-		logger.Warn("Bad Request: can't update group empty id")
-		return nil, fmt.Errorf("Bad Request: can't update group empty id")
+		err := ErrBadRequest.New("can't update group with empty id")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupService()
 	if err := svc.WithTransaction(spanCtx); err != nil {
-		logger.Errorf("error getting sql transaction for updating group: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting sql transaction for updating group")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	updateableGroup := svc.FromProto(in.Group)
 
 	if err := svc.Update(spanCtx, updateableGroup, in.OnlyFields); err != nil {
-		logger.Errorf("error updating group into sql: %s", err.Error())
+		err := errors.Wrap(err, "error updating group into sql")
+		logger.Error(err)
 		svc.Rollback()
-		return nil, err
+		return nil, err.AsGRPC()
 	}
 
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Filter(func(_ int, v string) bool { return v == "parent_id" }).Len() > 0 {
 		if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
-			logger.Errorf("error updating group paths in sql: %s", err.Error())
+			err := errors.Wrap(err, "error updating group paths in sql")
+			logger.Error(err)
 			svc.Rollback()
-			return nil, err
+			return nil, err.AsGRPC()
 		}
 	}
 
 	if err := svc.Reload(spanCtx, updateableGroup); err != nil {
-		logger.Errorf("error reloading group from sql: %s", err.Error())
+		err := errors.Wrap(err, "error reloading group from sql")
+		logger.Error(err)
 		svc.Rollback()
-		return nil, err
+		return nil, err.AsGRPC()
 	}
 
 	group, err := svc.ToProto(updateableGroup)
 	if err != nil {
-		logger.Errorf("error converting group db model to proto: %s", err.Error())
+		err := errors.Wrap(err, "error converting group db model to proto")
+		logger.Error(err)
 		svc.Rollback()
-		return nil, err
+		return nil, err.AsGRPC()
 	}
 
 	if err := svc.Commit(); err != nil {
-		logger.Errorf("error commiting transaction for updating group: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error commiting transaction for updating group")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.UpdateGroupResponse{Group: group}, nil
+}
+
+func (server *OrchardGRPCServer) UpdateGroupTypes(ctx context.Context, in *servicePb.UpdateGroupTypesRequest) (*servicePb.UpdateGroupTypesResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "UpdateGroupTypes")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := db.NewGroupService()
+
+	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error updating group types")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.UpdateGroupTypesResponse{}, nil
 }
 
 func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
@@ -289,15 +402,17 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
-		logger.Warn("Bad Request: tenantId and GroupId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId and groupId can't be empty")
+		err := ErrBadRequest.New("tenantId and GroupId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupService()
 
 	if err := svc.DeleteByID(spanCtx, in.GroupId, in.TenantId); err != nil {
-		logger.Errorf("error deleting group by id: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error deleting group by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return nil, nil

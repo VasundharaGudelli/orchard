@@ -2,8 +2,8 @@ package grpchandlers
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
@@ -17,13 +17,15 @@ func (server *OrchardGRPCServer) InsertGroupViewer(ctx context.Context, in *serv
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.GroupViewer == nil {
-		logger.Warn("Bad Request: inserting groupViewer requires GroupViewer to be non-null")
-		return nil, grpcError(spanCtx, fmt.Errorf("Bad Request: inserting groupViewer requires GroupViewer to be non-null"))
+		err := ErrBadRequest.New("groupViewer can't be null")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.GroupViewer.TenantId == "" || in.GroupViewer.GroupId == "" || in.GroupViewer.PersonId == "" {
-		logger.Warn("Bad Request: inserting groupViewer requires tenantId, groupId and personId to be non-empty")
-		return nil, grpcError(spanCtx, fmt.Errorf("Bad Request: inserting groupViewer requires tenantId, groupId and personId to be non-empty"))
+		err := ErrBadRequest.New("tenantId, groupId and personId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupViewerService()
@@ -31,14 +33,16 @@ func (server *OrchardGRPCServer) InsertGroupViewer(ctx context.Context, in *serv
 	gv := svc.FromProto(in.GroupViewer)
 
 	if err := svc.Insert(spanCtx, gv); err != nil {
-		logger.Errorf("error inserting group viewer into sql: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error inserting group viewer into sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	groupViewer, err := svc.ToProto(gv)
 	if err != nil {
-		logger.Errorf("error converting groupViewer db model to proto: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error converting groupViewer db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.InsertGroupViewerResponse{GroupViewer: groupViewer}, nil
@@ -51,16 +55,18 @@ func (server *OrchardGRPCServer) GetGroupViewers(ctx context.Context, in *servic
 	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
-		logger.Warn("Bad Request: getting groupViewers requires tenantId, groupId to be non-empty")
-		return nil, grpcError(spanCtx, fmt.Errorf("Bad Request: getting groupViewers requires tenantId, groupId to be non-empty"))
+		err := ErrBadRequest.New("tenantId and groupId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupViewerService()
 
 	peeps, err := svc.GetGroupViewers(spanCtx, in.TenantId, in.GroupId)
 	if err != nil {
-		logger.Errorf("error getting group viewers from sql: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting group viewers from sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	personSvc := db.NewPersonService()
@@ -70,8 +76,9 @@ func (server *OrchardGRPCServer) GetGroupViewers(ctx context.Context, in *servic
 		ids[i] = peep.ID
 		groupViewers[i], err = personSvc.ToProto(peep)
 		if err != nil {
-			logger.Errorf("error converting person db model to proto: %s", err.Error())
-			return nil, err
+			err := errors.Wrap(err, "error converting person db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
 		}
 	}
 
@@ -89,16 +96,18 @@ func (server *OrchardGRPCServer) GetPersonViewableGroups(ctx context.Context, in
 	logger := log.WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.GroupId == "" {
-		logger.Warn("Bad Request: getting person viewable groups requires tenantId, personId to be non-empty")
-		return nil, grpcError(spanCtx, fmt.Errorf("Bad Request: getting person viewable groups requires tenantId, personId to be non-empty"))
+		err := ErrBadRequest.New("tenantId and personId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupViewerService()
 
 	groups, err := svc.GetPersonViewableGroups(spanCtx, in.TenantId, in.GroupId)
 	if err != nil {
-		logger.Errorf("error getting person viewable groups from sql: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting person viewable groups from sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	groupSvc := db.NewGroupService()
@@ -108,8 +117,9 @@ func (server *OrchardGRPCServer) GetPersonViewableGroups(ctx context.Context, in
 		ids[i] = group.ID
 		viewableGroups[i], err = groupSvc.ToProto(group)
 		if err != nil {
-			logger.Errorf("error converting group db model to proto: %s", err.Error())
-			return nil, err
+			err := errors.Wrap(err, "error converting group db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
 		}
 	}
 
@@ -127,13 +137,15 @@ func (server *OrchardGRPCServer) UpdateGroupViewer(ctx context.Context, in *serv
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.GroupViewer == nil {
-		logger.Warn("Bad Request: updating groupViewer requires GroupViewer to be non-null")
-		return nil, grpcError(spanCtx, fmt.Errorf("Bad Request: updating groupViewer requires GroupViewer to be non-null"))
+		err := ErrBadRequest.New("groupViewer can't be null")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.GroupViewer.TenantId == "" || in.GroupViewer.GroupId == "" || in.GroupViewer.PersonId == "" {
-		logger.Warn("Bad Request: updating groupViewer requires tenantId, groupId and personId to be non-empty")
-		return nil, grpcError(spanCtx, fmt.Errorf("Bad Request: updating groupViewer requires tenantId, groupId and personId to be non-empty"))
+		err := ErrBadRequest.New("tenantId, groupId and personId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupViewerService()
@@ -141,14 +153,16 @@ func (server *OrchardGRPCServer) UpdateGroupViewer(ctx context.Context, in *serv
 	gv := svc.FromProto(in.GroupViewer)
 
 	if err := svc.Update(spanCtx, gv); err != nil {
-		logger.Errorf("error updating group viewer in sql: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error updating group viewer in sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	groupViewer, err := svc.ToProto(gv)
 	if err != nil {
-		logger.Errorf("error converting groupViewer db model to proto: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error converting groupViewer db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.UpdateGroupViewerResponse{GroupViewer: groupViewer}, nil
@@ -161,15 +175,17 @@ func (server *OrchardGRPCServer) DeleteGroupViewerById(ctx context.Context, in *
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.TenantId == "" || in.GroupId == "" || in.PersonId == "" {
-		logger.Warn("Bad Request: deleting groupViewer requires tenantId, groupId and personId to be non-empty")
-		return nil, grpcError(spanCtx, fmt.Errorf("Bad Request: deleting groupViewer requires tenantId, groupId and personId to be non-empty"))
+		err := ErrBadRequest.New("tenantId, groupId and personId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewGroupViewerService()
 
 	if err := svc.DeleteByID(spanCtx, in.TenantId, in.GroupId, in.PersonId); err != nil {
-		logger.Errorf("error deleting group viewer in sql: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error deleting group viewer in sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.Empty{}, nil

@@ -3,6 +3,7 @@ package grpchandlers
 import (
 	"context"
 
+	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-common/sync"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
@@ -11,7 +12,6 @@ import (
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
 
-// TODO: Create GroupSync that runs before this
 func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.SyncUsersRequest) (*servicePb.SyncUsersResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "SyncUsers")
 	defer span.End()
@@ -43,8 +43,9 @@ func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.Sy
 	})
 
 	if err := pool.Wait(); err != nil {
-		logger.Errorf("error getting person data from disparate data sources: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting person data from disparate data sources")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	ids := make([]string, len(provisionedUsers)+len(latestCRMUsers))
@@ -63,8 +64,9 @@ func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.Sy
 
 	currentPeople, err := personSvc.GetByIDs(spanCtx, in.TenantId, ids...)
 	if err != nil {
-		logger.Errorf("error getting existing person records from sql: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting existing person records from sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	mergedPeople := map[string]*models.Person{}
@@ -103,21 +105,24 @@ func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.Sy
 	}
 
 	if err := personSvc.UpsertAll(spanCtx, upsertPeople); err != nil {
-		logger.Errorf("error upserting merged person records: %s", err.Error())
+		err := errors.Wrap(err, "error upserting merged person records")
+		logger.Error(err)
 		personSvc.Rollback()
-		return nil, err
+		return nil, err.AsGRPC()
 	}
 
 	if err := personSvc.UpdatePersonGroups(spanCtx, in.TenantId); err != nil {
-		logger.Errorf("error updating person groups: %s", err.Error())
+		err := errors.Wrap(err, "error updating person groups")
+		logger.Error(err)
 		personSvc.Rollback()
-		return nil, err
+		return nil, err.AsGRPC()
 	}
 
 	if err := personSvc.Commit(); err != nil {
-		logger.Errorf("error commiting sync users transactions in sql: %s", err.Error())
+		err := errors.Wrap(err, "error commiting sync users transactions in sql")
+		logger.Error(err)
 		personSvc.Rollback()
-		return nil, err
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.SyncUsersResponse{}, nil

@@ -2,8 +2,8 @@ package grpchandlers
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
@@ -17,18 +17,21 @@ func (server *OrchardGRPCServer) CreateSystemRole(ctx context.Context, in *servi
 	logger := log.WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		logger.Warn("Bad Request: tenantId can't be empty")
-		return nil, fmt.Errorf("Bad Request: tenantId can't be empty")
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.SystemRole == nil {
-		logger.Warn("Bad Request: can't insert null system role")
-		return nil, fmt.Errorf("Bad Request: can't insert null system role")
+		err := ErrBadRequest.New("system role can't be null")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.SystemRole.Id != "" {
-		logger.Warn("Bad Request: can't insert new record with existing id")
-		return nil, grpcError(spanCtx, fmt.Errorf("Bad Request: can't insert new systemRole with non-empty id"))
+		err := ErrBadRequest.New("can't insert record with existing id")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	in.SystemRole.Id = db.MakeID()
@@ -42,14 +45,16 @@ func (server *OrchardGRPCServer) CreateSystemRole(ctx context.Context, in *servi
 	sr := svc.FromProto(in.SystemRole)
 
 	if err := svc.Insert(spanCtx, sr); err != nil {
-		logger.Errorf("error inserting system role into sql: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error inserting system role into sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	systemRole, err := svc.ToProto(sr)
 	if err != nil {
-		logger.Errorf("error converting systemRole db model to proto: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error converting systemRole db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.CreateSystemRoleResponse{SystemRole: systemRole}, nil
@@ -62,22 +67,25 @@ func (server *OrchardGRPCServer) GetSystemRoleById(ctx context.Context, in *serv
 	logger := log.WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
-		logger.Warn("Bad Request: Id can't be empty")
-		return nil, fmt.Errorf("Bad Request: Id can't be empty")
+		err := ErrBadRequest.New("id can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewSystemRoleService()
 
 	sr, err := svc.GetByID(spanCtx, in.Id)
 	if err != nil {
-		logger.Errorf("error getting systemRole by id: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error getting systemRole by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	systemRole, err := svc.ToProto(sr)
 	if err != nil {
-		logger.Errorf("error converting systemRole db model to proto: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error converting systemRole db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return systemRole, nil
@@ -93,16 +101,18 @@ func (server *OrchardGRPCServer) GetSystemRoles(ctx context.Context, in *service
 
 	srs, err := svc.Search(spanCtx, in.TenantId, in.Search)
 	if err != nil {
-		logger.Errorf("error searching systemRoles: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error searching systemRoles")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	systemRoles := make([]*orchardPb.SystemRole, len(srs))
 	for i, sr := range srs {
 		systemRoles[i], err = svc.ToProto(sr)
 		if err != nil {
-			logger.Errorf("error converting systemRole db model to proto: %s", err.Error())
-			return nil, err
+			err := errors.Wrap(err, "error converting systemRole db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
 		}
 	}
 
@@ -117,16 +127,18 @@ func (server *OrchardGRPCServer) UpdateSystemRole(ctx context.Context, in *servi
 	defer span.End()
 
 	if in.SystemRole == nil {
-		log.Warn("Bad Request: SystemRole can't be null")
-		return nil, fmt.Errorf("Bad Request: SystemRole can't be null")
+		err := ErrBadRequest.New("systemRole can't be null")
+		log.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	if in.SystemRole.Id == "" {
 		in.SystemRole.Id = in.Id
 	}
 	if in.SystemRole.Id == "" {
-		log.Warn("Bad Request: id can't be empty")
-		return nil, fmt.Errorf("Bad Request: id can't be empty")
+		err := ErrBadRequest.New("id can't be empty")
+		log.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	logger := log.WithTenantID(in.SystemRole.TenantId).WithCustom("id", in.Id)
@@ -136,14 +148,16 @@ func (server *OrchardGRPCServer) UpdateSystemRole(ctx context.Context, in *servi
 
 	err := svc.Update(spanCtx, sr, in.OnlyFields)
 	if err != nil {
-		logger.Errorf("error updating systemRole: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error updating systemRole")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	systemRole, err := svc.ToProto(sr)
 	if err != nil {
-		logger.Errorf("error converting systemRole db model to proto: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error converting systemRole db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.UpdateSystemRoleResponse{SystemRole: systemRole}, nil
@@ -156,16 +170,18 @@ func (server *OrchardGRPCServer) DeleteSystemRoleById(ctx context.Context, in *s
 	logger := log.WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
-		logger.Warn("Bad Request: Id can't be empty")
-		return nil, fmt.Errorf("Bad Request: Id can't be empty")
+		err := ErrBadRequest.New("id can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
 	}
 
 	svc := db.NewSystemRoleService()
 
 	err := svc.DeleteByID(spanCtx, in.Id)
 	if err != nil {
-		logger.Errorf("error deleting systemRole by id: %s", err.Error())
-		return nil, err
+		err := errors.Wrap(err, "error deleting systemRole by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.Empty{}, nil

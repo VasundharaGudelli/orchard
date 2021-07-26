@@ -321,3 +321,147 @@ func (svc *GroupService) DeleteByID(ctx context.Context, id, tenantID string) er
 	}
 	return nil
 }
+
+const (
+	isCRMSyncedQuery = `SELECT
+	(SUM(CASE WHEN cr.id IS NULL THEN 1 ELSE 0 END) > 0)
+	OR
+	(SUM(CASE WHEN g.id IS NOT NULL AND (g.status = 'inactive' OR ARRAY_LENGTH(g.crm_role_ids, 1) > 1) THEN 1 ELSE 0 END)) > 1
+	AS is_not_synced
+FROM crm_role cr
+FULL OUTER JOIN "group" g ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
+WHERE cr.tenant_id = $1
+GROUP BY cr.tenant_id`
+)
+
+type IsCRMSyncedResult struct {
+	IsNotSynced bool `boil:"is_not_synced" json:"is_not_synced"`
+}
+
+func (svc *GroupService) IsCRMSynced(ctx context.Context, tenantID string) (bool, error) {
+	result := &IsCRMSyncedResult{}
+	if err := queries.Raw(isCRMSyncedQuery, tenantID).Bind(ctx, Global, result); err != nil {
+		log.WithTenantID(tenantID).WithCustom("query", isCRMSyncedQuery).Error(err)
+		return false, err
+	}
+	return !result.IsNotSynced, nil
+}
+
+const (
+	syncGroupsQuery = `WITH SyncedGroups AS (
+		SELECT DISTINCT
+			COALESCE(g.id, uuid_generate_v1()::TEXT) AS id,
+			cr.tenant_id,
+			COALESCE(cr."name", g."name", 'Unknown') AS "name",
+			COALESCE(p."type"::GROUP_TYPE, g."type", 'ic') AS "type",
+			COALESCE(g.status, 'active') AS status,
+			COALESCE(g.role_ids, '{}') AS role_ids,
+			COALESCE(ARRAY[cr.id], g.crm_role_ids, '{}') AS crm_role_ids,
+			cr.parent_id AS crm_parent_id, -- Used for identifying actual group parent later
+			cr.id AS crm_role_id, --  Used for identifying actual group parent later
+			COALESCE(g.group_path, ''::ltree) AS group_path,
+			COALESCE(g."order", 0) AS "order",
+			COALESCE(g.sync_filter, NULL) AS sync_filter,
+			COALESCE(g.opportunity_filter, NULL) AS opportunity_filter,
+			'00000000-0000-0000-0000-000000000000' AS created_by,
+			CURRENT_TIMESTAMP AS created_at,
+			'00000000-0000-0000-0000-000000000000' AS updated_by,
+			CURRENT_TIMESTAMP AS updated_at
+		FROM crm_role cr
+		LEFT OUTER JOIN "group" g ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
+		LEFT OUTER JOIN (
+			SELECT
+				p.tenant_id,
+				p.role_id,
+				CASE WHEN EVERY(p."type" = 'ic') THEN 'ic' ELSE 'manager' END AS "type"
+			FROM (
+				SELECT
+					p.tenant_id,
+					UNNEST(p.crm_role_ids) as role_id,
+					p."type"
+				FROM person p
+			) p
+			GROUP BY p.tenant_id, p.role_id
+		) p ON cr.id = p.role_id AND cr.tenant_id = p.tenant_id
+		WHERE cr.tenant_id = $1
+	)
+	INSERT INTO "group"
+	(id, tenant_id, "name", "type", status, role_ids, crm_role_ids, parent_id, group_path, "order", sync_filter, opportunity_filter, created_by, created_at, updated_by, updated_at)
+	SELECT
+		sg1.id, sg1.tenant_id, sg1."name", sg1."type", sg1.status, sg1.role_ids, sg1.crm_role_ids, sg2.id AS parent_id,
+		sg1.group_path, sg1."order", sg1.sync_filter, sg1.opportunity_filter, sg1.created_by, sg1.created_at, sg1.updated_by, sg1.updated_at
+	FROM SyncedGroups sg1
+	LEFT OUTER JOIN SyncedGroups sg2 ON sg1.crm_parent_id = sg2.crm_role_id
+	ON CONFLICT (id, tenant_id) DO UPDATE
+	SET "name" = EXCLUDED."name", "type" = EXCLUDED."type", status = EXCLUDED.status, role_ids = EXCLUDED.role_ids, crm_role_ids = EXCLUDED.crm_role_ids,
+		parent_id = EXCLUDED.parent_id, group_path = EXCLUDED.group_path, "order" = EXCLUDED."order", sync_filter = EXCLUDED.sync_filter, opportunity_filter = EXCLUDED.opportunity_filter,
+		created_by = EXCLUDED.created_by, created_at = EXCLUDED.created_at, updated_by = EXCLUDED.updated_by, updated_at = EXCLUDED.updated_at;`
+)
+
+func (svc *GroupService) SyncGroups(ctx context.Context, tenantID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	if _, err := queries.Raw(syncGroupsQuery, tenantID).ExecContext(ctx, x); err != nil {
+		log.WithTenantID(tenantID).WithCustom("query", syncGroupsQuery).Error(err)
+		return err
+	}
+	return nil
+}
+
+const (
+	deleteUnSyncedGroupsQuery = `DELETE FROM "group"
+	WHERE tenant_id = $1 AND id IN (
+		SELECT g.id
+		FROM "group" g
+		LEFT OUTER JOIN crm_role cr ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
+		WHERE cr.id IS NULL AND g.tenant_id = $1
+	)`
+)
+
+func (svc *GroupService) DeleteUnSyncedGroups(ctx context.Context, tenantID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	if _, err := queries.Raw(deleteUnSyncedGroupsQuery, tenantID).ExecContext(ctx, x); err != nil {
+		log.WithTenantID(tenantID).WithCustom("query", deleteUnSyncedGroupsQuery).Error(err)
+		return err
+	}
+	return nil
+}
+
+const (
+	updateGroupTypesQuery = `UPDATE "group"
+	SET "type" = groups."type"
+	FROM (
+		SELECT g.id, g.tenant_id, COALESCE(p."type"::GROUP_TYPE, g."type", 'ic') AS "type"
+		FROM "group" g
+		LEFT OUTER JOIN (
+			SELECT
+				p.tenant_id,
+				p.group_id,
+				CASE WHEN EVERY(p."type" = 'manager') THEN 'manager' ELSE 'ic' END AS "type"
+			FROM (
+				SELECT p.tenant_id, p.group_id,	p."type"
+				FROM person p
+			) p
+			GROUP BY p.tenant_id, p.group_id
+		) p ON g.tenant_id = p.tenant_id AND g.id = p.group_id
+		WHERE g.tenant_id = $1
+	) groups
+	WHERE "group".id = groups.id AND "group".tenant_id = groups.tenant_id`
+)
+
+func (svc *GroupService) UpdateGroupTypes(ctx context.Context, tenantID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	if _, err := queries.Raw(updateGroupTypesQuery, tenantID).ExecContext(ctx, x); err != nil {
+		log.WithTenantID(tenantID).WithCustom("query", updateGroupTypesQuery).Error(err)
+		return err
+	}
+	return nil
+}
