@@ -41,3 +41,7 @@ func (client *CRMClient) GetLatestChangedPeople(ctx context.Context, tenantID st
 	}
 	return res.LatestPeople, nil
 }
+
+func (client *CRMClient) GetLatestCRMRoles(ctx context.Context, tenantID string, changeSince *timestamp.Timestamp) ([]*orchardPb.CRMRole, error) {
+	return nil, nil
+}

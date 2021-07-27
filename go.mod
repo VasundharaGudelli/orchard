@@ -13,7 +13,7 @@ require (
 	github.com/loupe-co/go-elasticsearch-client v0.0.0-20210623153109-e53a1e1f47d4 // indirect
 	github.com/loupe-co/go-loupe-logger v0.0.0-20201016121042-920bce7c0a29
 	github.com/loupe-co/notes v0.0.0-20200810202043-af87a4438f79 // indirect
-	github.com/loupe-co/protos v0.0.0-20210726125730-730ea467925c
+	github.com/loupe-co/protos v0.0.0-20210727112903-6385c051a3e4
 	github.com/loupe-co/tenant-service v0.0.0-20210624140557-8397b29e5bc5 // indirect
 	github.com/spf13/viper v1.6.3
 	github.com/volatiletech/null/v8 v8.1.2

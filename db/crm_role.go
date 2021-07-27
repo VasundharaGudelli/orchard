@@ -2,11 +2,13 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/orchard/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	null "github.com/volatiletech/null/v8"
@@ -17,10 +19,35 @@ import (
 
 // TODO: Add tracing
 
-type CRMRoleService struct{}
+type CRMRoleService struct {
+	tx *sql.Tx
+}
 
 func NewCRMRoleService() *CRMRoleService {
 	return &CRMRoleService{}
+}
+
+func (svc *CRMRoleService) WithTransaction(ctx context.Context) error {
+	tx, err := Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	svc.tx = tx
+	return nil
+}
+
+func (svc *CRMRoleService) Rollback() error {
+	if svc.tx == nil {
+		return nil
+	}
+	return svc.tx.Rollback()
+}
+
+func (svc *CRMRoleService) Commit() error {
+	if svc.tx == nil {
+		return nil
+	}
+	return svc.tx.Commit()
 }
 
 func (svc *CRMRoleService) FromProto(cr *orchardPb.CRMRole) *models.CRMRole {
@@ -57,7 +84,11 @@ var (
 )
 
 func (svc *CRMRoleService) Insert(ctx context.Context, cr *models.CRMRole) error {
-	return cr.Insert(ctx, Global, boil.Whitelist(crmRoleInsertWhitelist...))
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	return cr.Insert(ctx, x, boil.Whitelist(crmRoleInsertWhitelist...))
 }
 
 const (
@@ -65,6 +96,11 @@ const (
 )
 
 func (svc *CRMRoleService) UpsertAll(ctx context.Context, crmRoles []*models.CRMRole) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+
 	subs := []string{}
 	vals := []interface{}{}
 
@@ -77,7 +113,7 @@ func (svc *CRMRoleService) UpsertAll(ctx context.Context, crmRoles []*models.CRM
 
 	query := strings.ReplaceAll(crmRoleUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 
-	_, err := queries.Raw(query, vals...).ExecContext(ctx, Global)
+	_, err := queries.Raw(query, vals...).ExecContext(ctx, x)
 	if err != nil {
 		argsRaw, _ := json.Marshal(vals)
 		fmt.Println("QUERY", query)
@@ -121,13 +157,32 @@ func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string) (
 }
 
 func (svc *CRMRoleService) DeleteByID(ctx context.Context, id, tenantID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
 	cr := &models.CRMRole{ID: id, TenantID: tenantID}
-	numAffected, err := cr.Delete(ctx, Global)
+	numAffected, err := cr.Delete(ctx, x)
 	if err != nil {
 		return err
 	}
 	if numAffected != 1 {
 		return fmt.Errorf("error deleting crmRole: delete affected 0 rows")
+	}
+	return nil
+}
+
+func (svc *CRMRoleService) DeleteUnSynced(ctx context.Context, tenantID string, syncedIDs ...interface{}) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	numAffected, err := models.CRMRoles(qm.Where("tenant_id = $1"), qm.AndNotIn("id NOT IN ?", syncedIDs...)).DeleteAll(ctx, x)
+	if err != nil {
+		return err
+	}
+	if numAffected < int64(len(syncedIDs)) {
+		return errors.Error("one or more roles failed to delete from sql")
 	}
 	return nil
 }

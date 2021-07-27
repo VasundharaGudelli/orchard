@@ -11,6 +11,65 @@ import (
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
 
+func (server *OrchardGRPCServer) SyncCrmRoles(ctx context.Context, in *servicePb.SyncCrmRolesRequest) (*servicePb.SyncCRMRolesResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "SyncCrmRoles")
+	defer span.End()
+
+	syncSince := in.SyncSince.AsTime()
+
+	logger := log.WithTenantID(in.TenantId).WithCustom("syncSince", syncSince)
+
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	latestCRMRoles, err := server.crmClient.GetLatestCRMRoles(spanCtx, in.TenantId, in.SyncSince)
+	if err != nil {
+		err := errors.Wrap(err, "error getting latest crm roles from crm-data-access")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	svc := db.NewCRMRoleService()
+	if err := svc.WithTransaction(spanCtx); err != nil {
+		err := errors.Wrap(err, "error starting sync_crm_roles transaction")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	ids := make([]interface{}, len(latestCRMRoles))
+	dbCRMRoles := make([]*models.CRMRole, len(latestCRMRoles))
+	for i, role := range latestCRMRoles {
+		ids[i] = role.Id
+		dbCRMRoles[i] = svc.FromProto(role)
+	}
+
+	if err := svc.UpsertAll(spanCtx, dbCRMRoles); err != nil {
+		err := errors.Wrap(err, "error upserting latest crm roles for sync")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.DeleteUnSynced(spanCtx, in.TenantId, ids...); err != nil {
+		err := errors.Wrap(err, "error deleting unsynced crm_roles")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting sync_crm_roles transaction")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.SyncCRMRolesResponse{}, nil
+}
+
 func (server *OrchardGRPCServer) UpsertCRMRoles(ctx context.Context, in *servicePb.UpsertCRMRolesRequest) (*servicePb.UpsertCRMRolesResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "UpsertCRMRoles")
 	defer span.End()
