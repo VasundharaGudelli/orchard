@@ -457,6 +457,8 @@ github.com/loupe-co/protos v0.0.0-20210726125730-730ea467925c h1:oCVD1ho43KisWXO
 github.com/loupe-co/protos v0.0.0-20210726125730-730ea467925c/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/loupe-co/protos v0.0.0-20210727112903-6385c051a3e4 h1:7gY6h7lF1ZBYLxHsuMy5u0Sr0K+szBKhT2o0K2iymm4=
 github.com/loupe-co/protos v0.0.0-20210727112903-6385c051a3e4/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
+github.com/loupe-co/protos v0.0.0-20210727123104-3578a29e4b48 h1:A9vGwTwU2rrdHNJQG7AgYEywD48FJ8Qec6Mq63XLmk0=
+github.com/loupe-co/protos v0.0.0-20210727123104-3578a29e4b48/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/loupe-co/reporting v0.0.0-20200624214422-71b5daa49e95/go.mod h1:jKfMWN/80IT0ch1LwVCi5V16MUcGz5GD+DaEU2oua+I=
 github.com/loupe-co/setting-service v0.0.0-20200620163229-f5b11d294f7d/go.mod h1:vFPyVtilbt8dW2Yiql9dFZEFdgkBYwfSNq2T6WDKB/I=
 github.com/loupe-co/signal-evaluator v0.0.0-20200207182452-feb402a25fad/go.mod h1:sz9GKO4/C+XaPpE0bcfH9f6ZyyEnzRskxIngXazvU3c=

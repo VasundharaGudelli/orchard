@@ -11,7 +11,7 @@ import (
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
 
-func (server *OrchardGRPCServer) SyncCrmRoles(ctx context.Context, in *servicePb.SyncCrmRolesRequest) (*servicePb.SyncCRMRolesResponse, error) {
+func (server *OrchardGRPCServer) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "SyncCrmRoles")
 	defer span.End()
 
@@ -67,7 +67,7 @@ func (server *OrchardGRPCServer) SyncCrmRoles(ctx context.Context, in *servicePb
 		return nil, err.AsGRPC()
 	}
 
-	return &servicePb.SyncCRMRolesResponse{}, nil
+	return &servicePb.SyncResponse{}, nil
 }
 
 func (server *OrchardGRPCServer) UpsertCRMRoles(ctx context.Context, in *servicePb.UpsertCRMRolesRequest) (*servicePb.UpsertCRMRolesResponse, error) {

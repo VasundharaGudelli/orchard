@@ -11,7 +11,7 @@ import (
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
 
-func (server *OrchardGRPCServer) SyncGroups(ctx context.Context, in *servicePb.SyncGroupsRequest) (*servicePb.SyncGroupsResponse, error) {
+func (server *OrchardGRPCServer) SyncGroups(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "SyncGroups")
 	defer span.End()
 
@@ -34,7 +34,7 @@ func (server *OrchardGRPCServer) SyncGroups(ctx context.Context, in *servicePb.S
 
 	if !isSynced {
 		logger.Info("tenant crm roles are not synced with groups, skipping group sync.")
-		return &servicePb.SyncGroupsResponse{}, nil
+		return &servicePb.SyncResponse{}, nil
 	}
 
 	if err := svc.WithTransaction(spanCtx); err != nil {
@@ -71,7 +71,7 @@ func (server *OrchardGRPCServer) SyncGroups(ctx context.Context, in *servicePb.S
 		return nil, err.AsGRPC()
 	}
 
-	return &servicePb.SyncGroupsResponse{}, nil
+	return &servicePb.SyncResponse{}, nil
 }
 
 func (server *OrchardGRPCServer) CreateGroup(ctx context.Context, in *servicePb.CreateGroupRequest) (*servicePb.CreateGroupResponse, error) {

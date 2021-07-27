@@ -12,7 +12,7 @@ import (
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
 
-func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.SyncUsersRequest) (*servicePb.SyncUsersResponse, error) {
+func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "SyncUsers")
 	defer span.End()
 
@@ -125,5 +125,5 @@ func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.Sy
 		return nil, err.AsGRPC()
 	}
 
-	return &servicePb.SyncUsersResponse{}, nil
+	return &servicePb.SyncResponse{}, nil
 }

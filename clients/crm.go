@@ -43,5 +43,9 @@ func (client *CRMClient) GetLatestChangedPeople(ctx context.Context, tenantID st
 }
 
 func (client *CRMClient) GetLatestCRMRoles(ctx context.Context, tenantID string, changeSince *timestamp.Timestamp) ([]*orchardPb.CRMRole, error) {
-	return nil, nil
+	res, err := client.client.GetLatestCRMRoles(ctx, &servicePb.GetLatestCRMRolesRequest{TenantId: tenantID, ChangeSince: changeSince})
+	if err != nil {
+		return nil, err
+	}
+	return res.LatestRoles, nil
 }
