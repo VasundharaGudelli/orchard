@@ -353,7 +353,11 @@ const (
 			COALESCE(g.id, uuid_generate_v1()::TEXT) AS id,
 			cr.tenant_id,
 			COALESCE(cr."name", g."name", 'Unknown') AS "name",
-			COALESCE(p."type"::GROUP_TYPE, g."type", 'ic') AS "type",
+			COALESCE(
+				(CASE WHEN cr2.id IS NULL THEN 'ic' ELSE 'manager' END)::GROUP_TYPE,
+				g."type",
+				'ic'
+			) AS "type",
 			COALESCE(g.status, 'active') AS status,
 			COALESCE(g.role_ids, '{}') AS role_ids,
 			COALESCE(ARRAY[cr.id], g.crm_role_ids, '{}') AS crm_role_ids,
@@ -369,20 +373,7 @@ const (
 			CURRENT_TIMESTAMP AS updated_at
 		FROM crm_role cr
 		LEFT OUTER JOIN "group" g ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
-		LEFT OUTER JOIN (
-			SELECT
-				p.tenant_id,
-				p.role_id,
-				CASE WHEN EVERY(p."type" = 'ic') THEN 'ic' ELSE 'manager' END AS "type"
-			FROM (
-				SELECT
-					p.tenant_id,
-					UNNEST(p.crm_role_ids) as role_id,
-					p."type"
-				FROM person p
-			) p
-			GROUP BY p.tenant_id, p.role_id
-		) p ON cr.id = p.role_id AND cr.tenant_id = p.tenant_id
+		LEFT OUTER JOIN crm_role cr2 ON cr.id = cr2.parent_id AND cr.tenant_id = cr2.tenant_id
 		WHERE cr.tenant_id = $1
 	)
 	INSERT INTO "group"
@@ -434,21 +425,11 @@ func (svc *GroupService) DeleteUnSyncedGroups(ctx context.Context, tenantID stri
 
 const (
 	updateGroupTypesQuery = `UPDATE "group"
-	SET "type" = groups."type"
+	SET "type" = groups."type"::GROUP_TYPE
 	FROM (
-		SELECT g.id, g.tenant_id, COALESCE(p."type"::GROUP_TYPE, g."type", 'ic') AS "type"
+		SELECT g.id, g.tenant_id, CASE WHEN g2.id IS NULL THEN 'ic' ELSE 'manager' END AS "type"
 		FROM "group" g
-		LEFT OUTER JOIN (
-			SELECT
-				p.tenant_id,
-				p.group_id,
-				CASE WHEN EVERY(p."type" = 'manager') THEN 'manager' ELSE 'ic' END AS "type"
-			FROM (
-				SELECT p.tenant_id, p.group_id,	p."type"
-				FROM person p
-			) p
-			GROUP BY p.tenant_id, p.group_id
-		) p ON g.tenant_id = p.tenant_id AND g.id = p.group_id
+		LEFT OUTER JOIN "group" g2 ON g.tenant_id = g2.tenant_id AND g.id = g2.parent_id
 		WHERE g.tenant_id = $1
 	) groups
 	WHERE "group".id = groups.id AND "group".tenant_id = groups.tenant_id`
