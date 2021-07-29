@@ -2,13 +2,12 @@ package grpchandlers
 
 import (
 	"context"
+	"time"
 
 	"github.com/loupe-co/go-common/errors"
-	"github.com/loupe-co/go-common/sync"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
 	"github.com/loupe-co/orchard/models"
-	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
 
@@ -20,43 +19,16 @@ func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.Sy
 
 	logger := log.WithTenantID(in.TenantId).WithCustom("syncSince", syncSince)
 
-	provisionedUsers := []*orchardPb.Person{}
-	latestCRMUsers := []*orchardPb.Person{}
-
-	pool, _ := sync.NewWorkerPool(spanCtx, 2)
-	pool.Go(func() error {
-		var err error
-		provisionedUsers, err = server.tenantClient.GetProvisionedUsers(spanCtx, in.TenantId)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-
-	pool.Go(func() error {
-		var err error
-		latestCRMUsers, err = server.crmClient.GetLatestChangedPeople(spanCtx, in.TenantId, in.SyncSince)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-
-	if err := pool.Wait(); err != nil {
-		err := errors.Wrap(err, "error getting person data from disparate data sources")
+	latestCRMUsers, err := server.crmClient.GetLatestChangedPeople(spanCtx, in.TenantId, in.SyncSince)
+	if err != nil {
+		err := errors.Wrap(err, "error getting person data from crm-data-access")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
 
-	ids := make([]string, len(provisionedUsers)+len(latestCRMUsers))
-	idx := 0
-	for _, person := range provisionedUsers {
-		ids[idx] = person.Id
-		idx++
-	}
-	for _, person := range latestCRMUsers {
-		ids[idx] = person.Id
-		idx++
+	ids := make([]interface{}, len(latestCRMUsers))
+	for i, person := range latestCRMUsers {
+		ids[i] = person.Id
 	}
 
 	personSvc := db.NewPersonService()
@@ -69,39 +41,29 @@ func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.Sy
 		return nil, err.AsGRPC()
 	}
 
-	mergedPeople := map[string]*models.Person{}
+	existingPeople := make(map[string]*models.Person, len(currentPeople))
 	for _, person := range currentPeople {
-		mergedPeople[person.ID] = person
+		existingPeople[person.ID] = person
 	}
-	for _, person := range latestCRMUsers {
+
+	upsertPeople := make([]*models.Person, len(latestCRMUsers))
+	for i, person := range latestCRMUsers {
 		p := personSvc.FromProto(person)
 		p.TenantID = in.TenantId
 		p.UpdatedBy = "00000000-0000-0000-0000-000000000000"
-		if current, ok := mergedPeople[person.Id]; ok {
-			current.Name = p.Name
-			current.FirstName = p.FirstName
-			current.LastName = p.LastName
-			current.Email = p.Email
-			current.ManagerID = p.ManagerID
-			current.CRMRoleIds = p.CRMRoleIds
-			current.Status = p.Status
-			current.UpdatedAt = p.UpdatedAt
-			continue
+		p.UpdatedAt = time.Now().UTC()
+		if current, ok := existingPeople[person.Id]; ok {
+			if len(p.RoleIds) == 0 {
+				p.RoleIds = current.RoleIds
+			}
+			if !p.GroupID.Valid || p.GroupID.String == "" {
+				p.GroupID = current.GroupID
+			}
+		} else {
+			p.CreatedBy = "00000000-0000-0000-0000-000000000000"
 		}
 		p.IsSynced = true
-		mergedPeople[person.Id] = p
-	}
-	for _, person := range provisionedUsers {
-		if current, ok := mergedPeople[person.Id]; ok {
-			current.IsProvisioned = true
-		}
-	}
-
-	upsertPeople := make([]*models.Person, len(mergedPeople))
-	i := 0
-	for _, person := range mergedPeople {
-		upsertPeople[i] = person
-		i++
+		upsertPeople[i] = p
 	}
 
 	if err := personSvc.UpsertAll(spanCtx, upsertPeople); err != nil {

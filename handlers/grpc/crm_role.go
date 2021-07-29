@@ -32,6 +32,12 @@ func (server *OrchardGRPCServer) SyncCrmRoles(ctx context.Context, in *servicePb
 		return nil, err.AsGRPC()
 	}
 
+	if len(latestCRMRoles) == 0 {
+		logger.Info("no new crm_roles to sync")
+		return &servicePb.SyncResponse{}, nil
+		// return nil, errors.Error("no latest crm_roles returned from crm-data-access")
+	}
+
 	svc := db.NewCRMRoleService()
 	if err := svc.WithTransaction(spanCtx); err != nil {
 		err := errors.Wrap(err, "error starting sync_crm_roles transaction")

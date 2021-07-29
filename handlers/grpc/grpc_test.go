@@ -11,6 +11,7 @@ import (
 	"github.com/buger/jsonparser"
 	configUtil "github.com/loupe-co/go-common/config"
 	"github.com/loupe-co/go-common/fixtures"
+	"github.com/loupe-co/orchard/clients"
 	"github.com/loupe-co/orchard/config"
 	"github.com/loupe-co/orchard/db"
 	"github.com/loupe-co/orchard/models"
@@ -18,11 +19,11 @@ import (
 
 var testServer *OrchardGRPCServer
 var generatedTestIDs = map[string][]string{
-	"system_role":  []string{},
-	"crm_role":     []string{},
-	"group":        []string{},
-	"person":       []string{},
-	"group_viewer": []string{},
+	"system_role":  {},
+	"crm_role":     {},
+	"group":        {},
+	"person":       {},
+	"group_viewer": {},
 }
 
 func setup() (*OrchardGRPCServer, error) {
@@ -37,9 +38,9 @@ func setup() (*OrchardGRPCServer, error) {
 		configUtil.SetDefaultENV("DB_HOST", "35.245.37.78"),
 		configUtil.SetDefaultENV("DB_PASSWORD", "jLariybb1oe5FbDz"),
 		configUtil.SetDefaultENV("DB_MAX_CONNECTIONS", "10"),
-		configUtil.SetDefaultENV("DB_DEBUG", "true"),
-		configUtil.SetDefaultENV("TENANT_SERVICE_ADDR", "true"),
-		configUtil.SetDefaultENV("CRM_SERVICE_ADDR", "true"),
+		configUtil.SetDefaultENV("DB_DEBUG", "false"),
+		configUtil.SetDefaultENV("TENANT_SERVICE_ADDR", "localhost:50051"),
+		configUtil.SetDefaultENV("CRM_SERVICE_ADDR", "localhost:50052"),
 	)
 	if err != nil {
 		panic("Error parsing config from environment")
@@ -47,10 +48,18 @@ func setup() (*OrchardGRPCServer, error) {
 	if err := db.Init(cfg); err != nil {
 		return nil, err
 	}
+	crmClient, err := clients.NewCRMClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	tenantClient, err := clients.NewTenantClient(cfg)
+	if err != nil {
+		return nil, err
+	}
 	if err := seed(); err != nil {
 		return nil, err
 	}
-	return &OrchardGRPCServer{cfg: cfg}, nil
+	return &OrchardGRPCServer{cfg: cfg, tenantClient: tenantClient, crmClient: crmClient}, nil
 }
 
 func seed() error {
@@ -139,11 +148,11 @@ func seed() error {
 
 func teardown() error {
 	failedIDs := map[string][]string{
-		"system_role":  []string{},
-		"crm_role":     []string{},
-		"group":        []string{},
-		"person":       []string{},
-		"group_viewer": []string{},
+		"system_role":  {},
+		"crm_role":     {},
+		"group":        {},
+		"person":       {},
+		"group_viewer": {},
 	}
 	for object, ids := range generatedTestIDs {
 		switch object {

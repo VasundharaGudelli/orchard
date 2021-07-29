@@ -354,7 +354,7 @@ const (
 			cr.tenant_id,
 			COALESCE(cr."name", g."name", 'Unknown') AS "name",
 			COALESCE(
-				(CASE WHEN cr2.id IS NULL THEN 'ic' ELSE 'manager' END)::GROUP_TYPE,
+				(CASE WHEN cr2.parent_id IS NULL THEN 'ic' ELSE 'manager' END)::GROUP_TYPE,
 				g."type",
 				'ic'
 			) AS "type",
@@ -373,7 +373,10 @@ const (
 			CURRENT_TIMESTAMP AS updated_at
 		FROM crm_role cr
 		LEFT OUTER JOIN "group" g ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
-		LEFT OUTER JOIN crm_role cr2 ON cr.id = cr2.parent_id AND cr.tenant_id = cr2.tenant_id
+		LEFT OUTER JOIN (
+			SELECT DISTINCT parent_id, tenant_id
+			FROM crm_role
+		) cr2 ON cr.id = cr2.parent_id AND cr.tenant_id = cr2.tenant_id
 		WHERE cr.tenant_id = $1
 	)
 	INSERT INTO "group"

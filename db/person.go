@@ -178,8 +178,8 @@ func (svc *PersonService) GetByID(ctx context.Context, id, tenantID string) (*mo
 	return person, nil
 }
 
-func (svc *PersonService) GetByIDs(ctx context.Context, tenantID string, ids ...string) ([]*models.Person, error) {
-	people, err := models.People(qm.Where("tenant_id = $1"), qm.AndIn("id IN ?", ids)).All(ctx, Global)
+func (svc *PersonService) GetByIDs(ctx context.Context, tenantID string, ids ...interface{}) ([]*models.Person, error) {
+	people, err := models.People(qm.WhereIn("id IN ?", ids...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(ctx, Global)
 	if err != nil {
 		return nil, err
 	}

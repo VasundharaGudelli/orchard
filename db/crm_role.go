@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/orchard/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	null "github.com/volatiletech/null/v8"
@@ -177,12 +176,9 @@ func (svc *CRMRoleService) DeleteUnSynced(ctx context.Context, tenantID string, 
 	if svc.tx != nil {
 		x = svc.tx
 	}
-	numAffected, err := models.CRMRoles(qm.Where("tenant_id = $1"), qm.AndNotIn("id NOT IN ?", syncedIDs...)).DeleteAll(ctx, x)
+	_, err := models.CRMRoles(qm.Where("tenant_id::TEXT = $1"), qm.AndNotIn("id NOT IN ?", syncedIDs...)).DeleteAll(ctx, x)
 	if err != nil {
 		return err
-	}
-	if numAffected < int64(len(syncedIDs)) {
-		return errors.Error("one or more roles failed to delete from sql")
 	}
 	return nil
 }
