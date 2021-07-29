@@ -62,14 +62,14 @@ func main() {
 	// Setup os signal server/handler
 	sigServer := common.NewSigServer()
 	sigServer.Handle(func(sig os.Signal) error {
-		log.Infof("handling os signal %s", sig.String())
+		log.WithCustom("signal", sig.String()).Info("received os signal")
 		// TODO: how do we handle these signals in this service, may not matter?
 		return nil
 	}, os.Interrupt, syscall.SIGTERM)
 
 	// Start all servers and wait for any to error
 	log.Info("Server starting")
-	if err := common.ServerListenMux(sigServer, grpcServer); err != nil {
+	if err := common.ServerListenMux(sigServer, grpcServer, ekgServer); err != nil {
 		log.Error(err)
 	}
 	log.Info("Server exiting")
