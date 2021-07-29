@@ -13,9 +13,9 @@ data:
   SENTRY_DSN: https://bcf02969cee648f8819d7cfdd973ce3f@sentry.io/1765772
   GRPC_HOST: ''
   GRPC_PORT: '50051'
-  DB_HOST: 10.117.32.2
+  DB_HOST: 172.31.112.3
   DB_PORT: "5432"
-  DB_PASSWORD: "aM73nc7L6POJ3FIA"
+  DB_PASSWORD: "jLariybb1oe5FbDz"
   DB_USER: "postgres"
   DB_NAME: "tenant"
   DB_MAX_CONNECTIONS: '20'

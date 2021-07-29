@@ -7,6 +7,7 @@ import (
 
 	common "github.com/loupe-co/go-common"
 	configUtil "github.com/loupe-co/go-common/config"
+	ekg "github.com/loupe-co/go-common/ekg"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/clients"
 	"github.com/loupe-co/orchard/config"
@@ -53,6 +54,10 @@ func main() {
 	grpcServer.Register(func(server *grpc.Server) {
 		servicePb.RegisterOrchardServer(server, orchardServer)
 	})
+
+	// Create EKG server (AKA health checks)
+	ekgServer := ekg.New()
+	ekgServer.Handle("sql", db.DefaultHealthCheckPolicy, db.HealthCheck)
 
 	// Setup os signal server/handler
 	sigServer := common.NewSigServer()
