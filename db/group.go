@@ -240,8 +240,16 @@ const (
 	"group".status as "group.status", "group".role_ids as "group.role_ids", "group".crm_role_ids as "group.crm_role_ids", "group".parent_id as "group.parent_id",
 	"group".group_path as "group.group_path", "group".order as "group.order", "group".sync_filter as "group.sync_filter", "group".opportunity_filter as "group.opportunity_filter",
 	"group".created_at as "group.created_at", "group".created_by as "group.created_by", "group".updated_at as "group.updated_at", "group".updated_by as "group.updated_by",
-	ARRAY_AGG({PERSON_SELECT}) as "members_raw"
-FROM "group" INNER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id
+	ARRAY_REMOVE(
+		ARRAY_AGG(
+			CASE WHEN p.id IS NULL THEN NULL ELSE
+				{PERSON_SELECT}
+			END
+		),
+		NULL
+	) as "members_raw"
+FROM "group"
+LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id
 WHERE "group".tenant_id = $1
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
@@ -251,7 +259,7 @@ GROUP BY
 func (svc *GroupService) GetFullTenantTree(ctx context.Context, tenantID string, hydrateUsers bool) ([]*GroupTreeNode, error) {
 	personSelect := "p.id"
 	if hydrateUsers {
-		personSelect = `JSON_BUILD_OBJECT(
+		personSelect = `JSONB_BUILD_OBJECT(
 			'id', p.id, 'tenant_id', p.tenant_id, 'name', p."name", 'first_name', p.first_name, 'last_name', p.last_name, 'email', p.email, 'manager_id', p.manager_id,
 			'role_ids', p.role_ids, 'crm_role_ids', p.crm_role_ids, 'is_provisioned', p.is_provisioned, 'is_synced', p.is_synced, 'status', p.status,
 			'created_at', TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH:MI:SS"Z"'), 'created_by', p.created_by,
