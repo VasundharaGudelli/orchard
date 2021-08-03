@@ -2,6 +2,7 @@ package grpchandlers
 
 import (
 	"context"
+	"time"
 
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -10,6 +11,50 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
+
+func (server *OrchardGRPCServer) CreatePerson(ctx context.Context, in *servicePb.CreatePersonRequest) (*servicePb.CreatePersonResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "CreatePerson")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	if in.Person == nil {
+		return nil, ErrBadRequest.New("person can't be nil")
+	}
+
+	if in.Person.Id != "" {
+		return nil, ErrBadRequest.New("person id must be empty to create a new person")
+	}
+
+	in.Person.Id = db.MakeID()
+
+	svc := db.NewPersonService()
+
+	insertablePerson := svc.FromProto(in.Person)
+	insertablePerson.CreatedAt = time.Now().UTC()
+	insertablePerson.UpdatedAt = time.Now().UTC()
+
+	if err := svc.Insert(spanCtx, insertablePerson); err != nil {
+		err := errors.Wrap(err, "error inserting person in sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	createdRes, err := svc.ToProto(insertablePerson)
+	if err != nil {
+		err := errors.Wrap(err, "error converting created person to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.CreatePersonResponse{Person: createdRes}, nil
+}
 
 func (server *OrchardGRPCServer) UpsertPeople(ctx context.Context, in *servicePb.UpsertPeopleRequest) (*servicePb.UpsertPeopleResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "UpsertPeople")
