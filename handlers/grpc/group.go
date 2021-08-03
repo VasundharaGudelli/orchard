@@ -2,6 +2,7 @@ package grpchandlers
 
 import (
 	"context"
+	"sync"
 
 	strUtils "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
@@ -213,8 +214,8 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 
 	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
-	if in.TenantId == "" || in.GroupId == "" {
-		err := ErrBadRequest.New("tenantId and GroupId can't be empty")
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
 		logger.Warn(err.Error())
 		return nil, err.AsGRPC()
 	}
@@ -259,25 +260,36 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 	}
 
 	// Form tree structure
-	var root *servicePb.GroupWithMembers
+	roots := []*servicePb.GroupWithMembers{}
 	for _, g := range flatProtos {
-		if g.Group.Id == in.GroupId {
-			root = g
+		if g.Group.ParentId == "" {
+			roots = append(roots, g)
 		}
 	}
-	if root == nil {
+	if len(roots) == 0 {
 		return &servicePb.GetGroupSubTreeResponse{
-			GroupId: in.GroupId,
-			Depth:   0,
-			SubTree: nil,
+			Roots: []*servicePb.GroupSubtreeRoot{},
 		}, nil
 	}
-	depth := recursivelyGetGroupChildren(root, flatProtos, 1)
+
+	finalRoots := make([]*servicePb.GroupSubtreeRoot, len(roots))
+	wg := sync.WaitGroup{}
+	for i, root := range roots {
+		wg.Add(1)
+		go func(w *sync.WaitGroup, r *servicePb.GroupWithMembers, all []*servicePb.GroupWithMembers, idx int) {
+			depth := recursivelyGetGroupChildren(r, all, 1)
+			finalRoots[idx] = &servicePb.GroupSubtreeRoot{
+				GroupId: r.Group.Id,
+				Depth:   int32(depth),
+				SubTree: r,
+			}
+			w.Done()
+		}(&wg, root, flatProtos, i)
+	}
+	wg.Wait()
 
 	return &servicePb.GetGroupSubTreeResponse{
-		GroupId: in.GroupId,
-		Depth:   int32(depth),
-		SubTree: root,
+		Roots: finalRoots,
 	}, nil
 }
 

@@ -540,6 +540,42 @@ func TestGetGroupSubTreeWithHydrateUsers(t *testing.T) {
 	}
 }
 
+func TestGetGroupSubTreeWithEmptyGroupIdGood(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestGetGroupSubTreeWithEmptyGroupIdGood")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.GetGroupSubTreeRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	res, err := testServer.GetGroupSubTree(context.Background(), req)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestGetGroupSubTreeWithEmptyGroupIdGood.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
 func TestGetGroupSubTreeBadRequestEmptyTenantID(t *testing.T) {
 	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestGetGroupSubTreeBadRequestEmptyTenantID")
 	if err != nil {

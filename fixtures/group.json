@@ -25,6 +25,12 @@
     "max_depth": -1,
     "hydrate_users": true
   },
+  "TestGetGroupSubTreeWithEmptyGroupIdGood": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "group_id": "",
+    "max_depth": -1,
+    "hydrate_users": false
+  },
   "TestGetGroupSubTreeBadRequestEmptyTenantID": {},
   "TestGetGroupSubTreeBadRequestEmptyGroupID": {},
   "TestUpdateGroup": {
