@@ -194,7 +194,8 @@ LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".te
 WHERE {GROUP_SELECT} AND "group".tenant_id = $2
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
-	"group".group_path, "group".order, "group".sync_filter, "group".opportunity_filter, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by`
+	"group".group_path, "group".order, "group".sync_filter, "group".opportunity_filter, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by
+ORDER BY "group.name"`
 
 	fullPersonSelectClause = `JSONB_BUILD_OBJECT(
 		'id', p.id, 'tenant_id', p.tenant_id, 'name', p."name", 'first_name', p.first_name, 'last_name', p.last_name, 'email', p.email, 'manager_id', p.manager_id,

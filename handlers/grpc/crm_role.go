@@ -183,6 +183,41 @@ func (server *OrchardGRPCServer) GetCRMRoles(ctx context.Context, in *servicePb.
 	return &servicePb.GetCRMRolesResponse{CrmRoles: crmRoles}, nil
 }
 
+func (server *OrchardGRPCServer) GetUnsyncedCRMRoles(ctx context.Context, in *servicePb.GetUnsyncedCRMRolesRequest) (*servicePb.GetUnsyncedCRMRolesResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "GetCRMRoles")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := db.NewCRMRoleService()
+
+	crs, err := svc.GetUnsynced(spanCtx, in.TenantId)
+	if err != nil {
+		err := errors.Wrap(err, "error getting unsynced crmRoles from sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	crmRoles := make([]*orchardPb.CRMRole, len(crs))
+	for i, cr := range crs {
+		role, err := svc.ToProto(cr)
+		if err != nil {
+			err := errors.Wrap(err, "error converting crmRole from db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		crmRoles[i] = role
+	}
+
+	return &servicePb.GetUnsyncedCRMRolesResponse{CrmRoles: crmRoles}, nil
+}
+
 func (server *OrchardGRPCServer) DeleteCRMRoleById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
 	spanCtx, span := log.StartSpan(ctx, "DeleteCRMRoleById")
 	defer span.End()

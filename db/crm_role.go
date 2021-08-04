@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	null "github.com/volatiletech/null/v8"
@@ -130,6 +131,23 @@ func (svc *CRMRoleService) GetByID(ctx context.Context, id, tenantID string) (*m
 	}
 
 	return cr, nil
+}
+
+const (
+	getUnsyncedCRMRolesQuery = `SELECT cr.*
+	FROM crm_role cr
+	LEFT OUTER JOIN "group" g ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
+	WHERE g.id IS NULL AND cr.tenant_id = $1`
+)
+
+func (svc *CRMRoleService) GetUnsynced(ctx context.Context, tenantID string) ([]*models.CRMRole, error) {
+	results := []*models.CRMRole{}
+	if err := queries.Raw(getUnsyncedCRMRolesQuery, tenantID).Bind(ctx, Global, results); err != nil {
+		log.WithTenantID(tenantID).WithCustom("query", getUnsyncedCRMRolesQuery).Error(err)
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string) ([]*models.CRMRole, error) {
