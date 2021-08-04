@@ -1,5 +1,18 @@
 {
-  "TestCreateGroup": {},
+  "TestCreateGroup": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "group": {
+      "id": "",
+      "tenant_id": "00000000-0000-0000-0000-000000000000",
+      "name": "Test Create Group",
+      "type": 2,
+      "status": 1,
+      "role_ids": [],
+      "crm_role_ids": [],
+      "parent_id": "",
+      "order": 0
+    }
+  },
   "TestCreateGroupBadRequestEmptyTenantID": {},
   "TestCreateGroupBadRequestNilGroup": {},
   "TestCreateGroupBadRequestNonEmptyID": {},

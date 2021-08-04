@@ -3,6 +3,7 @@ package grpchandlers
 import (
 	"context"
 	"sync"
+	"time"
 
 	strUtils "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
@@ -109,6 +110,8 @@ func (server *OrchardGRPCServer) CreateGroup(ctx context.Context, in *servicePb.
 	}
 
 	insertableGroup := svc.FromProto(in.Group)
+	insertableGroup.CreatedAt = time.Now().UTC()
+	insertableGroup.UpdatedAt = time.Now().UTC()
 
 	if err := svc.Insert(spanCtx, insertableGroup); err != nil {
 		err := errors.Wrap(err, "error inserting group into sql")
