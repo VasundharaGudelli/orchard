@@ -430,5 +430,5 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 		return nil, err.AsGRPC()
 	}
 
-	return nil, nil
+	return &servicePb.Empty{}, nil
 }
