@@ -377,7 +377,7 @@ const (
 		SELECT g.id, g.tenant_id, g.parent_id, CONCAT(gt.group_path, '.', REPLACE(g.id, '-', '_')) as group_path
 		FROM "group" g
 		INNER JOIN group_tree gt ON gt.id = g.parent_id AND gt.tenant_id = g.tenant_id
-		WHERE g.tenant_id::TEXT = $1 AND g.status = 'active'
+		WHERE g.status = 'active' AND g.tenant_id::TEXT = $1
 	)
 	UPDATE "group"
 	SET group_path = gt.group_path::ltree
