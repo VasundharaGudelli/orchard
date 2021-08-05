@@ -184,3 +184,15 @@ func (svc *SystemRoleService) DeleteByID(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+func (svc *SystemRoleService) SoftDeleteByID(ctx context.Context, id, userID string) error {
+	sr := &models.SystemRole{ID: id, UpdatedBy: userID, UpdatedAt: time.Now().UTC(), Status: "inactive"}
+	numAffected, err := sr.Update(ctx, Global, boil.Whitelist("updated_by", "updated_at", "status"))
+	if err != nil {
+		return err
+	}
+	if numAffected != 1 {
+		return fmt.Errorf("error soft deleting systemRole: delete affected 0 rows")
+	}
+	return nil
+}

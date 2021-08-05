@@ -175,9 +175,13 @@ func (server *OrchardGRPCServer) DeleteSystemRoleById(ctx context.Context, in *s
 		return nil, err.AsGRPC()
 	}
 
+	if in.UserId == "" {
+		in.UserId = "00000000-0000-0000-0000-000000000000"
+	}
+
 	svc := db.NewSystemRoleService()
 
-	err := svc.DeleteByID(spanCtx, in.Id)
+	err := svc.SoftDeleteByID(spanCtx, in.Id, in.UserId)
 	if err != nil {
 		err := errors.Wrap(err, "error deleting systemRole by id")
 		logger.Error(err)

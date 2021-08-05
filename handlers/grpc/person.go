@@ -293,9 +293,13 @@ func (server *OrchardGRPCServer) DeletePersonById(ctx context.Context, in *servi
 		return nil, err.AsGRPC()
 	}
 
+	if in.UserId == "" {
+		in.UserId = "00000000-0000-0000-0000-000000000000"
+	}
+
 	svc := db.NewPersonService()
 
-	if err := svc.DeleteByID(spanCtx, in.PersonId, in.TenantId); err != nil {
+	if err := svc.SoftDeleteByID(spanCtx, in.PersonId, in.TenantId, in.UserId); err != nil {
 		logger.Errorf("error deleting person by id: %s", err.Error())
 		return nil, err
 	}

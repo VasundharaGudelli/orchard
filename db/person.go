@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/orchard/models"
@@ -288,6 +289,18 @@ func (svc *PersonService) DeleteByID(ctx context.Context, id, tenantID string) e
 	}
 	if numAffected != 1 {
 		return fmt.Errorf("error deleting person: delete affected 0 rows")
+	}
+	return nil
+}
+
+func (svc *PersonService) SoftDeleteByID(ctx context.Context, id, tenantID, userID string) error {
+	person := &models.Person{ID: id, TenantID: tenantID, UpdatedBy: userID, UpdatedAt: time.Now().UTC(), Status: "inactive"}
+	numAffected, err := person.Update(ctx, Global, boil.Whitelist("updated_by", "updated_at", "status"))
+	if err != nil {
+		return err
+	}
+	if numAffected != 1 {
+		return fmt.Errorf("error soft deleting person: delete affected 0 rows")
 	}
 	return nil
 }
