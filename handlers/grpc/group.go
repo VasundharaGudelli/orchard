@@ -427,9 +427,36 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 	}
 
 	svc := db.NewGroupService()
+	if err := svc.WithTransaction(spanCtx); err != nil {
+		err := errors.Wrap(err, "error starting delete group transaction")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.TransferGroupChildrenParent(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error transferring deleted group's children's parent")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.RemoveGroupMembers(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error removing deleted group's members")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
 
 	if err := svc.SoftDeleteByID(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
+		svc.Rollback()
 		err := errors.Wrap(err, "error soft deleting group by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.Commit(); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error commiting delete group transaction")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}

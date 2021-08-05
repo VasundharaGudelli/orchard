@@ -405,8 +405,12 @@ func (svc *GroupService) Reload(ctx context.Context, group *models.Group) error 
 }
 
 func (svc *GroupService) DeleteByID(ctx context.Context, id, tenantID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
 	group := &models.Group{ID: id, TenantID: tenantID}
-	numAffected, err := group.Delete(ctx, Global)
+	numAffected, err := group.Delete(ctx, x)
 	if err != nil {
 		return err
 	}
@@ -417,8 +421,12 @@ func (svc *GroupService) DeleteByID(ctx context.Context, id, tenantID string) er
 }
 
 func (svc *GroupService) SoftDeleteByID(ctx context.Context, id, tenantID, userID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
 	group := &models.Group{ID: id, TenantID: tenantID, UpdatedBy: userID, Status: "inactive", UpdatedAt: time.Now().UTC()}
-	numAffected, err := group.Update(ctx, Global, boil.Whitelist("updated_at", "updated_by", "status"))
+	numAffected, err := group.Update(ctx, x, boil.Whitelist("updated_at", "updated_by", "status"))
 	if err != nil {
 		return err
 	}
@@ -426,6 +434,36 @@ func (svc *GroupService) SoftDeleteByID(ctx context.Context, id, tenantID, userI
 		return fmt.Errorf("error soft deleting group: delete affected 0 rows")
 	}
 	return nil
+}
+
+const (
+	transferGroupChildrenParentQuery = `UPDATE "group"
+	SET parent_id = (SELECT parent_id FROM "group" WHERE id = $1 AND tenant_id = $2 LIMIT 1), updated_by = $3, updated_at = CURRENT_TIMESTAMP
+	WHERE parent_id = $1 AND tenant_id = $2`
+)
+
+func (svc *GroupService) TransferGroupChildrenParent(ctx context.Context, groupID, tenantID, userID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	_, err := queries.Raw(transferGroupChildrenParentQuery, groupID, tenantID, userID).ExecContext(ctx, x)
+	return err
+}
+
+const (
+	removeGroupMembersQuery = `UPDATE person
+	SET group_id = NULL, updated_by = $3 AND updated_at = CURRENT_TIMESTAMP
+	WHERE group_id = $1 AND tenant_id = $2`
+)
+
+func (svc *GroupService) RemoveGroupMembers(ctx context.Context, groupID, tenantID, userID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	_, err := queries.Raw(removeGroupMembersQuery, groupID, tenantID, userID).ExecContext(ctx, x)
+	return err
 }
 
 const (
