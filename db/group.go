@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -410,6 +411,18 @@ func (svc *GroupService) DeleteByID(ctx context.Context, id, tenantID string) er
 	}
 	if numAffected != 1 {
 		return fmt.Errorf("error deleting group: delete affected 0 rows")
+	}
+	return nil
+}
+
+func (svc *GroupService) SoftDeleteByID(ctx context.Context, id, tenantID, userID string) error {
+	group := &models.Group{ID: id, TenantID: tenantID, UpdatedBy: userID, Status: "inactive", UpdatedAt: time.Now().UTC()}
+	numAffected, err := group.Update(ctx, Global, boil.Whitelist("updated_at", "updated_by", "status"))
+	if err != nil {
+		return err
+	}
+	if numAffected != 1 {
+		return fmt.Errorf("error soft deleting group: delete affected 0 rows")
 	}
 	return nil
 }

@@ -422,10 +422,14 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 		return nil, err.AsGRPC()
 	}
 
+	if in.UserId == "" {
+		in.UserId = "00000000-0000-0000-0000-000000000000"
+	}
+
 	svc := db.NewGroupService()
 
-	if err := svc.DeleteByID(spanCtx, in.GroupId, in.TenantId); err != nil {
-		err := errors.Wrap(err, "error deleting group by id")
+	if err := svc.SoftDeleteByID(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
+		err := errors.Wrap(err, "error soft deleting group by id")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
