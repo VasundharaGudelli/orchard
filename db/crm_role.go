@@ -142,7 +142,7 @@ const (
 
 func (svc *CRMRoleService) GetUnsynced(ctx context.Context, tenantID string) ([]*models.CRMRole, error) {
 	results := []*models.CRMRole{}
-	if err := queries.Raw(getUnsyncedCRMRolesQuery, tenantID).Bind(ctx, Global, results); err != nil {
+	if err := queries.Raw(getUnsyncedCRMRolesQuery, tenantID).Bind(ctx, Global, &results); err != nil {
 		log.WithTenantID(tenantID).WithCustom("query", getUnsyncedCRMRolesQuery).Error(err)
 		return nil, err
 	}

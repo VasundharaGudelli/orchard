@@ -255,6 +255,7 @@ func TestGetCRMRoles(t *testing.T) {
 		return
 	}
 }
+
 func TestGetCRMRolesWithSearch(t *testing.T) {
 	testData, _, _, err := jsonparser.Get(fixtures.Data["crm_role"], "GetCRMRolesWithSearch")
 	if err != nil {
@@ -325,6 +326,43 @@ func TestGetCRMRolesBadRequestEmptyTenantID(t *testing.T) {
 		return
 	}
 }
+
+func TestGetUnsyncedCRMRoles(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["crm_role"], "TestGetUnsyncedCRMRoles")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.GetUnsyncedCRMRolesRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	res, err := testServer.GetUnsyncedCRMRoles(context.Background(), req)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestGetUnsyncedCRMRoles.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
 func TestDeleteCRMRoleById(t *testing.T) {
 	testData, _, _, err := jsonparser.Get(fixtures.Data["crm_role"], "DeleteCRMRoleById")
 	if err != nil {
