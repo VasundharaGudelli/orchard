@@ -19,23 +19,24 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/queries/qmhelper"
+	"github.com/volatiletech/sqlboiler/v4/types"
 	"github.com/volatiletech/strmangle"
 )
 
 // SystemRole is an object representing the database table.
 type SystemRole struct {
-	ID          string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TenantID    string      `boil:"tenant_id" json:"tenant_id" toml:"tenant_id" yaml:"tenant_id"`
-	Name        string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Description null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
-	Type        string      `boil:"type" json:"type" toml:"type" yaml:"type"`
-	Permissions int64       `boil:"permissions" json:"permissions" toml:"permissions" yaml:"permissions"`
-	Status      string      `boil:"status" json:"status" toml:"status" yaml:"status"`
-	Priority    int         `boil:"priority" json:"priority" toml:"priority" yaml:"priority"`
-	CreatedBy   string      `boil:"created_by" json:"created_by" toml:"created_by" yaml:"created_by"`
-	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedBy   string      `boil:"updated_by" json:"updated_by" toml:"updated_by" yaml:"updated_by"`
-	UpdatedAt   time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID          string           `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TenantID    string           `boil:"tenant_id" json:"tenant_id" toml:"tenant_id" yaml:"tenant_id"`
+	Name        string           `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Description null.String      `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
+	Type        string           `boil:"type" json:"type" toml:"type" yaml:"type"`
+	Status      string           `boil:"status" json:"status" toml:"status" yaml:"status"`
+	Priority    int              `boil:"priority" json:"priority" toml:"priority" yaml:"priority"`
+	CreatedBy   string           `boil:"created_by" json:"created_by" toml:"created_by" yaml:"created_by"`
+	CreatedAt   time.Time        `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedBy   string           `boil:"updated_by" json:"updated_by" toml:"updated_by" yaml:"updated_by"`
+	UpdatedAt   time.Time        `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Permissions types.Int64Array `boil:"permissions" json:"permissions" toml:"permissions" yaml:"permissions"`
 
 	R *systemRoleR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L systemRoleL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -47,26 +48,26 @@ var SystemRoleColumns = struct {
 	Name        string
 	Description string
 	Type        string
-	Permissions string
 	Status      string
 	Priority    string
 	CreatedBy   string
 	CreatedAt   string
 	UpdatedBy   string
 	UpdatedAt   string
+	Permissions string
 }{
 	ID:          "id",
 	TenantID:    "tenant_id",
 	Name:        "name",
 	Description: "description",
 	Type:        "type",
-	Permissions: "permissions",
 	Status:      "status",
 	Priority:    "priority",
 	CreatedBy:   "created_by",
 	CreatedAt:   "created_at",
 	UpdatedBy:   "updated_by",
 	UpdatedAt:   "updated_at",
+	Permissions: "permissions",
 }
 
 var SystemRoleTableColumns = struct {
@@ -75,29 +76,50 @@ var SystemRoleTableColumns = struct {
 	Name        string
 	Description string
 	Type        string
-	Permissions string
 	Status      string
 	Priority    string
 	CreatedBy   string
 	CreatedAt   string
 	UpdatedBy   string
 	UpdatedAt   string
+	Permissions string
 }{
 	ID:          "system_role.id",
 	TenantID:    "system_role.tenant_id",
 	Name:        "system_role.name",
 	Description: "system_role.description",
 	Type:        "system_role.type",
-	Permissions: "system_role.permissions",
 	Status:      "system_role.status",
 	Priority:    "system_role.priority",
 	CreatedBy:   "system_role.created_by",
 	CreatedAt:   "system_role.created_at",
 	UpdatedBy:   "system_role.updated_by",
 	UpdatedAt:   "system_role.updated_at",
+	Permissions: "system_role.permissions",
 }
 
 // Generated where
+
+type whereHelpertypes_Int64Array struct{ field string }
+
+func (w whereHelpertypes_Int64Array) EQ(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertypes_Int64Array) NEQ(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertypes_Int64Array) LT(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_Int64Array) LTE(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertypes_Int64Array) GT(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
 
 var SystemRoleWhere = struct {
 	ID          whereHelperstring
@@ -105,26 +127,26 @@ var SystemRoleWhere = struct {
 	Name        whereHelperstring
 	Description whereHelpernull_String
 	Type        whereHelperstring
-	Permissions whereHelperint64
 	Status      whereHelperstring
 	Priority    whereHelperint
 	CreatedBy   whereHelperstring
 	CreatedAt   whereHelpertime_Time
 	UpdatedBy   whereHelperstring
 	UpdatedAt   whereHelpertime_Time
+	Permissions whereHelpertypes_Int64Array
 }{
 	ID:          whereHelperstring{field: "\"system_role\".\"id\""},
 	TenantID:    whereHelperstring{field: "\"system_role\".\"tenant_id\""},
 	Name:        whereHelperstring{field: "\"system_role\".\"name\""},
 	Description: whereHelpernull_String{field: "\"system_role\".\"description\""},
 	Type:        whereHelperstring{field: "\"system_role\".\"type\""},
-	Permissions: whereHelperint64{field: "\"system_role\".\"permissions\""},
 	Status:      whereHelperstring{field: "\"system_role\".\"status\""},
 	Priority:    whereHelperint{field: "\"system_role\".\"priority\""},
 	CreatedBy:   whereHelperstring{field: "\"system_role\".\"created_by\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"system_role\".\"created_at\""},
 	UpdatedBy:   whereHelperstring{field: "\"system_role\".\"updated_by\""},
 	UpdatedAt:   whereHelpertime_Time{field: "\"system_role\".\"updated_at\""},
+	Permissions: whereHelpertypes_Int64Array{field: "\"system_role\".\"permissions\""},
 }
 
 // SystemRoleRels is where relationship names are stored.
@@ -144,9 +166,9 @@ func (*systemRoleR) NewStruct() *systemRoleR {
 type systemRoleL struct{}
 
 var (
-	systemRoleAllColumns            = []string{"id", "tenant_id", "name", "description", "type", "permissions", "status", "priority", "created_by", "created_at", "updated_by", "updated_at"}
+	systemRoleAllColumns            = []string{"id", "tenant_id", "name", "description", "type", "status", "priority", "created_by", "created_at", "updated_by", "updated_at", "permissions"}
 	systemRoleColumnsWithoutDefault = []string{"id", "name", "description"}
-	systemRoleColumnsWithDefault    = []string{"tenant_id", "type", "permissions", "status", "priority", "created_by", "created_at", "updated_by", "updated_at"}
+	systemRoleColumnsWithDefault    = []string{"tenant_id", "type", "status", "priority", "created_by", "created_at", "updated_by", "updated_at", "permissions"}
 	systemRolePrimaryKeyColumns     = []string{"id"}
 )
 

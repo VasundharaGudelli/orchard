@@ -568,7 +568,7 @@ func testSystemRolesSelect(t *testing.T) {
 }
 
 var (
-	systemRoleDBTypes = map[string]string{`ID`: `uuid`, `TenantID`: `uuid`, `Name`: `text`, `Description`: `text`, `Type`: `enum.system_role_type('internal','manager','ic')`, `Permissions`: `bigint`, `Status`: `enum.system_role_status('active','inactive')`, `Priority`: `integer`, `CreatedBy`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedBy`: `text`, `UpdatedAt`: `timestamp without time zone`}
+	systemRoleDBTypes = map[string]string{`ID`: `uuid`, `TenantID`: `uuid`, `Name`: `text`, `Description`: `text`, `Type`: `enum.system_role_type('internal','manager','ic')`, `Status`: `enum.system_role_status('active','inactive')`, `Priority`: `integer`, `CreatedBy`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedBy`: `text`, `UpdatedAt`: `timestamp without time zone`, `Permissions`: `ARRAYbigint`}
 	_                 = bytes.MinRead
 )
 

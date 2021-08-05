@@ -149,7 +149,7 @@ func testGroupsExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := GroupExists(ctx, tx, o.ID)
+	e, err := GroupExists(ctx, tx, o.TenantID, o.ID)
 	if err != nil {
 		t.Errorf("Unable to check if Group exists: %s", err)
 	}
@@ -175,7 +175,7 @@ func testGroupsFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	groupFound, err := FindGroup(ctx, tx, o.ID)
+	groupFound, err := FindGroup(ctx, tx, o.TenantID, o.ID)
 	if err != nil {
 		t.Error(err)
 	}

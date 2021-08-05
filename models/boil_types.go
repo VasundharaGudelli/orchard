@@ -84,6 +84,13 @@ const (
 	PersonStatusInactive = "inactive"
 )
 
+// Enum values for person_type
+const (
+	PersonTypeInternal = "internal"
+	PersonTypeManager  = "manager"
+	PersonTypeIc       = "ic"
+)
+
 // Enum values for system_role_type
 const (
 	SystemRoleTypeInternal = "internal"

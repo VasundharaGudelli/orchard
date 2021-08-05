@@ -128,8 +128,10 @@ func (w whereHelpertypes_StringArray) EQ(x types.StringArray) qm.QueryMod {
 func (w whereHelpertypes_StringArray) NEQ(x types.StringArray) qm.QueryMod {
 	return qmhelper.WhereNullEQ(w.field, true, x)
 }
-func (w whereHelpertypes_StringArray) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpertypes_StringArray) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpertypes_StringArray) IsNull() qm.QueryMod { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpertypes_StringArray) IsNotNull() qm.QueryMod {
+	return qmhelper.WhereIsNotNull(w.field)
+}
 func (w whereHelpertypes_StringArray) LT(x types.StringArray) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LT, x)
 }
@@ -222,7 +224,7 @@ var (
 	groupAllColumns            = []string{"id", "tenant_id", "name", "type", "status", "role_ids", "crm_role_ids", "parent_id", "group_path", "order", "created_by", "created_at", "updated_by", "updated_at", "sync_filter", "opportunity_filter"}
 	groupColumnsWithoutDefault = []string{"id", "tenant_id", "name", "role_ids", "crm_role_ids", "parent_id", "group_path", "sync_filter", "opportunity_filter"}
 	groupColumnsWithDefault    = []string{"type", "status", "order", "created_by", "created_at", "updated_by", "updated_at"}
-	groupPrimaryKeyColumns     = []string{"id"}
+	groupPrimaryKeyColumns     = []string{"tenant_id", "id"}
 )
 
 type (
@@ -508,7 +510,7 @@ func Groups(mods ...qm.QueryMod) groupQuery {
 
 // FindGroup retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindGroup(ctx context.Context, exec boil.ContextExecutor, iD string, selectCols ...string) (*Group, error) {
+func FindGroup(ctx context.Context, exec boil.ContextExecutor, tenantID string, iD string, selectCols ...string) (*Group, error) {
 	groupObj := &Group{}
 
 	sel := "*"
@@ -516,10 +518,10 @@ func FindGroup(ctx context.Context, exec boil.ContextExecutor, iD string, select
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"group\" where \"id\"=$1", sel,
+		"select %s from \"group\" where \"tenant_id\"=$1 AND \"id\"=$2", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, tenantID, iD)
 
 	err := q.Bind(ctx, exec, groupObj)
 	if err != nil {
@@ -894,7 +896,7 @@ func (o *Group) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, e
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), groupPrimaryKeyMapping)
-	sql := "DELETE FROM \"group\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"group\" WHERE \"tenant_id\"=$1 AND \"id\"=$2"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -991,7 +993,7 @@ func (o GroupSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (i
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Group) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindGroup(ctx, exec, o.ID)
+	ret, err := FindGroup(ctx, exec, o.TenantID, o.ID)
 	if err != nil {
 		return err
 	}
@@ -1030,16 +1032,16 @@ func (o *GroupSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) e
 }
 
 // GroupExists checks if the Group row exists.
-func GroupExists(ctx context.Context, exec boil.ContextExecutor, iD string) (bool, error) {
+func GroupExists(ctx context.Context, exec boil.ContextExecutor, tenantID string, iD string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"group\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"group\" where \"tenant_id\"=$1 AND \"id\"=$2 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, tenantID, iD)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, tenantID, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {

@@ -42,6 +42,7 @@ type Person struct {
 	UpdatedBy     string            `boil:"updated_by" json:"updated_by" toml:"updated_by" yaml:"updated_by"`
 	UpdatedAt     time.Time         `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	GroupID       null.String       `boil:"group_id" json:"group_id,omitempty" toml:"group_id" yaml:"group_id,omitempty"`
+	Type          string            `boil:"type" json:"type" toml:"type" yaml:"type"`
 
 	R *personR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L personL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -65,6 +66,7 @@ var PersonColumns = struct {
 	UpdatedBy     string
 	UpdatedAt     string
 	GroupID       string
+	Type          string
 }{
 	ID:            "id",
 	TenantID:      "tenant_id",
@@ -83,6 +85,7 @@ var PersonColumns = struct {
 	UpdatedBy:     "updated_by",
 	UpdatedAt:     "updated_at",
 	GroupID:       "group_id",
+	Type:          "type",
 }
 
 var PersonTableColumns = struct {
@@ -103,6 +106,7 @@ var PersonTableColumns = struct {
 	UpdatedBy     string
 	UpdatedAt     string
 	GroupID       string
+	Type          string
 }{
 	ID:            "person.id",
 	TenantID:      "person.tenant_id",
@@ -121,6 +125,7 @@ var PersonTableColumns = struct {
 	UpdatedBy:     "person.updated_by",
 	UpdatedAt:     "person.updated_at",
 	GroupID:       "person.group_id",
+	Type:          "person.type",
 }
 
 // Generated where
@@ -152,6 +157,7 @@ var PersonWhere = struct {
 	UpdatedBy     whereHelperstring
 	UpdatedAt     whereHelpertime_Time
 	GroupID       whereHelpernull_String
+	Type          whereHelperstring
 }{
 	ID:            whereHelperstring{field: "\"person\".\"id\""},
 	TenantID:      whereHelperstring{field: "\"person\".\"tenant_id\""},
@@ -170,6 +176,7 @@ var PersonWhere = struct {
 	UpdatedBy:     whereHelperstring{field: "\"person\".\"updated_by\""},
 	UpdatedAt:     whereHelpertime_Time{field: "\"person\".\"updated_at\""},
 	GroupID:       whereHelpernull_String{field: "\"person\".\"group_id\""},
+	Type:          whereHelperstring{field: "\"person\".\"type\""},
 }
 
 // PersonRels is where relationship names are stored.
@@ -189,9 +196,9 @@ func (*personR) NewStruct() *personR {
 type personL struct{}
 
 var (
-	personAllColumns            = []string{"id", "tenant_id", "name", "first_name", "last_name", "email", "manager_id", "role_ids", "crm_role_ids", "is_provisioned", "is_synced", "status", "created_by", "created_at", "updated_by", "updated_at", "group_id"}
+	personAllColumns            = []string{"id", "tenant_id", "name", "first_name", "last_name", "email", "manager_id", "role_ids", "crm_role_ids", "is_provisioned", "is_synced", "status", "created_by", "created_at", "updated_by", "updated_at", "group_id", "type"}
 	personColumnsWithoutDefault = []string{"id", "tenant_id", "name", "first_name", "last_name", "email", "manager_id", "role_ids", "crm_role_ids", "group_id"}
-	personColumnsWithDefault    = []string{"is_provisioned", "is_synced", "status", "created_by", "created_at", "updated_by", "updated_at"}
+	personColumnsWithDefault    = []string{"is_provisioned", "is_synced", "status", "created_by", "created_at", "updated_by", "updated_at", "type"}
 	personPrimaryKeyColumns     = []string{"tenant_id", "id"}
 )
 
