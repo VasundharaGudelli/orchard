@@ -192,7 +192,7 @@ const (
 	) as "members_raw"
 FROM "group"
 LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id
-WHERE {GROUP_SELECT} AND "group".tenant_id = $2
+WHERE {GROUP_SELECT} AND "group".tenant_id = $2 AND "group".status = 'active'
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
 	"group".group_path, "group".order, "group".sync_filter, "group".opportunity_filter, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by
@@ -284,10 +284,11 @@ const (
 	) as "members_raw"
 FROM "group"
 LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id
-WHERE "group".tenant_id = $1
+WHERE "group".tenant_id = $1 AND "group".status = 'active'
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
-	"group".group_path, "group".order, "group".sync_filter, "group".opportunity_filter, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by`
+	"group".group_path, "group".order, "group".sync_filter, "group".opportunity_filter, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by
+ORDER BY "group.name"`
 )
 
 func (svc *GroupService) GetFullTenantTree(ctx context.Context, tenantID string, hydrateUsers bool) ([]*GroupTreeNode, error) {
@@ -371,12 +372,12 @@ const (
 	updateGroupPathsQuery = `WITH RECURSIVE group_tree AS (
 		SELECT id, tenant_id, parent_id, CONCAT(REPLACE($1, '-', '_'), '.', REPLACE(id, '-', '_')) as group_path
 		FROM "group"
-		WHERE tenant_id::TEXT = $1 AND parent_id IS NULL
+		WHERE tenant_id::TEXT = $1 AND parent_id IS NULL AND status = 'active'
 		UNION
 		SELECT g.id, g.tenant_id, g.parent_id, CONCAT(gt.group_path, '.', REPLACE(g.id, '-', '_')) as group_path
 		FROM "group" g
 		INNER JOIN group_tree gt ON gt.id = g.parent_id AND gt.tenant_id = g.tenant_id
-		WHERE g.tenant_id::TEXT = $1
+		WHERE g.tenant_id::TEXT = $1 AND g.status = 'active'
 	)
 	UPDATE "group"
 	SET group_path = gt.group_path::ltree
