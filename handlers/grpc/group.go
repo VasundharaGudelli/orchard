@@ -7,6 +7,7 @@ import (
 
 	strUtils "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
+	commonSync "github.com/loupe-co/go-common/sync"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
@@ -224,7 +225,6 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 	}
 
 	svc := db.NewGroupService()
-	personSvc := db.NewPersonService()
 
 	flatGroups, err := svc.GetGroupSubTree(spanCtx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers)
 	if err != nil {
@@ -234,32 +234,14 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 	}
 
 	// Convert db models to protos
+	parGroup, _ := commonSync.NewWorkerPool(spanCtx, 10)
 	flatProtos := make([]*servicePb.GroupWithMembers, len(flatGroups))
 	for i, g := range flatGroups {
-		group, err := svc.ToProto(&g.Group)
-		if err != nil {
-			err := errors.Wrap(err, "error converting group db model to proto")
-			logger.Error(err)
-			return nil, err.AsGRPC()
-		}
-		members := make([]*orchardPb.Person, len(g.Members))
-		for j, p := range g.Members {
-			if !in.HydrateUsers {
-				members[j] = &orchardPb.Person{Id: p.ID}
-				continue
-			}
-			members[j], err = personSvc.ToProto(&p)
-			if err != nil {
-				err := errors.Wrap(err, "error converting person db model to proto")
-				logger.Error(err)
-				return nil, err.AsGRPC()
-			}
-		}
-		flatProtos[i] = &servicePb.GroupWithMembers{
-			Group:    group,
-			Members:  members,
-			Children: []*servicePb.GroupWithMembers{},
-		}
+		parGroup.Go(runGroupTreeProtoConversion(spanCtx, i, g, flatProtos, in.TenantId, in.HydrateUsers, in.HydrateCrmRoles))
+	}
+	if err := parGroup.Close(); err != nil {
+		logger.Error(err)
+		return nil, err
 	}
 
 	// Form tree structure
@@ -294,6 +276,59 @@ func (server *OrchardGRPCServer) GetGroupSubTree(ctx context.Context, in *servic
 	return &servicePb.GetGroupSubTreeResponse{
 		Roots: finalRoots,
 	}, nil
+}
+
+func runGroupTreeProtoConversion(ctx context.Context, idx int, g *db.GroupTreeNode, results []*servicePb.GroupWithMembers, tenantID string, hydrateUsers, hydrateRoles bool) func() error {
+	return func() error {
+		// Parse group
+		svc := db.NewGroupService()
+		group, err := svc.ToProto(&g.Group)
+		if err != nil {
+			err := errors.Wrap(err, "error converting group db model to proto")
+			return err.AsGRPC()
+		}
+
+		// Parse members
+		personSvc := db.NewPersonService()
+		members := make([]*orchardPb.Person, len(g.Members))
+		for j, p := range g.Members {
+			if !hydrateUsers {
+				members[j] = &orchardPb.Person{Id: p.ID}
+				continue
+			}
+			members[j], err = personSvc.ToProto(&p)
+			if err != nil {
+				err := errors.Wrap(err, "error converting person db model to proto")
+				return err.AsGRPC()
+			}
+		}
+
+		// If requested, get full crm_roles and put them onto group object
+		if hydrateRoles {
+			crmSvc := db.NewCRMRoleService()
+			crmRoles, err := crmSvc.GetByIDs(ctx, tenantID, group.CrmRoleIds...)
+			if err != nil {
+				return errors.Wrap(err, "error getting crm_roles for group").AsGRPC()
+			}
+			group.CrmRoles = make([]*orchardPb.CRMRole, len(crmRoles))
+			for j, cr := range crmRoles {
+				crmRole, err := crmSvc.ToProto(cr)
+				if err != nil {
+					return errors.Wrap(err, "error converting crm role to proto for group").AsGRPC()
+				}
+				group.CrmRoles[j] = crmRole
+			}
+		}
+
+		// Assign final groupWithMembers struct
+		results[idx] = &servicePb.GroupWithMembers{
+			Group:    group,
+			Members:  members,
+			Children: []*servicePb.GroupWithMembers{},
+		}
+
+		return nil
+	}
 }
 
 func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*servicePb.GroupWithMembers, depth int) int {

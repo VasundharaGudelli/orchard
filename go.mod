@@ -11,7 +11,7 @@ require (
 	github.com/lib/pq v1.10.2
 	github.com/loupe-co/go-common v1.0.3
 	github.com/loupe-co/go-loupe-logger v1.0.0
-	github.com/loupe-co/protos v0.0.0-20210805113729-06b900642ad0
+	github.com/loupe-co/protos v0.0.0-20210806141402-e4eb3a31b847
 	github.com/spf13/viper v1.6.3
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/randomize v0.0.1

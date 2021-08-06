@@ -660,6 +660,42 @@ func TestGetGroupSubTreeBadRequestEmptyGroupID(t *testing.T) {
 	}
 }
 
+func TestGetGroupSubTreeDev(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestGetGroupSubTreeDev")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.GetGroupSubTreeRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	res, err := testServer.GetGroupSubTree(context.Background(), req)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestGetGroupSubTreeDev.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
 func TestUpdateGroup(t *testing.T) {
 	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestUpdateGroup")
 	if err != nil {

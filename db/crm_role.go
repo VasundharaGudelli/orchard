@@ -133,6 +133,19 @@ func (svc *CRMRoleService) GetByID(ctx context.Context, id, tenantID string) (*m
 	return cr, nil
 }
 
+func (svc *CRMRoleService) GetByIDs(ctx context.Context, tenantID string, ids ...string) ([]*models.CRMRole, error) {
+	idsParam := make([]interface{}, len(ids))
+	for i, id := range ids {
+		idsParam[i] = id
+	}
+	crs, err := models.CRMRoles(qm.WhereIn("id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(ctx, Global)
+	if err != nil {
+		return nil, err
+	}
+
+	return crs, nil
+}
+
 const (
 	getUnsyncedCRMRolesQuery = `SELECT cr.*
 	FROM crm_role cr
@@ -194,7 +207,7 @@ func (svc *CRMRoleService) DeleteUnSynced(ctx context.Context, tenantID string, 
 	if svc.tx != nil {
 		x = svc.tx
 	}
-	_, err := models.CRMRoles(qm.Where("tenant_id::TEXT = $1"), qm.AndNotIn("id NOT IN ?", syncedIDs...)).DeleteAll(ctx, x)
+	_, err := models.CRMRoles(qm.WhereNotIn("id NOT IN ?", syncedIDs...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(syncedIDs)+1), tenantID)).DeleteAll(ctx, x)
 	if err != nil {
 		return err
 	}
