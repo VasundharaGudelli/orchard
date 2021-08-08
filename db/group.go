@@ -453,7 +453,7 @@ func (svc *GroupService) TransferGroupChildrenParent(ctx context.Context, groupI
 
 const (
 	removeGroupMembersQuery = `UPDATE person
-	SET group_id = NULL, updated_by = $3 AND updated_at = CURRENT_TIMESTAMP
+	SET group_id = NULL, updated_by = $3, updated_at = CURRENT_TIMESTAMP
 	WHERE group_id = $1 AND tenant_id = $2`
 )
 

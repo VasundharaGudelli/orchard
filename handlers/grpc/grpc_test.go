@@ -38,7 +38,7 @@ func setup() (*OrchardGRPCServer, error) {
 		configUtil.SetDefaultENV("DB_HOST", "35.245.37.78"),
 		configUtil.SetDefaultENV("DB_PASSWORD", "jLariybb1oe5FbDz"),
 		configUtil.SetDefaultENV("DB_MAX_CONNECTIONS", "10"),
-		configUtil.SetDefaultENV("DB_DEBUG", "false"),
+		configUtil.SetDefaultENV("DB_DEBUG", "true"),
 		configUtil.SetDefaultENV("TENANT_SERVICE_ADDR", "localhost:50051"),
 		configUtil.SetDefaultENV("CRM_SERVICE_ADDR", "localhost:50052"),
 	)
