@@ -149,6 +149,8 @@ func (server *OrchardGRPCServer) SearchPeople(ctx context.Context, in *servicePb
 		return nil, err.AsGRPC()
 	}
 
+	crmRoleMap := map[string]int{}
+	systemRoleMap := map[string]int{}
 	people := make([]*orchardPb.Person, len(peeps))
 	for i, peep := range peeps {
 		p, err := svc.ToProto(peep)
@@ -158,6 +160,42 @@ func (server *OrchardGRPCServer) SearchPeople(ctx context.Context, in *servicePb
 			return nil, err.AsGRPC()
 		}
 		people[i] = p
+		for _, crmRoleID := range p.CrmRoleIds {
+			crmRoleMap[crmRoleID] = i
+		}
+		for _, roleID := range p.RoleIds {
+			systemRoleMap[roleID] = i
+		}
+	}
+
+	if in.HydrateCrmRoles {
+		crmSvc := db.NewCRMRoleService()
+		ids := make([]string, len(crmRoleMap))
+		i := 0
+		for id := range crmRoleMap {
+			ids[i] = id
+			i++
+		}
+		crmRoles, err := crmSvc.GetByIDs(spanCtx, in.TenantId, ids...)
+		if err != nil {
+			err := errors.Wrap(err, "error getting person crm roles")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		for _, crmRole := range crmRoles {
+			crmRoleProto, err := crmSvc.ToProto(crmRole)
+			if err != nil {
+				err := errors.Wrap(err, "error converting person crm role to proto")
+				logger.Error(err)
+				return nil, err.AsGRPC()
+			}
+			personIdx := crmRoleMap[crmRole.ID]
+			people[personIdx].CrmRoles = append(people[personIdx].CrmRoles, crmRoleProto)
+		}
+	}
+
+	if in.HydrateRoles {
+		// TODO: Hydrate crm_roles
 	}
 
 	return &servicePb.SearchPeopleResponse{
