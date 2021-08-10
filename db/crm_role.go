@@ -163,7 +163,7 @@ func (svc *CRMRoleService) GetUnsynced(ctx context.Context, tenantID string) ([]
 	return results, nil
 }
 
-func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string) ([]*models.CRMRole, error) {
+func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, limit, offset int) ([]*models.CRMRole, error) {
 	queryParts := []qm.QueryMod{}
 
 	paramIdx := 1
@@ -177,6 +177,8 @@ func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string) (
 		queryParts = append(queryParts, qm.Where(fmt.Sprintf("LOWER(name) LIKE $%d", paramIdx), "%"+strings.ToLower(query)+"%"))
 		paramIdx++ // NOTE: not actually necessary, but just in case we add any more params
 	}
+
+	queryParts = append(queryParts, qm.OrderBy("name"), qm.Offset(offset), qm.Limit(limit))
 
 	crmRoles, err := models.CRMRoles(queryParts...).All(ctx, Global)
 	if err != nil {

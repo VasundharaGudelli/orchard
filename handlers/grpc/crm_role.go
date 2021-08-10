@@ -160,9 +160,18 @@ func (server *OrchardGRPCServer) GetCRMRoles(ctx context.Context, in *servicePb.
 		return nil, err.AsGRPC()
 	}
 
+	limit := 20
+	if in.PageSize > 0 {
+		limit = int(in.PageSize)
+	}
+	offset := 0
+	if in.Page > 0 {
+		offset = (int(in.Page) - 1) * limit
+	}
+
 	svc := db.NewCRMRoleService()
 
-	crs, err := svc.Search(spanCtx, in.TenantId, in.Search)
+	crs, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset)
 	if err != nil {
 		err := errors.Wrap(err, "error getting crmRole from sql by id")
 		logger.Error(err)
