@@ -2,6 +2,7 @@ package grpchandlers
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/loupe-co/go-common/errors"
@@ -140,9 +141,64 @@ func (server *OrchardGRPCServer) SearchPeople(ctx context.Context, in *servicePb
 		offset = (int(in.Page) - 1) * limit
 	}
 
+	// Parse generic person filters for db
+	dbFilters := make([]db.PersonFilter, len(in.Filters))
+	for i, f := range in.Filters {
+		vals := make([]interface{}, len(f.Values))
+		for j, raw := range f.Values {
+			if err := json.Unmarshal(raw, &vals[j]); err != nil {
+				err := errors.Wrap(err, "error unmarshaling person filter value")
+				logger.Error(err)
+				return nil, err
+			}
+		}
+		var field string
+		switch f.Field {
+		case orchardPb.PersonField_Id:
+			field = "id"
+		case orchardPb.PersonField_TenantId:
+			field = "tenant_id"
+		case orchardPb.PersonField_Name:
+			field = "name"
+		case orchardPb.PersonField_FirstName:
+			field = "first_name"
+		case orchardPb.PersonField_LastName:
+			field = "last_name"
+		case orchardPb.PersonField_Email:
+			field = "email"
+		case orchardPb.PersonField_ManagerId:
+			field = "manager_id"
+		case orchardPb.PersonField_GroupId:
+			field = "group_id"
+		case orchardPb.PersonField_RoleIds:
+			field = "role_ids"
+		case orchardPb.PersonField_CrmRoleIds:
+			field = "crm_role_ids"
+		case orchardPb.PersonField_IsProvisioned:
+			field = "is_provisioned"
+		case orchardPb.PersonField_IsSynced:
+			field = "is_synced"
+		case orchardPb.PersonField_Status:
+			field = "status"
+		case orchardPb.PersonField_CreatedAt:
+			field = "created_at"
+		case orchardPb.PersonField_CreatedBy:
+			field = "created_by"
+		case orchardPb.PersonField_UpdatedAt:
+			field = "updated_at"
+		case orchardPb.PersonField_UpdatedBy:
+			field = "updated_by"
+		}
+		dbFilters[i] = db.PersonFilter{
+			Field:  field,
+			Op:     f.Op.String(),
+			Values: vals,
+		}
+	}
+
 	svc := db.NewPersonService()
 
-	peeps, total, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset)
+	peeps, total, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset, dbFilters...)
 	if err != nil {
 		err := errors.Wrap(err, "error searching people")
 		logger.Error(err)

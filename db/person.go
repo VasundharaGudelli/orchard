@@ -187,14 +187,46 @@ func (svc *PersonService) GetByIDs(ctx context.Context, tenantID string, ids ...
 	return people, nil
 }
 
-func (svc *PersonService) Search(ctx context.Context, tenantID, query string, limit, offset int) ([]*models.Person, int64, error) {
+type PersonFilter struct {
+	Field  string
+	Op     string
+	Values []interface{}
+}
+
+func (svc *PersonService) Search(ctx context.Context, tenantID, query string, limit, offset int, filters ...PersonFilter) ([]*models.Person, int64, error) {
 	queryParts := []qm.QueryMod{}
-
 	queryParts = append(queryParts, qm.Where("tenant_id=$1", tenantID))
-
+	paramIdx := 2
 	if query != "" {
+		paramIdx = 3
 		searchClause := "LOWER(name) LIKE $2 OR LOWER(email) LIKE $2"
-		queryParts = append(queryParts, qm.Where(searchClause, "%"+strings.ToLower(query)+"%"))
+		queryParts = append(queryParts, qm.And(searchClause, "%"+strings.ToLower(query)+"%"))
+	}
+
+	for _, filter := range filters {
+		switch filter.Op {
+		case "EQ":
+			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s = $%d", filter.Field, paramIdx), filter.Values...))
+		case "NEQ":
+			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s <> $%d", filter.Field, paramIdx), filter.Values...))
+		case "IN":
+			queryParts = append(queryParts, qm.AndIn(fmt.Sprintf("%s IN ?", filter.Field), filter.Values...))
+			paramIdx += len(filters) - 1
+		case "NIN":
+			queryParts = append(queryParts, qm.AndNotIn(fmt.Sprintf("%s NOT IN ?", filter.Field), filter.Values...))
+			paramIdx += len(filters) - 1
+		case "GT":
+			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s > $%d", filter.Field, paramIdx), filter.Values...))
+		case "GTE":
+			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s >= $%d", filter.Field, paramIdx), filter.Values...))
+		case "LT":
+			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s < $%d", filter.Field, paramIdx), filter.Values...))
+		case "LTE":
+			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s <= $%d", filter.Field, paramIdx), filter.Values...))
+		default:
+			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s = $%d", filter.Field, paramIdx), filter.Values...))
+		}
+		paramIdx++
 	}
 
 	total, err := models.People(queryParts...).Count(ctx, Global)

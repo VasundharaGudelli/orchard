@@ -233,6 +233,42 @@ func TestSearchPeopleWithPaging(t *testing.T) {
 	}
 }
 
+func TestSearchPeopleWithFilters(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["person"], "TestSearchPeopleWithFilters")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.SearchPeopleRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	res, err := testServer.SearchPeople(context.Background(), req)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestSearchPeopleWithFilters.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
 func TestSearchPeopleBadRequestEmptyTenantID(t *testing.T) {
 	testData, _, _, err := jsonparser.Get(fixtures.Data["person"], "TestSearchPeopleBadRequestEmptyTenantID")
 	if err != nil {

@@ -38,6 +38,19 @@
     "page": 2,
     "page_size": 2
   },
+  "TestSearchPeopleWithFilters": {
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "search": "",
+    "filters": [
+      {
+        "field": 10,
+        "op": 0,
+        "values": [
+          "ZmFsc2U="
+        ]
+      }
+    ]
+  },
   "TestSearchPeopleBadRequestEmptyTenantID": {},
   "TestGetGroupMembers": {
     "tenant_id": "00000000-0000-0000-0000-000000000000",
