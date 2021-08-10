@@ -163,7 +163,7 @@ func (svc *CRMRoleService) GetUnsynced(ctx context.Context, tenantID string) ([]
 	return results, nil
 }
 
-func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, limit, offset int) ([]*models.CRMRole, error) {
+func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, limit, offset int) ([]*models.CRMRole, int64, error) {
 	queryParts := []qm.QueryMod{}
 
 	paramIdx := 1
@@ -178,14 +178,19 @@ func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, l
 		paramIdx++ // NOTE: not actually necessary, but just in case we add any more params
 	}
 
+	total, err := models.CRMRoles(queryParts...).Count(ctx, Global)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	queryParts = append(queryParts, qm.OrderBy("name"), qm.Offset(offset), qm.Limit(limit))
 
 	crmRoles, err := models.CRMRoles(queryParts...).All(ctx, Global)
 	if err != nil {
-		return nil, err
+		return nil, total, err
 	}
 
-	return crmRoles, nil
+	return crmRoles, total, nil
 }
 
 func (svc *CRMRoleService) DeleteByID(ctx context.Context, id, tenantID string) error {

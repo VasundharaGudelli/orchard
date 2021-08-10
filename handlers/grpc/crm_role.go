@@ -171,7 +171,7 @@ func (server *OrchardGRPCServer) GetCRMRoles(ctx context.Context, in *servicePb.
 
 	svc := db.NewCRMRoleService()
 
-	crs, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset)
+	crs, total, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset)
 	if err != nil {
 		err := errors.Wrap(err, "error getting crmRole from sql by id")
 		logger.Error(err)
@@ -189,7 +189,7 @@ func (server *OrchardGRPCServer) GetCRMRoles(ctx context.Context, in *servicePb.
 		crmRoles[i] = role
 	}
 
-	return &servicePb.GetCRMRolesResponse{CrmRoles: crmRoles}, nil
+	return &servicePb.GetCRMRolesResponse{CrmRoles: crmRoles, Total: int32(total)}, nil
 }
 
 func (server *OrchardGRPCServer) GetUnsyncedCRMRoles(ctx context.Context, in *servicePb.GetUnsyncedCRMRolesRequest) (*servicePb.GetUnsyncedCRMRolesResponse, error) {
