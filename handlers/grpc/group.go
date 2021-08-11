@@ -12,6 +12,7 @@ import (
 	"github.com/loupe-co/orchard/db"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"google.golang.org/grpc/codes"
 )
 
 func (server *OrchardGRPCServer) SyncGroups(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
@@ -113,6 +114,16 @@ func (server *OrchardGRPCServer) CreateGroup(ctx context.Context, in *servicePb.
 	insertableGroup := svc.FromProto(in.Group)
 	insertableGroup.CreatedAt = time.Now().UTC()
 	insertableGroup.UpdatedAt = time.Now().UTC()
+
+	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(spanCtx, in.Group.Id, in.TenantId, in.Group.CrmRoleIds); err != nil {
+		err := errors.Wrap(err, "error checking for duplicate crm_role_ids before write")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	} else if hasDups {
+		err := errors.Error("given group has crm_role_ids that already exist in another group").WithCode(codes.InvalidArgument)
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
 
 	if err := svc.Insert(spanCtx, insertableGroup); err != nil {
 		err := errors.Wrap(err, "error inserting group into sql")
@@ -381,6 +392,16 @@ func (server *OrchardGRPCServer) UpdateGroup(ctx context.Context, in *servicePb.
 	}
 
 	updateableGroup := svc.FromProto(in.Group)
+
+	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(spanCtx, in.Group.Id, in.TenantId, in.Group.CrmRoleIds); err != nil {
+		err := errors.Wrap(err, "error checking for duplicate crm_role_ids before write")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	} else if hasDups {
+		err := errors.Error("given group has crm_role_ids that already exist in another group").WithCode(codes.InvalidArgument)
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
 
 	if err := svc.Update(spanCtx, updateableGroup, in.OnlyFields); err != nil {
 		err := errors.Wrap(err, "error updating group into sql")

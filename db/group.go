@@ -149,6 +149,30 @@ func (svc *GroupService) GetByID(ctx context.Context, id, tenantID string) (*mod
 	return group, nil
 }
 
+const (
+	checkDuplicateCRMIDsQuery = `SELECT SUM(1) > 0 as has_dups
+	FROM "group" g
+	WHERE g.crm_role_ids && $1 AND tenant_id = $2 AND id <> $3
+	GROUP BY tenant_id`
+)
+
+type HasDupsResult struct {
+	HasDups bool `json:"has_dups" boil:"has_dups"`
+}
+
+func (svc *GroupService) CheckDuplicateCRMRoleIDs(ctx context.Context, id, tenantID string, crmRolesIDs []string) (bool, error) {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	result := HasDupsResult{}
+	if err := queries.Raw(checkDuplicateCRMIDsQuery, tenantID, types.StringArray(crmRolesIDs), id).Bind(ctx, x, &result); err != nil {
+		log.WithTenantID(tenantID).WithCustom("query", checkDuplicateCRMIDsQuery).Error(err)
+		return false, err
+	}
+	return result.HasDups, nil
+}
+
 func (svc *GroupService) Search(ctx context.Context, tenantID, query string) ([]*models.Group, error) {
 	queryParts := []qm.QueryMod{}
 
@@ -467,15 +491,22 @@ func (svc *GroupService) RemoveGroupMembers(ctx context.Context, groupID, tenant
 }
 
 const (
-	isCRMSyncedQuery = `SELECT
-	(SUM(CASE WHEN cr.id IS NULL THEN 1 ELSE 0 END) > 0)
-	OR
-	(SUM(CASE WHEN g.id IS NOT NULL AND (g.status = 'inactive' OR ARRAY_LENGTH(g.crm_role_ids, 1) > 1) THEN 1 ELSE 0 END)) > 1
-	AS is_not_synced
-FROM crm_role cr
-FULL OUTER JOIN "group" g ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
-WHERE cr.tenant_id = $1
-GROUP BY cr.tenant_id`
+	isCRMSyncedQuery = `WITH UserCreated AS (
+		SELECT SUM(CASE WHEN created_by <> '00000000-0000-0000-0000-000000000000' THEN 1 ELSE 0 END) as user_created_count
+		FROM "group"
+		WHERE tenant_id = $1
+		GROUP BY tenant_id
+	)
+	SELECT
+		(SELECT user_created_count > 0 FROM UserCreated)
+		OR
+		(SUM(CASE WHEN cr.id IS NULL THEN 1 ELSE 0 END) > 0)
+		OR
+		(SUM(CASE WHEN g.id IS NOT NULL AND (g.status = 'inactive' OR ARRAY_LENGTH(g.crm_role_ids, 1) > 1) THEN 1 ELSE 0 END)) > 1
+		AS is_not_synced
+	FROM crm_role cr
+	FULL OUTER JOIN "group" g ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
+	WHERE cr.tenant_id = $1`
 )
 
 type IsCRMSyncedResult struct {
