@@ -265,14 +265,20 @@ func (svc *PersonService) Update(ctx context.Context, p *models.Person, onlyFiel
 	if len(onlyFields) > 0 {
 		whitelist = onlyFields
 	}
-	var hasUpdatedAt bool
+	var hasUpdatedAt, hasUpdatedBy bool
 	for _, f := range whitelist {
 		if f == "updated_at" {
 			hasUpdatedAt = true
 		}
+		if f == "updated_by" {
+			hasUpdatedBy = true
+		}
 	}
 	if !hasUpdatedAt {
 		whitelist = append(whitelist, "updated_at")
+	}
+	if !hasUpdatedBy {
+		whitelist = append(whitelist, "updated_by")
 	}
 
 	x := boil.ContextExecutor(Global)

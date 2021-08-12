@@ -351,6 +351,10 @@ func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb
 		return &servicePb.UpdatePersonResponse{}, nil
 	}
 
+	if in.Person.UpdatedBy == "" {
+		in.Person.UpdatedBy = "00000000-0000-0000-0000-000000000000"
+	}
+
 	logger = logger.WithCustom("personId", in.Person.Id)
 
 	svc := db.NewPersonService()

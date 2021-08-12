@@ -430,3 +430,39 @@ func TestGetGroupMembersBadRequestEmptyGroupID(t *testing.T) {
 		return
 	}
 }
+
+func TestUpdatePerson(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["person"], "TestUpdatePerson")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.UpdatePersonRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	res, err := testServer.UpdatePerson(context.Background(), req)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestUpdatePerson.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}

@@ -61,5 +61,31 @@
   },
   "TestGetGroupMembersBadRequestEmptyGroupID": {
     "tenant_id": "00000000-0000-0000-0000-000000000000"
+  },
+  "TestUpdatePerson": {
+    "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
+    "person_id": "0051U000004VFVpQAO",
+    "person": {
+        "id": "0051U000004VFVpQAO",
+        "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
+        "name": "",
+        "first_name": "",
+        "last_name": "",
+        "email": "",
+        "manager_id": "",
+        "group_id": "",
+        "role_ids": [
+            "8d94bd88-78a5-467c-a0d8-079f26b412d9"
+        ],
+        "roles": [],
+        "crm_role_ids": [],
+        "crm_roles": [],
+        "is_provisioned": true,
+        "is_synced": false,
+        "status": 0,
+        "created_by": "",
+        "updated_by": ""
+    },
+    "only_fields": ["is_provisioned", "role_ids"]
   }
 }
