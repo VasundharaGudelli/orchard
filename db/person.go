@@ -162,6 +162,7 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 	_, err := queries.Raw(query, vals...).ExecContext(ctx, x)
 	if err != nil {
 		argsRaw, _ := json.Marshal(vals)
+		// Printing to stdout because query/args may be too long for stackdriver logging to pick up, still should probably clean this up though
 		fmt.Println("QUERY", query)
 		fmt.Println("ARGS", string(argsRaw))
 		return err
@@ -185,6 +186,17 @@ func (svc *PersonService) GetByIDs(ctx context.Context, tenantID string, ids ...
 		return nil, err
 	}
 	return people, nil
+}
+
+func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string) (*models.Person, error) {
+	person, err := models.People(qm.Where("tenant_id = $1 AND email = $2", tenantID, email)).One(ctx, Global)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	if person == nil || person.ID == "" || err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return person, nil
 }
 
 type PersonFilter struct {

@@ -11,6 +11,7 @@ import (
 	"github.com/loupe-co/orchard/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"google.golang.org/grpc/codes"
 )
 
 func (server *OrchardGRPCServer) CreatePerson(ctx context.Context, in *servicePb.CreatePersonRequest) (*servicePb.CreatePersonResponse, error) {
@@ -41,6 +42,20 @@ func (server *OrchardGRPCServer) CreatePerson(ctx context.Context, in *servicePb
 	insertablePerson.CreatedAt = time.Now().UTC()
 	insertablePerson.UpdatedAt = time.Now().UTC()
 
+	// Check if email already exists
+	existingPerson, err := svc.GetByEmail(spanCtx, in.TenantId, in.Person.Email)
+	if err != nil {
+		err := errors.Wrap(err, "error checking for existing person by email")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+	if existingPerson != nil {
+		err := errors.New("can't insert person with given email").WithCode(codes.AlreadyExists)
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	// Perform insert in db
 	if err := svc.Insert(spanCtx, insertablePerson); err != nil {
 		err := errors.Wrap(err, "error inserting person in sql")
 		logger.Error(err)
