@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	strUtil "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
@@ -403,16 +404,58 @@ func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb
 
 	logger = logger.WithCustom("personId", in.Person.Id)
 
+	// Check if we are updating a person's provisioning
+	changeProvisioning := strUtil.Strings(in.OnlyFields).Has("is_provisioned")
+
 	svc := db.NewPersonService()
+	svc.WithTransaction(spanCtx)
 
 	updatePerson := svc.FromProto(in.Person)
 
+	// Update person in sql
 	if err := svc.Update(spanCtx, updatePerson, in.OnlyFields); err != nil {
 		err := errors.Wrap(err, "error updating person record")
 		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
 		return nil, err.AsGRPC()
 	}
 
+	// If we changed the provisioning of the person, update in Auth0
+	if changeProvisioning {
+		if updatePerson.IsProvisioned {
+			if err := server.auth0Client.Provision(spanCtx, in.TenantId, updatePerson); err != nil {
+				err := errors.Wrap(err, "error provisioning user in auth0")
+				logger.Error(err)
+				if err := svc.Rollback(); err != nil {
+					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				}
+				return nil, err.AsGRPC()
+			}
+		} else {
+			if err := server.auth0Client.Unprovision(spanCtx, in.TenantId, updatePerson.ID); err != nil {
+				err := errors.Wrap(err, "error unprovisioning user in auth0")
+				logger.Error(err)
+				if err := svc.Rollback(); err != nil {
+					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				}
+				return nil, err.AsGRPC()
+			}
+		}
+	}
+
+	// Commit the update person transaction in sql
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting update person transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// Convert the updated person db model to proto for response
 	person, err := svc.ToProto(updatePerson)
 	if err != nil {
 		err := errors.Wrap(err, "error converting person db model to proto")
