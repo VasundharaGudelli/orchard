@@ -3,6 +3,8 @@ module github.com/loupe-co/orchard
 go 1.16
 
 require (
+	github.com/aybabtme/iocontrol v0.0.0-20150809002002-ad15bcfc95a0 // indirect
+	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/buger/jsonparser v1.1.1
 	github.com/friendsofgo/errors v0.9.2
 	github.com/golang/protobuf v1.5.2
@@ -18,4 +20,5 @@ require (
 	github.com/volatiletech/sqlboiler/v4 v4.6.0
 	github.com/volatiletech/strmangle v0.0.1
 	google.golang.org/grpc v1.38.0
+	gopkg.in/auth0.v4 v4.7.0
 )

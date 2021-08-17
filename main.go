@@ -48,8 +48,10 @@ func main() {
 		return
 	}
 
+	auth0Client := clients.NewAuth0Client(cfg)
+
 	// Create grpc server
-	orchardServer := grpcHandlers.NewOrchardGRPCServer(cfg, tenantClient, crmClient)
+	orchardServer := grpcHandlers.NewOrchardGRPCServer(cfg, tenantClient, crmClient, auth0Client)
 	grpcServer := common.NewGRPCServer(cfg.GRPCHost, cfg.GRPCPort, grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32))
 	grpcServer.Register(func(server *grpc.Server) {
 		servicePb.RegisterOrchardServer(server, orchardServer)

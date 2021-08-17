@@ -38,6 +38,16 @@ spec:
               value: /var/secrets/google/key.json
             - name: PORT
               value: "80"
+            - name: AUTH_0_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: auth0
+                  key: client.id
+            - name: AUTH_0_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth0
+                  key: client.secret
             - name: BQ_TIER_REALTIME
               valueFrom:
                 configMapKeyRef:

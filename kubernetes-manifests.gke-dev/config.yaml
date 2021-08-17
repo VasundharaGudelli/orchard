@@ -28,3 +28,6 @@ data:
   EKG_POLICY_STATUS_RETENTION: '12'
   TENANT_SERVICE_ADDR: tenant-service:50051
   CRM_SERVICE_ADDR: crm-data-access:50051
+  AUTH_0_ISSUER: loupe-dev.auth0.com
+  AUTH_0_AUDIENCE: Fb8FuT6ezfLFG2tabZeFh2r8NsTD4AAm
+  AUTH_0_DOMAIN: https://loupe-dev.auth0.com

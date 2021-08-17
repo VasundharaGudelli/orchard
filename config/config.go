@@ -13,4 +13,9 @@ type Config struct {
 	DBDebug           bool   `env:"DB_DEBUG" envDefault:"false"`
 	TenantServiceAddr string `env:"TENANT_SERVICE_ADDR" envDefault:""`
 	CRMServiceAddr    string `env:"CRM_SERVICE_ADDR" envDefault:""`
+	Auth0Issuer       string `env:"AUTH_0_ISSUER" envDefault:"auth.loupe.co"`
+	Auth0Audience     string `env:"AUTH_0_AUDIENCE" envDefault:"Ub9IKZnGYUh7oM42iPBumI32cLWmVNWC"`
+	Auth0Domain       string `env:"AUTH_0_DOMAIN" envDefault:"https://loupe.auth0.com/"`
+	Auth0ClientID     string `env:"AUTH_0_CLIENT_ID" envDefault:""`
+	Auth0ClientSecret string `env:"AUTH_0_CLIENT_SECRET" envDefault:""`
 }
