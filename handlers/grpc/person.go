@@ -55,13 +55,44 @@ func (server *OrchardGRPCServer) CreatePerson(ctx context.Context, in *servicePb
 		return nil, err.AsGRPC()
 	}
 
-	// Perform insert in db
-	if err := svc.Insert(spanCtx, insertablePerson); err != nil {
-		err := errors.Wrap(err, "error inserting person in sql")
+	// Get transaction, so we can rollback if user provisioning fails
+	if err := svc.WithTransaction(spanCtx); err != nil {
+		err := errors.Wrap(err, "error creating transaction for creating person")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
 
+	// Perform insert in db
+	if err := svc.Insert(spanCtx, insertablePerson); err != nil {
+		err := errors.Wrap(err, "error inserting person in sql")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// Provision user in Auth0
+	if err := server.auth0Client.Provision(spanCtx, in.TenantId, insertablePerson); err != nil {
+		err := errors.Wrap(err, "error provisioning user in auth0")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// Commit create person transaction
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting create person transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// Convert updated person model back to proto for response
 	createdRes, err := svc.ToProto(insertablePerson)
 	if err != nil {
 		err := errors.Wrap(err, "error converting created person to proto")
