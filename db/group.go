@@ -461,6 +461,21 @@ func (svc *GroupService) SoftDeleteByID(ctx context.Context, id, tenantID, userI
 }
 
 const (
+	softDeleteTenantGroupsQuery = `UPDATE "group"
+	SET status = 'inactive', updated_by = $1, updated_at = CURRENT_TIMESTAMP
+	WHERE tenant_id = $2`
+)
+
+func (svc *GroupService) SoftDeleteTenantGroups(ctx context.Context, tenantID, userID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	_, err := queries.Raw(softDeleteTenantGroupsQuery, userID, tenantID).ExecContext(ctx, x)
+	return err
+}
+
+const (
 	transferGroupChildrenParentQuery = `UPDATE "group"
 	SET parent_id = (SELECT parent_id FROM "group" WHERE id = $1 AND tenant_id = $2 LIMIT 1), updated_by = $3, updated_at = CURRENT_TIMESTAMP
 	WHERE parent_id = $1 AND tenant_id = $2`
@@ -487,6 +502,21 @@ func (svc *GroupService) RemoveGroupMembers(ctx context.Context, groupID, tenant
 		x = svc.tx
 	}
 	_, err := queries.Raw(removeGroupMembersQuery, groupID, tenantID, userID).ExecContext(ctx, x)
+	return err
+}
+
+const (
+	removeAllGroupMembersQuery = `UPDATE person
+	SET group_id = NULL, updated_by = $1, updated_at = CURRENT_TIMESTAMP
+	WHERE tenant_id = $2`
+)
+
+func (svc *GroupService) RemoveAllGroupMembers(ctx context.Context, tenantID, userID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	_, err := queries.Raw(removeAllGroupMembersQuery, userID, tenantID).ExecContext(ctx, x)
 	return err
 }
 

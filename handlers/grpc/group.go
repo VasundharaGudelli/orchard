@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	act "github.com/loupe-co/bouncer/pkg/context"
 	strUtils "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
 	commonSync "github.com/loupe-co/go-common/sync"
@@ -518,4 +519,53 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 	}
 
 	return &servicePb.Empty{}, nil
+}
+
+func (server *OrchardGRPCServer) ResetHierarchy(ctx context.Context, in *servicePb.ResetHierarchyRequest) (*servicePb.ResetHierarchyResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "ResetHierarchy")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	userID := act.GetUserID(ctx)
+
+	if userID == "" {
+		userID = "00000000-0000-0000-0000-000000000000"
+	}
+
+	svc := db.NewGroupService()
+	if err := svc.WithTransaction(spanCtx); err != nil {
+		err := errors.Wrap(err, "error starting reset hierarchy transaction")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.RemoveAllGroupMembers(spanCtx, in.TenantId, userID); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error removing all groups members for tenant")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.SoftDeleteTenantGroups(spanCtx, in.TenantId, userID); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error soft deleting tenant groups")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.Commit(); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error commiting reset hierarchy transaction")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.ResetHierarchyResponse{}, nil
 }

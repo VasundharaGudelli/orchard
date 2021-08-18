@@ -11,14 +11,15 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/lib/pq v1.10.2
+	github.com/loupe-co/bouncer v0.0.1 // indirect
 	github.com/loupe-co/go-common v1.0.7
 	github.com/loupe-co/go-loupe-logger v1.0.0
-	github.com/loupe-co/protos v0.0.0-20210810173235-17bf985795c7
-	github.com/spf13/viper v1.6.3
+	github.com/loupe-co/protos v0.0.0-20210818113422-9aae053eb5b0
+	github.com/spf13/viper v1.8.1
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/randomize v0.0.1
 	github.com/volatiletech/sqlboiler/v4 v4.6.0
 	github.com/volatiletech/strmangle v0.0.1
-	google.golang.org/grpc v1.38.0
+	google.golang.org/grpc v1.39.0
 	gopkg.in/auth0.v4 v4.7.0
 )
