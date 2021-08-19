@@ -32,6 +32,6 @@ func NewOrchardGRPCServer(
 		tenantClient:  tenantClient,
 		crmClient:     crmClient,
 		auth0Client:   auth0Client,
-		bouncerClient: bouncerClient,
+		bouncerClient: nil,
 	}
 }

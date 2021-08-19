@@ -49,12 +49,11 @@ func main() {
 		return
 	}
 
-	bouncerClient, err := bouncer.NewBouncerClient(bouncer.SetBouncerClientConfig(bouncer.BouncerClientConfig{
-		BouncerAddr: cfg.BouncerAddr,
-		RedisHost:   cfg.RedisHost,
-		RedisUser:   cfg.RedisUser,
-		RedisPass:   cfg.RedisPassword,
-	}))
+	bouncerClient, err := bouncer.NewBouncerClient(
+		bouncer.SetBouncerAddr(cfg.BouncerAddr),
+		bouncer.SetRedisHost(cfg.RedisHost),
+		bouncer.SetRedisPass(cfg.RedisPassword),
+	)
 	if err != nil {
 		log.Errorf("error getting bouncer client: %s", err.Error())
 		return
