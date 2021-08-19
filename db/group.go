@@ -546,9 +546,13 @@ type IsCRMSyncedResult struct {
 
 func (svc *GroupService) IsCRMSynced(ctx context.Context, tenantID string) (bool, error) {
 	result := &IsCRMSyncedResult{}
-	if err := queries.Raw(isCRMSyncedQuery, tenantID).Bind(ctx, Global, result); err != nil {
+	err := queries.Raw(isCRMSyncedQuery, tenantID).Bind(ctx, Global, result)
+	if err != nil && err != sql.ErrNoRows {
 		log.WithTenantID(tenantID).WithCustom("query", isCRMSyncedQuery).Error(err)
 		return false, err
+	}
+	if err == sql.ErrNoRows { // This should only happen if the tenant has no crm_roles and no groups in postgres, in which case there is nothing to sync anyway
+		return false, nil
 	}
 	return !result.IsNotSynced, nil
 }
