@@ -344,8 +344,12 @@ func (svc *PersonService) DeleteByID(ctx context.Context, id, tenantID string) e
 }
 
 func (svc *PersonService) SoftDeleteByID(ctx context.Context, id, tenantID, userID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
 	person := &models.Person{ID: id, TenantID: tenantID, UpdatedBy: userID, UpdatedAt: time.Now().UTC(), Status: "inactive"}
-	numAffected, err := person.Update(ctx, Global, boil.Whitelist("updated_by", "updated_at", "status"))
+	numAffected, err := person.Update(ctx, x, boil.Whitelist("updated_by", "updated_at", "status"))
 	if err != nil {
 		return err
 	}

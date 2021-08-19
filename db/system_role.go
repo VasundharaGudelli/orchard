@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -16,10 +17,35 @@ import (
 
 // TODO: Add tracing
 
-type SystemRoleService struct{}
+type SystemRoleService struct {
+	tx *sql.Tx
+}
 
 func NewSystemRoleService() *SystemRoleService {
 	return &SystemRoleService{}
+}
+
+func (svc *SystemRoleService) WithTransaction(ctx context.Context) error {
+	tx, err := Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	svc.tx = tx
+	return nil
+}
+
+func (svc *SystemRoleService) Rollback() error {
+	if svc.tx == nil {
+		return nil
+	}
+	return svc.tx.Rollback()
+}
+
+func (svc *SystemRoleService) Commit() error {
+	if svc.tx == nil {
+		return nil
+	}
+	return svc.tx.Commit()
 }
 
 func (svc *SystemRoleService) FromProto(sr *orchardPb.SystemRole) *models.SystemRole {
@@ -162,7 +188,12 @@ func (svc *SystemRoleService) Update(ctx context.Context, sr *models.SystemRole,
 
 	sr.UpdatedAt = time.Now().UTC()
 
-	numAffected, err := sr.Update(ctx, Global, boil.Whitelist(whitelist...))
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+
+	numAffected, err := sr.Update(ctx, x, boil.Whitelist(whitelist...))
 	if err != nil {
 		return err
 	}
@@ -174,8 +205,12 @@ func (svc *SystemRoleService) Update(ctx context.Context, sr *models.SystemRole,
 }
 
 func (svc *SystemRoleService) DeleteByID(ctx context.Context, id string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
 	sr := &models.SystemRole{ID: id}
-	numAffected, err := sr.Delete(ctx, Global)
+	numAffected, err := sr.Delete(ctx, x)
 	if err != nil {
 		return err
 	}
@@ -186,8 +221,12 @@ func (svc *SystemRoleService) DeleteByID(ctx context.Context, id string) error {
 }
 
 func (svc *SystemRoleService) SoftDeleteByID(ctx context.Context, id, userID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
 	sr := &models.SystemRole{ID: id, UpdatedBy: userID, UpdatedAt: time.Now().UTC(), Status: "inactive"}
-	numAffected, err := sr.Update(ctx, Global, boil.Whitelist("updated_by", "updated_at", "status"))
+	numAffected, err := sr.Update(ctx, x, boil.Whitelist("updated_by", "updated_at", "status"))
 	if err != nil {
 		return err
 	}

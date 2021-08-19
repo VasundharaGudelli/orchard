@@ -5,6 +5,7 @@ import (
 	"os"
 	"syscall"
 
+	bouncer "github.com/loupe-co/bouncer/pkg/client"
 	common "github.com/loupe-co/go-common"
 	configUtil "github.com/loupe-co/go-common/config"
 	ekg "github.com/loupe-co/go-common/ekg"
@@ -48,10 +49,21 @@ func main() {
 		return
 	}
 
+	bouncerClient, err := bouncer.NewBouncerClient(bouncer.SetBouncerClientConfig(bouncer.BouncerClientConfig{
+		BouncerAddr: cfg.BouncerAddr,
+		RedisHost:   cfg.RedisHost,
+		RedisUser:   cfg.RedisUser,
+		RedisPass:   cfg.RedisPassword,
+	}))
+	if err != nil {
+		log.Errorf("error getting bouncer client: %s", err.Error())
+		return
+	}
+
 	auth0Client := clients.NewAuth0Client(cfg)
 
 	// Create grpc server
-	orchardServer := grpcHandlers.NewOrchardGRPCServer(cfg, tenantClient, crmClient, auth0Client)
+	orchardServer := grpcHandlers.NewOrchardGRPCServer(cfg, tenantClient, crmClient, auth0Client, bouncerClient)
 	grpcServer := common.NewGRPCServer(cfg.GRPCHost, cfg.GRPCPort, grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32))
 	grpcServer.Register(func(server *grpc.Server) {
 		servicePb.RegisterOrchardServer(server, orchardServer)

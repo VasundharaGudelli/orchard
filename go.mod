@@ -11,10 +11,10 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/lib/pq v1.10.2
-	github.com/loupe-co/bouncer v0.0.1 // indirect
+	github.com/loupe-co/bouncer v0.0.4
 	github.com/loupe-co/go-common v1.0.7
 	github.com/loupe-co/go-loupe-logger v1.0.0
-	github.com/loupe-co/protos v0.0.0-20210818113422-9aae053eb5b0
+	github.com/loupe-co/protos v0.0.0-20210818163909-e54d3201719d
 	github.com/spf13/viper v1.8.1
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/randomize v0.0.1

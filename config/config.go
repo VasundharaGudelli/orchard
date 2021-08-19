@@ -18,4 +18,8 @@ type Config struct {
 	Auth0Domain       string `env:"AUTH_0_DOMAIN" envDefault:"https://loupe.auth0.com/"`
 	Auth0ClientID     string `env:"AUTH_0_CLIENT_ID" envDefault:""`
 	Auth0ClientSecret string `env:"AUTH_0_CLIENT_SECRET" envDefault:""`
+	BouncerAddr       string `env:"BOUNCER_ADDR" envDefault:"" json:"bouncerAddr"`
+	RedisHost         string `env:"REDIS_HOST" envDefault:""`
+	RedisUser         string `env:"REDIS_USER" envDefault:""`
+	RedisPassword     string `env:"REDIS_PASS" envDefault:""`
 }

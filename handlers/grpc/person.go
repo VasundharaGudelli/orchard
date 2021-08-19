@@ -11,6 +11,7 @@ import (
 	"github.com/loupe-co/orchard/db"
 	"github.com/loupe-co/orchard/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
+	bouncerPb "github.com/loupe-co/protos/src/services/bouncer"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 	"google.golang.org/grpc/codes"
 )
@@ -407,8 +408,15 @@ func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb
 	// Check if we are updating a person's provisioning
 	changeProvisioning := strUtil.Strings(in.OnlyFields).Has("is_provisioned")
 
+	// Check if we're updating a person's system_roles
+	changeRoles := strUtil.Strings(in.OnlyFields).Has("role_ids") || len(in.OnlyFields) == 0
+
 	svc := db.NewPersonService()
-	svc.WithTransaction(spanCtx)
+	if err := svc.WithTransaction(spanCtx); err != nil {
+		err := errors.Wrap(err, "error creating update person transaction")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
 
 	updatePerson := svc.FromProto(in.Person)
 
@@ -442,6 +450,18 @@ func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb
 				}
 				return nil, err.AsGRPC()
 			}
+		}
+	}
+
+	// If we updated the user's system roles, then bust their auth cache in bouncer
+	if changeRoles {
+		if _, err := server.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+			err := errors.Wrap(err, "error busting auth data cache for user")
+			logger.Error(err)
+			if err := svc.Rollback(); err != nil {
+				logger.Error(errors.Wrap(err, "error rolling back transaction"))
+			}
+			return nil, err.AsGRPC()
 		}
 	}
 
@@ -485,10 +505,34 @@ func (server *OrchardGRPCServer) DeletePersonById(ctx context.Context, in *servi
 	}
 
 	svc := db.NewPersonService()
+	if err := svc.WithTransaction(spanCtx); err != nil {
+		err := errors.Wrap(err, "error creating delete person transaction")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
 
 	if err := svc.SoftDeleteByID(spanCtx, in.PersonId, in.TenantId, in.UserId); err != nil {
 		logger.Errorf("error deleting person by id: %s", err.Error())
 		return nil, err
+	}
+
+	if _, err := server.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.UserId}); err != nil {
+		err := errors.Wrap(err, "error busting auth data cache for user")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// Commit the update person transaction in sql
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting delete person transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.Empty{}, nil

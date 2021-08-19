@@ -528,7 +528,7 @@ const (
 		GROUP BY tenant_id
 	)
 	SELECT
-		(SELECT user_created_count > 0 FROM UserCreated)
+		COALESCE((SELECT user_created_count > 0 FROM UserCreated), FALSE)
 		OR
 		(SUM(CASE WHEN cr.id IS NULL THEN 1 ELSE 0 END) > 0)
 		OR
@@ -536,7 +536,8 @@ const (
 		AS is_not_synced
 	FROM crm_role cr
 	FULL OUTER JOIN "group" g ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
-	WHERE cr.tenant_id = $1`
+	WHERE cr.tenant_id = $1
+	GROUP BY cr.tenant_id`
 )
 
 type IsCRMSyncedResult struct {

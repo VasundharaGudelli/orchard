@@ -31,3 +31,6 @@ data:
   AUTH_0_ISSUER: loupe-dev.auth0.com
   AUTH_0_AUDIENCE: Fb8FuT6ezfLFG2tabZeFh2r8NsTD4AAm
   AUTH_0_DOMAIN: https://loupe-dev.auth0.com
+  BOUNCER_ADDR: bouncer:50051
+  REDIS_HOST: 10.0.0.3:6379
+  REDIS_PASS: ''

@@ -7,6 +7,7 @@ import (
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
+	bouncerPb "github.com/loupe-co/protos/src/services/bouncer"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
 
@@ -180,11 +181,35 @@ func (server *OrchardGRPCServer) DeleteSystemRoleById(ctx context.Context, in *s
 	}
 
 	svc := db.NewSystemRoleService()
+	if err := svc.WithTransaction(spanCtx); err != nil {
+		err := errors.Wrap(err, "error creating delete system role transaction")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
 
 	err := svc.SoftDeleteByID(spanCtx, in.Id, in.UserId)
 	if err != nil {
 		err := errors.Wrap(err, "error deleting systemRole by id")
 		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	// TODO: eventually, probably want to check the tenantID on the deleted system_role to see if we can be more specific with our cache bust
+	if _, err := server.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{}); err != nil {
+		err := errors.Wrap(err, "error busting auth data cache in bouncer")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting delete system role transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
 		return nil, err.AsGRPC()
 	}
 
