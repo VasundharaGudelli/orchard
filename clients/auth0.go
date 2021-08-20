@@ -2,13 +2,13 @@ package clients
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/config"
 	"github.com/loupe-co/orchard/models"
+	"google.golang.org/grpc/codes"
 	"gopkg.in/auth0.v4"
 	"gopkg.in/auth0.v4/management"
 )
@@ -36,7 +36,6 @@ func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *mode
 	logger := log.WithTenantID(tenantID).WithCustom("userId", user.ID)
 
 	provisionedUser := &management.User{
-		ID:            auth0.String(getAuth0UserID(tenantID, user.ID)),
 		Email:         auth0.String(user.Email.String),
 		EmailVerified: auth0.Bool(true),
 		Connection:    auth0.String("email"),
@@ -69,6 +68,7 @@ func (ac Auth0Client) Unprovision(ctx context.Context, tenantID, userID string) 
 
 	logger := log.WithTenantID(tenantID).WithCustom("userId", userID)
 
+	// Get auth0 client instance
 	client, err := ac.getClient(spanCtx)
 	if err != nil {
 		err := errors.Wrap(err, "error getting auth0 management client")
@@ -76,7 +76,19 @@ func (ac Auth0Client) Unprovision(ctx context.Context, tenantID, userID string) 
 		return err
 	}
 
-	if err := client.User.Delete(getAuth0UserID(tenantID, userID)); err != nil {
+	// Get user from auth0 so we can delete by the auth0 user ID
+	user, err := ac.getByUserID(spanCtx, client, tenantID, userID)
+	if err != nil {
+		err := errors.Wrap(err, "error getting user from auth0")
+		logger.Error(err)
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found in auth0").WithCode(codes.NotFound)
+	}
+
+	// Delete user in auth0 by the auth0 user id
+	if err := client.User.Delete(*user.ID); err != nil {
 		err := errors.Wrap(err, "error deleting provisioned user in auth0")
 		logger.Error(err)
 		return err
@@ -85,6 +97,15 @@ func (ac Auth0Client) Unprovision(ctx context.Context, tenantID, userID string) 
 	return nil
 }
 
-func getAuth0UserID(tenantID, userID string) string {
-	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", tenantID, userID)))
+func (ac Auth0Client) getByUserID(ctx context.Context, client *management.Management, tenantID, userID string) (*management.User, error) {
+	q := fmt.Sprintf(`app_metadata.tenant_id:"%s" AND app_metadata.person_id:"%s"`, tenantID, userID)
+	mQ := management.Query(q)
+	users, err := client.User.List(mQ, management.PerPage(1), management.Parameter("search_engine", "v3"))
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting list of users from auth0")
+	}
+	if users == nil || len(users.Users) == 0 {
+		return nil, nil
+	}
+	return users.Users[0], nil
 }

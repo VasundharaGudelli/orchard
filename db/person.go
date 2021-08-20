@@ -124,7 +124,11 @@ var (
 )
 
 func (svc *PersonService) Insert(ctx context.Context, p *models.Person) error {
-	return p.Insert(ctx, Global, boil.Whitelist(personInsertWhitelist...))
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	return p.Insert(ctx, x, boil.Whitelist(personInsertWhitelist...))
 }
 
 const (
