@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	commonSet "github.com/loupe-co/go-common/data-structures/set/string"
+	strUtil "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/config"
@@ -12,6 +14,27 @@ import (
 	"gopkg.in/auth0.v4"
 	"gopkg.in/auth0.v4/management"
 )
+
+var LegacyUserRoleMappings = strUtil.Strings{
+	"64cf1b39-d863-4601-bc21-f45dcf449e14",
+	"6f71019d-25cf-4c6a-a31e-bdd25472ba26",
+	"aafad8da-9dfa-417a-972b-89afadcb3302",
+}
+
+var LegacyManagerRoleMappings = strUtil.Strings{
+	"a2e39cf5-e016-44a4-b037-057a16fe14fc",
+	"9cb26135-9c37-4bc5-b620-c89177ad3ca3",
+	"e3a44322-0559-4f0f-bf61-a3a0dcca0c54",
+}
+
+var LegacyAdminRoleMappings = strUtil.Strings{
+	"8d94bd88-78a5-467c-a0d8-079f26b412d9",
+}
+
+var LegacySuperAdminRoleMappings = strUtil.Strings{
+	"aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5",
+	"95f00236-3b8c-4806-bec1-fbf532b7ad10",
+}
 
 type Auth0Client struct {
 	cfg config.Config
@@ -35,6 +58,22 @@ func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *mode
 
 	logger := log.WithTenantID(tenantID).WithCustom("userId", user.ID)
 
+	legacyRoles := commonSet.New()
+	for _, roleID := range user.RoleIds {
+		if LegacyUserRoleMappings.Has(roleID) {
+			legacyRoles.Set("rol_JbKBz2HaApjrd7yW")
+		}
+		if LegacyManagerRoleMappings.Has(roleID) {
+			legacyRoles.Set("rol_510TUetL44xR7zmm")
+		}
+		if LegacyAdminRoleMappings.Has(roleID) {
+			legacyRoles.Set("rol_6tBbx6gNRYgb47wM")
+		}
+		if LegacySuperAdminRoleMappings.Has(roleID) {
+			legacyRoles.Set("rol_42KN8JcK3EgysI0Q")
+		}
+	}
+
 	provisionedUser := &management.User{
 		Email:         auth0.String(user.Email.String),
 		EmailVerified: auth0.Bool(true),
@@ -55,6 +94,18 @@ func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *mode
 
 	if err := client.User.Create(provisionedUser); err != nil {
 		err := errors.Wrap(err, "error creating provisioned user in auth0")
+		logger.Error(err)
+		return err
+	}
+
+	userRoles := make([]*management.Role, len(legacyRoles))
+	for i, rID := range legacyRoles.Members() {
+		userRoles[i] = &management.Role{
+			ID: &rID,
+		}
+	}
+	if err := client.User.AssignRoles(*provisionedUser.ID, userRoles...); err != nil {
+		err := errors.Wrap(err, "error assigning user roles in auth0")
 		logger.Error(err)
 		return err
 	}
