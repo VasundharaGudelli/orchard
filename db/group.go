@@ -166,9 +166,13 @@ func (svc *GroupService) CheckDuplicateCRMRoleIDs(ctx context.Context, id, tenan
 		x = svc.tx
 	}
 	result := HasDupsResult{}
-	if err := queries.Raw(checkDuplicateCRMIDsQuery, tenantID, types.StringArray(crmRolesIDs), id).Bind(ctx, x, &result); err != nil {
+	err := queries.Raw(checkDuplicateCRMIDsQuery, types.StringArray(crmRolesIDs), tenantID, id).Bind(ctx, x, &result)
+	if err != nil && err != sql.ErrNoRows {
 		log.WithTenantID(tenantID).WithCustom("query", checkDuplicateCRMIDsQuery).Error(err)
 		return false, err
+	}
+	if err == sql.ErrNoRows {
+		return false, nil
 	}
 	return result.HasDups, nil
 }
