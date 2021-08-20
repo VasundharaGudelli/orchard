@@ -3,6 +3,7 @@ package grpchandlers
 import (
 	"context"
 
+	strUtil "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
@@ -144,6 +145,11 @@ func (server *OrchardGRPCServer) UpdateSystemRole(ctx context.Context, in *servi
 
 	logger := log.WithTenantID(in.SystemRole.TenantId).WithCustom("id", in.Id)
 	svc := db.NewSystemRoleService()
+	if err := svc.WithTransaction(spanCtx); err != nil {
+		err := errors.Wrap(err, "error creating update system role transaction")
+		logger.Error(err)
+		return nil, err
+	}
 
 	sr := svc.FromProto(in.SystemRole)
 
@@ -151,6 +157,27 @@ func (server *OrchardGRPCServer) UpdateSystemRole(ctx context.Context, in *servi
 	if err != nil {
 		err := errors.Wrap(err, "error updating systemRole")
 		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if len(in.OnlyFields) == 0 || strUtil.Strings(in.OnlyFields).Has("permissions") {
+		// TODO: eventually, probably want to check the tenantID on the deleted system_role to see if we can be more specific with our cache bust
+		if _, err := server.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{}); err != nil {
+			err := errors.Wrap(err, "error busting auth data cache in bouncer")
+			logger.Error(err)
+			if err := svc.Rollback(); err != nil {
+				logger.Error(errors.Wrap(err, "error rolling back transaction"))
+			}
+			return nil, err.AsGRPC()
+		}
+	}
+
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting update system role transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
 		return nil, err.AsGRPC()
 	}
 

@@ -336,8 +336,12 @@ func (svc *PersonService) UpdatePersonGroups(ctx context.Context, tenantID strin
 }
 
 func (svc *PersonService) DeleteByID(ctx context.Context, id, tenantID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
 	person := &models.Person{ID: id, TenantID: tenantID}
-	numAffected, err := person.Delete(ctx, Global)
+	numAffected, err := person.Delete(ctx, x)
 	if err != nil {
 		return err
 	}
