@@ -36,3 +36,39 @@ func (server *OrchardGRPCServer) GetGroupSyncSettings(ctx context.Context, in *s
 		Metadata: tenantProto.GroupSyncMetadata,
 	}, nil
 }
+
+func (server *OrchardGRPCServer) UpdateGroupSyncState(ctx context.Context, in *servicePb.UpdateGroupSyncStateRequest) (*servicePb.UpdateGroupSyncStateResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "UpdateGroupSyncState")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	svc := db.NewTenantService()
+
+	err := svc.UpdateGroupSyncState(spanCtx, in.TenantId, in.Status)
+	if err != nil {
+		err := errors.Wrap(err, "error updating tenant group sync state")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.UpdateGroupSyncStateResponse{}, nil
+}
+
+func (server *OrchardGRPCServer) UpdateGroupSyncMetadata(ctx context.Context, in *servicePb.UpdateGroupSyncMetadataRequest) (*servicePb.UpdateGroupSyncMetadataResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "UpdateGroupSyncMetadata")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	svc := db.NewTenantService()
+
+	err := svc.UpdateGroupSyncMetadata(spanCtx, in.TenantId, in.Metadata)
+	if err != nil {
+		err := errors.Wrap(err, "error updating tenant group sync metadata")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.UpdateGroupSyncMetadataResponse{}, nil
+}

@@ -12,6 +12,7 @@ import (
 	tenantPb "github.com/loupe-co/protos/src/common/tenant"
 	null "github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
@@ -61,6 +62,14 @@ func (svc *TenantService) FromProto(t *tenantPb.Tenant) (*models.Tenant, error) 
 		return nil, errors.Wrap(err, "error marshaling group_sync_metadata")
 	}
 
+	groupSyncState := "inactive"
+	switch t.GroupSyncState {
+	case tenantPb.GroupSyncStatus_Active:
+		groupSyncState = "active"
+	case tenantPb.GroupSyncStatus_PeopleOnly:
+		groupSyncState = "people_only"
+	}
+
 	return &models.Tenant{
 		ID:                t.Id,
 		Status:            t.Status,
@@ -70,7 +79,7 @@ func (svc *TenantService) FromProto(t *tenantPb.Tenant) (*models.Tenant, error) 
 		CRMID:             null.String{String: t.CrmId, Valid: t.CrmId != ""},
 		IsTestInstance:    null.BoolFrom(t.IsTestInstance),
 		ParentTenantID:    null.String{String: t.ParentTenantId, Valid: t.ParentTenantId != ""},
-		GroupSyncState:    strings.ToLower(t.GroupSyncState.String()),
+		GroupSyncState:    groupSyncState,
 		GroupSyncMetadata: types.JSON(groupSyncMetadataRaw),
 		Permissions:       t.Permissions,
 	}, nil
@@ -91,7 +100,7 @@ func (svc *TenantService) ToProto(t *models.Tenant) (*tenantPb.Tenant, error) {
 	switch t.GroupSyncState {
 	case "active":
 		groupSyncState = tenantPb.GroupSyncStatus_Active
-	case "people_only":
+	case "people_only", "peopleonly":
 		groupSyncState = tenantPb.GroupSyncStatus_PeopleOnly
 	}
 
@@ -119,6 +128,50 @@ func (svc *TenantService) GetByID(ctx context.Context, tenantID string) (*models
 	return models.FindTenant(ctx, Global, tenantID)
 }
 
+type GetGroupSyncStateResponse struct {
+	GroupSyncState string `boil:"group_sync_state" json:"groupSyncState"`
+}
+
+func (svc *TenantService) GetGroupSyncState(ctx context.Context, tenantID string) (tenantPb.GroupSyncStatus, error) {
+	res := &GetGroupSyncStateResponse{}
+	err := queries.Raw("SELECT group_sync_state FROM tenant WHERE id = $1", tenantID).Bind(ctx, Global, res)
+	if err != nil {
+		return tenantPb.GroupSyncStatus_Inactive, errors.Wrap(err, "error getting tenant group sync state")
+	}
+	state := tenantPb.GroupSyncStatus_Inactive
+	switch res.GroupSyncState {
+	case "active":
+		state = tenantPb.GroupSyncStatus_Active
+	case "people_only", "peopleonly":
+		state = tenantPb.GroupSyncStatus_PeopleOnly
+	}
+
+	return state, nil
+}
+
+const (
+	checkPeopleSyncStateQuery = `SELECT SUM(CARDINALITY(COALESCE(g.crm_role_ids, ARRAY[]::TEXT[]))) > 0 AS is_people_synced
+	FROM "group" g
+	WHERE g.status = 'active' AND tenant_id = $1
+	GROUP BY tenant_id;`
+)
+
+type CheckPeopleSyncedStateResponse struct {
+	IsPeopleSynced bool `boil:"is_people_synced" json:"isPeopleSynced"`
+}
+
+func (svc *TenantService) CheckPeopleSyncState(ctx context.Context, tenantID string) (peopleSynced bool, err error) {
+	res := &CheckPeopleSyncedStateResponse{}
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	if err := queries.Raw(checkPeopleSyncStateQuery, tenantID).Bind(ctx, x, res); err != nil {
+		return false, errors.Wrap(err, "error checking people sync state in sql")
+	}
+	return res.IsPeopleSynced, nil
+}
+
 func (svc *TenantService) UpdateGroupSyncState(ctx context.Context, tenantID string, state tenantPb.GroupSyncStatus) error {
 	t := models.Tenant{ID: tenantID, GroupSyncState: strings.ToLower(state.String())}
 	x := boil.ContextExecutor(Global)
@@ -126,6 +179,23 @@ func (svc *TenantService) UpdateGroupSyncState(ctx context.Context, tenantID str
 		x = svc.tx
 	}
 	_, err := t.Update(ctx, x, boil.Whitelist("group_sync_state"))
+	if err != nil {
+		return errors.Wrap(err, "error updating tenant in sql")
+	}
+	return nil
+}
+
+func (svc *TenantService) UpdateGroupSyncMetadata(ctx context.Context, tenantID string, metadata *tenantPb.GroupSyncMetadata) error {
+	metadataRaw, err := json.Marshal(metadata)
+	if err != nil {
+		return errors.Wrap(err, "error marshaling metadata")
+	}
+	t := models.Tenant{ID: tenantID, GroupSyncMetadata: types.JSON(metadataRaw)}
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	_, err = t.Update(ctx, x, boil.Whitelist("group_sync_metadata"))
 	if err != nil {
 		return errors.Wrap(err, "error updating tenant in sql")
 	}

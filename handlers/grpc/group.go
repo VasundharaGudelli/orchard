@@ -2,6 +2,7 @@ package grpchandlers
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/db"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
+	tenantPb "github.com/loupe-co/protos/src/common/tenant"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 	"google.golang.org/grpc/codes"
 )
@@ -137,6 +139,13 @@ func (server *OrchardGRPCServer) CreateGroup(ctx context.Context, in *servicePb.
 		err := errors.Wrap(err, "error updating group paths in sql")
 		logger.Error(err)
 		svc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
+	if err := server.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTX()); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error ensuring tenant group sync state")
+		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
 
@@ -411,11 +420,20 @@ func (server *OrchardGRPCServer) UpdateGroup(ctx context.Context, in *servicePb.
 		return nil, err.AsGRPC()
 	}
 
-	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Filter(func(_ int, v string) bool { return v == "parent_id" }).Len() > 0 {
+	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("parent_id") {
 		if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
 			err := errors.Wrap(err, "error updating group paths in sql")
 			logger.Error(err)
 			svc.Rollback()
+			return nil, err.AsGRPC()
+		}
+	}
+
+	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Intersects([]string{"crm_role_ids", "status"}) {
+		if err := server.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTX()); err != nil {
+			svc.Rollback()
+			err := errors.Wrap(err, "error ensuring tenant group sync state")
+			logger.Error(err)
 			return nil, err.AsGRPC()
 		}
 	}
@@ -484,6 +502,7 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 	}
 
 	svc := db.NewGroupService()
+
 	if err := svc.WithTransaction(spanCtx); err != nil {
 		err := errors.Wrap(err, "error starting delete group transaction")
 		logger.Error(err)
@@ -507,6 +526,13 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 	if err := svc.SoftDeleteByID(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
 		svc.Rollback()
 		err := errors.Wrap(err, "error soft deleting group by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if err := server.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTX()); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error ensuring tenant group sync state")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
@@ -540,11 +566,14 @@ func (server *OrchardGRPCServer) ResetHierarchy(ctx context.Context, in *service
 	}
 
 	svc := db.NewGroupService()
+	tenantSvc := db.NewTenantService()
+
 	if err := svc.WithTransaction(spanCtx); err != nil {
 		err := errors.Wrap(err, "error starting reset hierarchy transaction")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
+	tenantSvc.WithTransaction(spanCtx, svc.GetTX())
 
 	if err := svc.RemoveAllGroupMembers(spanCtx, in.TenantId, userID); err != nil {
 		svc.Rollback()
@@ -560,6 +589,13 @@ func (server *OrchardGRPCServer) ResetHierarchy(ctx context.Context, in *service
 		return nil, err.AsGRPC()
 	}
 
+	if err := tenantSvc.UpdateGroupSyncState(spanCtx, in.TenantId, tenantPb.GroupSyncStatus_Inactive); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error updating tenant group sync state")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
 	if err := svc.Commit(); err != nil {
 		svc.Rollback()
 		err := errors.Wrap(err, "error commiting reset hierarchy transaction")
@@ -568,4 +604,46 @@ func (server *OrchardGRPCServer) ResetHierarchy(ctx context.Context, in *service
 	}
 
 	return &servicePb.ResetHierarchyResponse{}, nil
+}
+
+func (server *OrchardGRPCServer) ensureTenantGroupSyncState(ctx context.Context, tenantID string, tx *sql.Tx) error {
+	tenantSvc := db.NewTenantService()
+	if err := tenantSvc.WithTransaction(ctx, tx); err != nil {
+		return err
+	}
+
+	currentSyncState, err := tenantSvc.GetGroupSyncState(ctx, tenantID)
+	if err != nil {
+		return errors.Wrap(err, "error checking current tenant group sync state")
+	}
+
+	res, err := server.IsHierarchySynced(ctx, &servicePb.IsHierarchySyncedRequest{TenantId: tenantID})
+	if err != nil {
+		return errors.Wrap(err, "error checking if hierarchy is synced")
+	}
+
+	if res.IsSynced {
+		if currentSyncState != tenantPb.GroupSyncStatus_Active {
+			return tenantSvc.UpdateGroupSyncState(ctx, tenantID, tenantPb.GroupSyncStatus_Active)
+		}
+		return nil
+	}
+
+	peopleSynced, err := tenantSvc.CheckPeopleSyncState(ctx, tenantID)
+	if err != nil {
+		return errors.Wrap(err, "error checking people sync state")
+	}
+
+	if peopleSynced {
+		if currentSyncState != tenantPb.GroupSyncStatus_PeopleOnly {
+			return tenantSvc.UpdateGroupSyncState(ctx, tenantID, tenantPb.GroupSyncStatus_Active)
+		}
+		return nil
+	}
+
+	if currentSyncState != tenantPb.GroupSyncStatus_Inactive {
+		return tenantSvc.UpdateGroupSyncState(ctx, tenantID, tenantPb.GroupSyncStatus_Inactive)
+	}
+
+	return nil
 }

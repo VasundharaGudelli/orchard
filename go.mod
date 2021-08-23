@@ -12,9 +12,9 @@ require (
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/lib/pq v1.10.2
 	github.com/loupe-co/bouncer v0.0.15
-	github.com/loupe-co/go-common v1.0.7
+	github.com/loupe-co/go-common v1.0.10
 	github.com/loupe-co/go-loupe-logger v1.0.0
-	github.com/loupe-co/protos v0.0.0-20210823134948-f74c636279a9
+	github.com/loupe-co/protos v0.0.0-20210823154034-336c6df1deac
 	github.com/spf13/viper v1.8.1
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/randomize v0.0.1
