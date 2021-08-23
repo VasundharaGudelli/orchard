@@ -49,8 +49,34 @@ func (server *OrchardGRPCServer) ReSyncCRM(ctx context.Context, in *servicePb.Re
 	}
 	tenantSvc.WithTransaction(spanCtx, groupSvc.GetTX()) // Don't need to handle error, as the we bypass error case when passing tx manually
 
+	fullSynced, err := groupSvc.IsCRMSynced(spanCtx, in.TenantId)
+	if err != nil {
+		err := errors.Wrap(err, "error checking current hierarchy sync state")
+		logger.Error(err)
+		groupSvc.Rollback() // Haven't really done anything yet, so not handling error
+		return nil, err.AsGRPC()
+	}
+	if fullSynced { // Attempt to bypass other processes if we're already in a full synced state
+		if _, err := server.Sync(spanCtx, &servicePb.SyncRequest{TenantId: in.TenantId}); err != nil {
+			err := errors.Wrap(err, "error syncing crm data")
+			logger.Error(err)
+			groupSvc.Rollback() // Haven't really done anything yet, so not handling error
+			return nil, err.AsGRPC()
+		}
+		return &servicePb.ReSyncCRMResponse{Status: tenantPb.GroupSyncStatus_Active}, nil
+	}
+
 	if err := groupSvc.DeleteAllTenantGroups(spanCtx, in.TenantId); err != nil {
 		err := errors.Wrap(err, "error deleting existing tenant groups in sql")
+		logger.Error(err)
+		if err := groupSvc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	if err := groupSvc.RemoveAllGroupMembers(spanCtx, in.TenantId, "00000000-0000-0000-0000-000000000000"); err != nil {
+		err := errors.Wrap(err, "error removing all group members for tenant")
 		logger.Error(err)
 		if err := groupSvc.Rollback(); err != nil {
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
