@@ -557,8 +557,12 @@ type IsCRMSyncedResult struct {
 }
 
 func (svc *GroupService) IsCRMSynced(ctx context.Context, tenantID string) (bool, error) {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
 	result := &IsCRMSyncedResult{}
-	err := queries.Raw(isCRMSyncedQuery, tenantID).Bind(ctx, Global, result)
+	err := queries.Raw(isCRMSyncedQuery, tenantID).Bind(ctx, x, result)
 	if err != nil && err != sql.ErrNoRows {
 		log.WithTenantID(tenantID).WithCustom("query", isCRMSyncedQuery).Error(err)
 		return false, err

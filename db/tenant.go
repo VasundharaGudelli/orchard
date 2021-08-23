@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"strings"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/go-common/errors"
@@ -177,7 +176,14 @@ func (svc *TenantService) CheckPeopleSyncState(ctx context.Context, tenantID str
 }
 
 func (svc *TenantService) UpdateGroupSyncState(ctx context.Context, tenantID string, state tenantPb.GroupSyncStatus) error {
-	t := models.Tenant{ID: tenantID, GroupSyncState: strings.ToLower(state.String())}
+	newState := "inactive"
+	switch state {
+	case tenantPb.GroupSyncStatus_Active:
+		newState = "active"
+	case tenantPb.GroupSyncStatus_PeopleOnly:
+		newState = "people_only"
+	}
+	t := models.Tenant{ID: tenantID, GroupSyncState: newState}
 	x := boil.ContextExecutor(Global)
 	if svc.tx != nil {
 		x = svc.tx
