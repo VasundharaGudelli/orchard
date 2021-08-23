@@ -19,67 +19,83 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/queries/qmhelper"
+	"github.com/volatiletech/sqlboiler/v4/types"
 	"github.com/volatiletech/strmangle"
 )
 
 // Tenant is an object representing the database table.
 type Tenant struct {
-	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Status         string      `boil:"status" json:"status" toml:"status" yaml:"status"`
-	Name           string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	ViewParams     null.JSON   `boil:"view_params" json:"view_params,omitempty" toml:"view_params" yaml:"view_params,omitempty"`
-	CRMID          null.String `boil:"crm_id" json:"crm_id,omitempty" toml:"crm_id" yaml:"crm_id,omitempty"`
-	IsTestInstance null.Bool   `boil:"is_test_instance" json:"is_test_instance,omitempty" toml:"is_test_instance" yaml:"is_test_instance,omitempty"`
-	ParentTenantID null.String `boil:"parent_tenant_id" json:"parent_tenant_id,omitempty" toml:"parent_tenant_id" yaml:"parent_tenant_id,omitempty"`
+	ID                string           `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Status            string           `boil:"status" json:"status" toml:"status" yaml:"status"`
+	Name              string           `boil:"name" json:"name" toml:"name" yaml:"name"`
+	CreatedAt         time.Time        `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt         time.Time        `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ViewParams        null.JSON        `boil:"view_params" json:"view_params,omitempty" toml:"view_params" yaml:"view_params,omitempty"`
+	CRMID             null.String      `boil:"crm_id" json:"crm_id,omitempty" toml:"crm_id" yaml:"crm_id,omitempty"`
+	IsTestInstance    null.Bool        `boil:"is_test_instance" json:"is_test_instance,omitempty" toml:"is_test_instance" yaml:"is_test_instance,omitempty"`
+	ParentTenantID    null.String      `boil:"parent_tenant_id" json:"parent_tenant_id,omitempty" toml:"parent_tenant_id" yaml:"parent_tenant_id,omitempty"`
+	GroupSyncState    string           `boil:"group_sync_state" json:"group_sync_state" toml:"group_sync_state" yaml:"group_sync_state"`
+	GroupSyncMetadata types.JSON       `boil:"group_sync_metadata" json:"group_sync_metadata" toml:"group_sync_metadata" yaml:"group_sync_metadata"`
+	Permissions       types.Int64Array `boil:"permissions" json:"permissions" toml:"permissions" yaml:"permissions"`
 
 	R *tenantR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L tenantL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var TenantColumns = struct {
-	ID             string
-	Status         string
-	Name           string
-	CreatedAt      string
-	UpdatedAt      string
-	ViewParams     string
-	CRMID          string
-	IsTestInstance string
-	ParentTenantID string
+	ID                string
+	Status            string
+	Name              string
+	CreatedAt         string
+	UpdatedAt         string
+	ViewParams        string
+	CRMID             string
+	IsTestInstance    string
+	ParentTenantID    string
+	GroupSyncState    string
+	GroupSyncMetadata string
+	Permissions       string
 }{
-	ID:             "id",
-	Status:         "status",
-	Name:           "name",
-	CreatedAt:      "created_at",
-	UpdatedAt:      "updated_at",
-	ViewParams:     "view_params",
-	CRMID:          "crm_id",
-	IsTestInstance: "is_test_instance",
-	ParentTenantID: "parent_tenant_id",
+	ID:                "id",
+	Status:            "status",
+	Name:              "name",
+	CreatedAt:         "created_at",
+	UpdatedAt:         "updated_at",
+	ViewParams:        "view_params",
+	CRMID:             "crm_id",
+	IsTestInstance:    "is_test_instance",
+	ParentTenantID:    "parent_tenant_id",
+	GroupSyncState:    "group_sync_state",
+	GroupSyncMetadata: "group_sync_metadata",
+	Permissions:       "permissions",
 }
 
 var TenantTableColumns = struct {
-	ID             string
-	Status         string
-	Name           string
-	CreatedAt      string
-	UpdatedAt      string
-	ViewParams     string
-	CRMID          string
-	IsTestInstance string
-	ParentTenantID string
+	ID                string
+	Status            string
+	Name              string
+	CreatedAt         string
+	UpdatedAt         string
+	ViewParams        string
+	CRMID             string
+	IsTestInstance    string
+	ParentTenantID    string
+	GroupSyncState    string
+	GroupSyncMetadata string
+	Permissions       string
 }{
-	ID:             "tenant.id",
-	Status:         "tenant.status",
-	Name:           "tenant.name",
-	CreatedAt:      "tenant.created_at",
-	UpdatedAt:      "tenant.updated_at",
-	ViewParams:     "tenant.view_params",
-	CRMID:          "tenant.crm_id",
-	IsTestInstance: "tenant.is_test_instance",
-	ParentTenantID: "tenant.parent_tenant_id",
+	ID:                "tenant.id",
+	Status:            "tenant.status",
+	Name:              "tenant.name",
+	CreatedAt:         "tenant.created_at",
+	UpdatedAt:         "tenant.updated_at",
+	ViewParams:        "tenant.view_params",
+	CRMID:             "tenant.crm_id",
+	IsTestInstance:    "tenant.is_test_instance",
+	ParentTenantID:    "tenant.parent_tenant_id",
+	GroupSyncState:    "tenant.group_sync_state",
+	GroupSyncMetadata: "tenant.group_sync_metadata",
+	Permissions:       "tenant.permissions",
 }
 
 // Generated where
@@ -108,25 +124,31 @@ func (w whereHelpernull_Bool) GTE(x null.Bool) qm.QueryMod {
 }
 
 var TenantWhere = struct {
-	ID             whereHelperstring
-	Status         whereHelperstring
-	Name           whereHelperstring
-	CreatedAt      whereHelpertime_Time
-	UpdatedAt      whereHelpertime_Time
-	ViewParams     whereHelpernull_JSON
-	CRMID          whereHelpernull_String
-	IsTestInstance whereHelpernull_Bool
-	ParentTenantID whereHelpernull_String
+	ID                whereHelperstring
+	Status            whereHelperstring
+	Name              whereHelperstring
+	CreatedAt         whereHelpertime_Time
+	UpdatedAt         whereHelpertime_Time
+	ViewParams        whereHelpernull_JSON
+	CRMID             whereHelpernull_String
+	IsTestInstance    whereHelpernull_Bool
+	ParentTenantID    whereHelpernull_String
+	GroupSyncState    whereHelperstring
+	GroupSyncMetadata whereHelpertypes_JSON
+	Permissions       whereHelpertypes_Int64Array
 }{
-	ID:             whereHelperstring{field: "\"tenant\".\"id\""},
-	Status:         whereHelperstring{field: "\"tenant\".\"status\""},
-	Name:           whereHelperstring{field: "\"tenant\".\"name\""},
-	CreatedAt:      whereHelpertime_Time{field: "\"tenant\".\"created_at\""},
-	UpdatedAt:      whereHelpertime_Time{field: "\"tenant\".\"updated_at\""},
-	ViewParams:     whereHelpernull_JSON{field: "\"tenant\".\"view_params\""},
-	CRMID:          whereHelpernull_String{field: "\"tenant\".\"crm_id\""},
-	IsTestInstance: whereHelpernull_Bool{field: "\"tenant\".\"is_test_instance\""},
-	ParentTenantID: whereHelpernull_String{field: "\"tenant\".\"parent_tenant_id\""},
+	ID:                whereHelperstring{field: "\"tenant\".\"id\""},
+	Status:            whereHelperstring{field: "\"tenant\".\"status\""},
+	Name:              whereHelperstring{field: "\"tenant\".\"name\""},
+	CreatedAt:         whereHelpertime_Time{field: "\"tenant\".\"created_at\""},
+	UpdatedAt:         whereHelpertime_Time{field: "\"tenant\".\"updated_at\""},
+	ViewParams:        whereHelpernull_JSON{field: "\"tenant\".\"view_params\""},
+	CRMID:             whereHelpernull_String{field: "\"tenant\".\"crm_id\""},
+	IsTestInstance:    whereHelpernull_Bool{field: "\"tenant\".\"is_test_instance\""},
+	ParentTenantID:    whereHelpernull_String{field: "\"tenant\".\"parent_tenant_id\""},
+	GroupSyncState:    whereHelperstring{field: "\"tenant\".\"group_sync_state\""},
+	GroupSyncMetadata: whereHelpertypes_JSON{field: "\"tenant\".\"group_sync_metadata\""},
+	Permissions:       whereHelpertypes_Int64Array{field: "\"tenant\".\"permissions\""},
 }
 
 // TenantRels is where relationship names are stored.
@@ -150,9 +172,9 @@ func (*tenantR) NewStruct() *tenantR {
 type tenantL struct{}
 
 var (
-	tenantAllColumns            = []string{"id", "status", "name", "created_at", "updated_at", "view_params", "crm_id", "is_test_instance", "parent_tenant_id"}
+	tenantAllColumns            = []string{"id", "status", "name", "created_at", "updated_at", "view_params", "crm_id", "is_test_instance", "parent_tenant_id", "group_sync_state", "group_sync_metadata", "permissions"}
 	tenantColumnsWithoutDefault = []string{"id", "status", "name", "view_params", "parent_tenant_id"}
-	tenantColumnsWithDefault    = []string{"created_at", "updated_at", "crm_id", "is_test_instance"}
+	tenantColumnsWithDefault    = []string{"created_at", "updated_at", "crm_id", "is_test_instance", "group_sync_state", "group_sync_metadata", "permissions"}
 	tenantPrimaryKeyColumns     = []string{"id"}
 )
 

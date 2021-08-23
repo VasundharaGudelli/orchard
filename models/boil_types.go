@@ -111,3 +111,10 @@ const (
 	TenantStatusPending = "pending"
 	TenantStatusExpired = "expired"
 )
+
+// Enum values for group_sync_status
+const (
+	GroupSyncStatusActive     = "active"
+	GroupSyncStatusPeopleOnly = "people_only"
+	GroupSyncStatusInactive   = "inactive"
+)

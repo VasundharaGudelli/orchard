@@ -722,7 +722,7 @@ func testTenantsSelect(t *testing.T) {
 }
 
 var (
-	tenantDBTypes = map[string]string{`ID`: `uuid`, `Status`: `enum.tenant_status('active','deleted','pending','expired')`, `Name`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `ViewParams`: `jsonb`, `CRMID`: `text`, `IsTestInstance`: `boolean`, `ParentTenantID`: `uuid`}
+	tenantDBTypes = map[string]string{`ID`: `uuid`, `Status`: `enum.tenant_status('active','deleted','pending','expired')`, `Name`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `ViewParams`: `jsonb`, `CRMID`: `text`, `IsTestInstance`: `boolean`, `ParentTenantID`: `uuid`, `GroupSyncState`: `enum.group_sync_status('active','people_only','inactive')`, `GroupSyncMetadata`: `jsonb`, `Permissions`: `ARRAYbigint`}
 	_             = bytes.MinRead
 )
 
