@@ -56,6 +56,10 @@ func (svc *GroupService) GetTX() *sql.Tx {
 	return svc.tx
 }
 
+func (svc *GroupService) SetTx(tx *sql.Tx) {
+	svc.tx = tx
+}
+
 func (svc *GroupService) FromProto(g *orchardPb.Group) *models.Group {
 	createdAt := g.CreatedAt.AsTime()
 	updatedAt := g.UpdatedAt.AsTime()

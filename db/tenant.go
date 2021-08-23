@@ -53,6 +53,10 @@ func (svc *TenantService) Commit() error {
 	return svc.tx.Commit()
 }
 
+func (svc *TenantService) GetTx() *sql.Tx {
+	return svc.tx
+}
+
 func (svc *TenantService) FromProto(t *tenantPb.Tenant) (*models.Tenant, error) {
 	createdAt := t.CreatedAt.AsTime()
 	updatedAt := t.UpdatedAt.AsTime()

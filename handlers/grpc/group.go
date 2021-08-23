@@ -607,25 +607,35 @@ func (server *OrchardGRPCServer) ResetHierarchy(ctx context.Context, in *service
 }
 
 func (server *OrchardGRPCServer) ensureTenantGroupSyncState(ctx context.Context, tenantID string, tx *sql.Tx) error {
+	logger := log.WithTenantID(tenantID)
+
 	tenantSvc := db.NewTenantService()
+	groupSvc := db.NewGroupService()
 	if err := tenantSvc.WithTransaction(ctx, tx); err != nil {
 		return err
 	}
+	groupSvc.SetTx(tenantSvc.GetTx())
 
 	currentSyncState, err := tenantSvc.GetGroupSyncState(ctx, tenantID)
 	if err != nil {
 		return errors.Wrap(err, "error checking current tenant group sync state")
 	}
 
-	res, err := server.IsHierarchySynced(ctx, &servicePb.IsHierarchySyncedRequest{TenantId: tenantID})
+	logger.WithCustom("currentSyncState", currentSyncState)
+
+	isSynced, err := groupSvc.IsCRMSynced(ctx, tenantID)
 	if err != nil {
 		return errors.Wrap(err, "error checking if hierarchy is synced")
 	}
 
-	if res.IsSynced {
+	logger.WithCustom("isSynced", isSynced)
+
+	if isSynced {
 		if currentSyncState != tenantPb.GroupSyncStatus_Active {
+			logger.Debug("wasn't active, now is active")
 			return tenantSvc.UpdateGroupSyncState(ctx, tenantID, tenantPb.GroupSyncStatus_Active)
 		}
+		logger.Debug("state not changing from active")
 		return nil
 	}
 
@@ -634,16 +644,23 @@ func (server *OrchardGRPCServer) ensureTenantGroupSyncState(ctx context.Context,
 		return errors.Wrap(err, "error checking people sync state")
 	}
 
+	logger.WithCustom("peopleSynced", peopleSynced)
+
 	if peopleSynced {
 		if currentSyncState != tenantPb.GroupSyncStatus_PeopleOnly {
-			return tenantSvc.UpdateGroupSyncState(ctx, tenantID, tenantPb.GroupSyncStatus_Active)
+			logger.Debug("wasn't people_only, now is people_only")
+			return tenantSvc.UpdateGroupSyncState(ctx, tenantID, tenantPb.GroupSyncStatus_PeopleOnly)
 		}
+		logger.Debug("state not changing from people_only")
 		return nil
 	}
 
 	if currentSyncState != tenantPb.GroupSyncStatus_Inactive {
+		logger.Debug("state changing to inactive")
 		return tenantSvc.UpdateGroupSyncState(ctx, tenantID, tenantPb.GroupSyncStatus_Inactive)
 	}
+
+	logger.Debug("no changes detected for group sync state")
 
 	return nil
 }
