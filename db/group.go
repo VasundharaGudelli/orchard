@@ -52,6 +52,10 @@ func (svc *GroupService) Commit() error {
 	return svc.tx.Commit()
 }
 
+func (svc *GroupService) GetTX() *sql.Tx {
+	return svc.tx
+}
+
 func (svc *GroupService) FromProto(g *orchardPb.Group) *models.Group {
 	createdAt := g.CreatedAt.AsTime()
 	updatedAt := g.UpdatedAt.AsTime()
@@ -659,6 +663,22 @@ func (svc *GroupService) UpdateGroupTypes(ctx context.Context, tenantID string) 
 	}
 	if _, err := queries.Raw(updateGroupTypesQuery, tenantID).ExecContext(ctx, x); err != nil {
 		log.WithTenantID(tenantID).WithCustom("query", updateGroupTypesQuery).Error(err)
+		return err
+	}
+	return nil
+}
+
+const (
+	deleteAllTenantGroupQuery = `DELETE FROM "group" WHERE tenant_id = $1`
+)
+
+func (svc *GroupService) DeleteAllTenantGroups(ctx context.Context, tenantID string) error {
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	if _, err := queries.Raw(deleteAllTenantGroupQuery, tenantID).ExecContext(ctx, x); err != nil {
+		log.WithTenantID(tenantID).WithCustom("query", deleteAllTenantGroupQuery).Error(err)
 		return err
 	}
 	return nil

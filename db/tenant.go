@@ -11,6 +11,7 @@ import (
 	"github.com/loupe-co/orchard/models"
 	tenantPb "github.com/loupe-co/protos/src/common/tenant"
 	null "github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
@@ -24,12 +25,16 @@ func NewTenantService() *TenantService {
 	return &TenantService{}
 }
 
-func (svc *TenantService) WithTransaction(ctx context.Context) error {
-	tx, err := Global.BeginTx(ctx, nil)
+func (svc *TenantService) WithTransaction(ctx context.Context, tx *sql.Tx) error {
+	if tx != nil {
+		svc.tx = tx
+		return nil
+	}
+	_tx, err := Global.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	svc.tx = tx
+	svc.tx = _tx
 	return nil
 }
 
@@ -112,4 +117,17 @@ func (svc *TenantService) ToProto(t *models.Tenant) (*tenantPb.Tenant, error) {
 
 func (svc *TenantService) GetByID(ctx context.Context, tenantID string) (*models.Tenant, error) {
 	return models.FindTenant(ctx, Global, tenantID)
+}
+
+func (svc *TenantService) UpdateGroupSyncState(ctx context.Context, tenantID string, state tenantPb.GroupSyncStatus) error {
+	t := models.Tenant{ID: tenantID, GroupSyncState: strings.ToLower(state.String())}
+	x := boil.ContextExecutor(Global)
+	if svc.tx != nil {
+		x = svc.tx
+	}
+	_, err := t.Update(ctx, x, boil.Whitelist("group_sync_state"))
+	if err != nil {
+		return errors.Wrap(err, "error updating tenant in sql")
+	}
+	return nil
 }

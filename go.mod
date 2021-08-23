@@ -14,7 +14,7 @@ require (
 	github.com/loupe-co/bouncer v0.0.15
 	github.com/loupe-co/go-common v1.0.7
 	github.com/loupe-co/go-loupe-logger v1.0.0
-	github.com/loupe-co/protos v0.0.0-20210823120226-9e00081c7b0c
+	github.com/loupe-co/protos v0.0.0-20210823134948-f74c636279a9
 	github.com/spf13/viper v1.8.1
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/randomize v0.0.1
