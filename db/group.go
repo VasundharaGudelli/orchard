@@ -195,7 +195,7 @@ func (svc *GroupService) Search(ctx context.Context, tenantID, query string) ([]
 		queryParts = append(queryParts, qm.Where(searchClause, "%"+strings.ToLower(query)+"%"))
 	}
 
-	queryParts = append(queryParts, qm.OrderBy("order, name"))
+	queryParts = append(queryParts, qm.OrderBy("\"order\", name"))
 
 	groups, err := models.Groups(queryParts...).All(ctx, Global)
 	if err != nil {

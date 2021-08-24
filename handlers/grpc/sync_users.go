@@ -59,10 +59,11 @@ func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.Sy
 			if !p.GroupID.Valid || p.GroupID.String == "" {
 				p.GroupID = current.GroupID
 			}
+			p.IsSynced = current.IsSynced
 		} else {
 			p.CreatedBy = "00000000-0000-0000-0000-000000000000"
+			p.IsSynced = true
 		}
-		p.IsSynced = true
 		upsertPeople[i] = p
 	}
 
