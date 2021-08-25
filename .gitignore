@@ -16,7 +16,7 @@
 # vendor/
 
 # workspace vscode settings; commenting out to keep launch configs for testing
-# .vscode/
+.vscode/settings.json
 
 # Test output
 fixtures/results/
