@@ -548,8 +548,7 @@ const (
 		AS is_not_synced
 	FROM crm_role cr
 	FULL OUTER JOIN "group" g ON cr.id = ANY(g.crm_role_ids) AND cr.tenant_id = g.tenant_id
-	WHERE cr.tenant_id = $1
-	GROUP BY cr.tenant_id`
+	WHERE cr.tenant_id = $1 OR g.tenant_id = $1`
 )
 
 type IsCRMSyncedResult struct {
