@@ -12,8 +12,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries"
 )
 
-// TODO: Add tracing
-
 type GroupViewerService struct {
 	*DBService
 }
@@ -71,7 +69,9 @@ var (
 )
 
 func (svc *GroupViewerService) Insert(ctx context.Context, gv *models.GroupViewer) error {
-	return gv.Insert(ctx, svc.GetContextExecutor(), boil.Whitelist(groupViewerInsertWhitelist...))
+	spanCtx, span := log.StartSpan(ctx, "GroupViewer.Insert")
+	defer span.End()
+	return gv.Insert(spanCtx, svc.GetContextExecutor(), boil.Whitelist(groupViewerInsertWhitelist...))
 }
 
 const (
@@ -81,8 +81,10 @@ const (
 )
 
 func (svc *GroupViewerService) GetGroupViewers(ctx context.Context, tenantID, groupID string) ([]*models.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "GroupViewer.GetGroupViewers")
+	defer span.End()
 	results := []*models.Person{}
-	err := queries.Raw(getGroupViewersQuery, groupID, tenantID).Bind(ctx, svc.GetContextExecutor(), results)
+	err := queries.Raw(getGroupViewersQuery, groupID, tenantID).Bind(spanCtx, svc.GetContextExecutor(), results)
 	if err != nil {
 		log.WithTenantID(tenantID).WithCustom("groupId", groupID).WithCustom("query", getGroupViewersQuery)
 		return nil, err
@@ -97,8 +99,10 @@ const (
 )
 
 func (svc *GroupViewerService) GetPersonViewableGroups(ctx context.Context, tenantID, personID string) ([]*models.Group, error) {
+	spanCtx, span := log.StartSpan(ctx, "GroupViewer.GetPersonViewableGroups")
+	defer span.End()
 	results := []*models.Group{}
-	err := queries.Raw(getPersonViewableGroupsQuery, personID, tenantID).Bind(ctx, svc.GetContextExecutor(), results)
+	err := queries.Raw(getPersonViewableGroupsQuery, personID, tenantID).Bind(spanCtx, svc.GetContextExecutor(), results)
 	if err != nil {
 		log.WithTenantID(tenantID).WithCustom("personId", personID).WithCustom("query", getPersonViewableGroupsQuery)
 		return nil, err
@@ -113,9 +117,10 @@ var (
 )
 
 func (svc *GroupViewerService) Update(ctx context.Context, gv *models.GroupViewer) error {
+	spanCtx, span := log.StartSpan(ctx, "GroupViewer.Update")
+	defer span.End()
 	whitelist := defaultGroupViewerUpdateWhitelist
-
-	numAffected, err := gv.Update(ctx, svc.GetContextExecutor(), boil.Whitelist(whitelist...))
+	numAffected, err := gv.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist(whitelist...))
 	if err != nil {
 		return err
 	}
@@ -127,8 +132,10 @@ func (svc *GroupViewerService) Update(ctx context.Context, gv *models.GroupViewe
 }
 
 func (svc *GroupViewerService) DeleteByID(ctx context.Context, tenantID, groupID, personID string) error {
+	spanCtx, span := log.StartSpan(ctx, "GroupViewer.DeleteByID")
+	defer span.End()
 	gv := &models.GroupViewer{GroupID: groupID, PersonID: personID, TenantID: tenantID}
-	numAffected, err := gv.Delete(ctx, svc.GetContextExecutor())
+	numAffected, err := gv.Delete(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/go-common/errors"
+	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
 	tenantPb "github.com/loupe-co/protos/src/common/tenant"
 	null "github.com/volatiletech/null/v8"
@@ -13,8 +14,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/types"
 )
-
-// TODO: Add tracing
 
 type TenantService struct {
 	*DBService
@@ -98,7 +97,9 @@ func (svc *TenantService) ToProto(t *models.Tenant) (*tenantPb.Tenant, error) {
 }
 
 func (svc *TenantService) GetByID(ctx context.Context, tenantID string) (*models.Tenant, error) {
-	return models.FindTenant(ctx, svc.GetContextExecutor(), tenantID)
+	spanCtx, span := log.StartSpan(ctx, "Tenant.GetByID")
+	defer span.End()
+	return models.FindTenant(spanCtx, svc.GetContextExecutor(), tenantID)
 }
 
 type GetGroupSyncStateResponse struct {
@@ -106,8 +107,10 @@ type GetGroupSyncStateResponse struct {
 }
 
 func (svc *TenantService) GetGroupSyncState(ctx context.Context, tenantID string) (tenantPb.GroupSyncStatus, error) {
+	spanCtx, span := log.StartSpan(ctx, "Tenant.GetGroupSyncState")
+	defer span.End()
 	res := &GetGroupSyncStateResponse{}
-	err := queries.Raw("SELECT group_sync_state FROM tenant WHERE id = $1", tenantID).Bind(ctx, svc.GetContextExecutor(), res)
+	err := queries.Raw("SELECT group_sync_state FROM tenant WHERE id = $1", tenantID).Bind(spanCtx, svc.GetContextExecutor(), res)
 	if err != nil {
 		return tenantPb.GroupSyncStatus_Inactive, errors.Wrap(err, "error getting tenant group sync state")
 	}
@@ -134,14 +137,18 @@ type CheckPeopleSyncedStateResponse struct {
 }
 
 func (svc *TenantService) CheckPeopleSyncState(ctx context.Context, tenantID string) (peopleSynced bool, err error) {
+	spanCtx, span := log.StartSpan(ctx, "Tenant.CheckPeopleSyncState")
+	defer span.End()
 	res := &CheckPeopleSyncedStateResponse{}
-	if err := queries.Raw(checkPeopleSyncStateQuery, tenantID).Bind(ctx, svc.GetContextExecutor(), res); err != nil {
+	if err := queries.Raw(checkPeopleSyncStateQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), res); err != nil {
 		return false, errors.Wrap(err, "error checking people sync state in sql")
 	}
 	return res.IsPeopleSynced, nil
 }
 
 func (svc *TenantService) UpdateGroupSyncState(ctx context.Context, tenantID string, state tenantPb.GroupSyncStatus) error {
+	spanCtx, span := log.StartSpan(ctx, "Tenant.UpdateGroupSyncState")
+	defer span.End()
 	newState := "inactive"
 	switch state {
 	case tenantPb.GroupSyncStatus_Active:
@@ -150,7 +157,7 @@ func (svc *TenantService) UpdateGroupSyncState(ctx context.Context, tenantID str
 		newState = "people_only"
 	}
 	t := models.Tenant{ID: tenantID, GroupSyncState: newState}
-	_, err := t.Update(ctx, svc.GetContextExecutor(), boil.Whitelist("group_sync_state"))
+	_, err := t.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("group_sync_state"))
 	if err != nil {
 		return errors.Wrap(err, "error updating tenant in sql")
 	}
@@ -158,12 +165,14 @@ func (svc *TenantService) UpdateGroupSyncState(ctx context.Context, tenantID str
 }
 
 func (svc *TenantService) UpdateGroupSyncMetadata(ctx context.Context, tenantID string, metadata *tenantPb.GroupSyncMetadata) error {
+	spanCtx, span := log.StartSpan(ctx, "Tenant.UpdateGroupSyncMetadata")
+	defer span.End()
 	metadataRaw, err := json.Marshal(metadata)
 	if err != nil {
 		return errors.Wrap(err, "error marshaling metadata")
 	}
 	t := models.Tenant{ID: tenantID, GroupSyncMetadata: types.JSON(metadataRaw)}
-	_, err = t.Update(ctx, svc.GetContextExecutor(), boil.Whitelist("group_sync_metadata"))
+	_, err = t.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("group_sync_metadata"))
 	if err != nil {
 		return errors.Wrap(err, "error updating tenant in sql")
 	}

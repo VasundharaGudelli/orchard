@@ -19,8 +19,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
-// TODO: Add tracing
-
 type GroupService struct {
 	*DBService
 }
@@ -112,12 +110,16 @@ var (
 )
 
 func (svc *GroupService) Insert(ctx context.Context, g *models.Group) error {
+	spanCtx, span := log.StartSpan(ctx, "Group.Insert")
+	defer span.End()
 	g.GroupPath = strings.ReplaceAll(g.GroupPath, "-", "_")
-	return g.Insert(ctx, svc.GetContextExecutor(), boil.Whitelist(groupInsertWhitelist...))
+	return g.Insert(spanCtx, svc.GetContextExecutor(), boil.Whitelist(groupInsertWhitelist...))
 }
 
 func (svc *GroupService) GetByID(ctx context.Context, id, tenantID string) (*models.Group, error) {
-	group, err := models.Groups(qm.Where("id=$1 AND tenant_id=$2", id, tenantID)).One(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Group.GetById")
+	defer span.End()
+	group, err := models.Groups(qm.Where("id=$1 AND tenant_id=$2", id, tenantID)).One(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -137,8 +139,10 @@ type HasDupsResult struct {
 }
 
 func (svc *GroupService) CheckDuplicateCRMRoleIDs(ctx context.Context, id, tenantID string, crmRolesIDs []string) (bool, error) {
+	spanCtx, span := log.StartSpan(ctx, "Group.CheckDuplicateCRMRoleIDs")
+	defer span.End()
 	result := HasDupsResult{}
-	err := queries.Raw(checkDuplicateCRMIDsQuery, types.StringArray(crmRolesIDs), tenantID, id).Bind(ctx, svc.GetContextExecutor(), &result)
+	err := queries.Raw(checkDuplicateCRMIDsQuery, types.StringArray(crmRolesIDs), tenantID, id).Bind(spanCtx, svc.GetContextExecutor(), &result)
 	if err != nil && err != sql.ErrNoRows {
 		log.WithTenantID(tenantID).WithCustom("query", checkDuplicateCRMIDsQuery).Error(err)
 		return false, err
@@ -150,6 +154,9 @@ func (svc *GroupService) CheckDuplicateCRMRoleIDs(ctx context.Context, id, tenan
 }
 
 func (svc *GroupService) Search(ctx context.Context, tenantID, query string) ([]*models.Group, error) {
+	spanCtx, span := log.StartSpan(ctx, "Group.Search")
+	defer span.End()
+
 	queryParts := []qm.QueryMod{}
 
 	queryParts = append(queryParts, qm.Where("tenant_id=$1", tenantID))
@@ -161,7 +168,7 @@ func (svc *GroupService) Search(ctx context.Context, tenantID, query string) ([]
 
 	queryParts = append(queryParts, qm.OrderBy("\"order\", name"))
 
-	groups, err := models.Groups(queryParts...).All(ctx, svc.GetContextExecutor())
+	groups, err := models.Groups(queryParts...).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -220,6 +227,9 @@ ORDER BY "group.name"`
 )
 
 func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool) ([]*GroupTreeNode, error) {
+	spanCtx, span := log.StartSpan(ctx, "Group.GetGroupSubTree")
+	defer span.End()
+
 	if maxDepth < 0 {
 		maxDepth = 1000000
 	}
@@ -244,7 +254,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	query = strings.ReplaceAll(query, "{GROUP_SELECT}", groupSelect)
 
 	results := []*GroupTreeNode{}
-	if err := queries.Raw(query, params...).Bind(ctx, svc.GetContextExecutor(), &results); err != nil {
+	if err := queries.Raw(query, params...).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
 		log.WithTenantID(tenantID).WithCustom("groupId", groupID).WithCustom("maxDepth", maxDepth).WithCustom("hydrateUsers", hydrateUsers).WithCustom("query", query).Error(err)
 		return nil, err
 	}
@@ -292,6 +302,9 @@ ORDER BY "group.name"`
 )
 
 func (svc *GroupService) GetFullTenantTree(ctx context.Context, tenantID string, hydrateUsers bool) ([]*GroupTreeNode, error) {
+	spanCtx, span := log.StartSpan(ctx, "Group.GetFullTenantTree")
+	defer span.End()
+
 	personSelect := "p.id"
 	if hydrateUsers {
 		personSelect = `JSONB_BUILD_OBJECT(
@@ -304,7 +317,7 @@ func (svc *GroupService) GetFullTenantTree(ctx context.Context, tenantID string,
 	query := strings.ReplaceAll(getFullTenantTreeQuery, "{PERSON_SELECT}", personSelect)
 
 	results := []*GroupTreeNode{}
-	if err := queries.Raw(query, tenantID).Bind(ctx, svc.GetContextExecutor(), &results); err != nil {
+	if err := queries.Raw(query, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
 		log.WithTenantID(tenantID).WithCustom("hydrateUsers", hydrateUsers).WithCustom("query", query).Error(err)
 		return nil, err
 	}
@@ -337,6 +350,9 @@ var (
 )
 
 func (svc *GroupService) Update(ctx context.Context, g *models.Group, onlyFields []string) error {
+	spanCtx, span := log.StartSpan(ctx, "Group.Update")
+	defer span.End()
+
 	whitelist := defaultGroupUpdateWhitelist
 	if len(onlyFields) > 0 {
 		whitelist = onlyFields
@@ -353,7 +369,7 @@ func (svc *GroupService) Update(ctx context.Context, g *models.Group, onlyFields
 
 	g.GroupPath = strings.ReplaceAll(g.GroupPath, "-", "_")
 
-	numAffected, err := g.Update(ctx, svc.GetContextExecutor(), boil.Whitelist(whitelist...))
+	numAffected, err := g.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist(whitelist...))
 	if err != nil {
 		return err
 	}
@@ -382,7 +398,9 @@ const (
 )
 
 func (svc *GroupService) UpdateGroupPaths(ctx context.Context, tenantID string) error {
-	if _, err := queries.Raw(updateGroupPathsQuery, tenantID).ExecContext(ctx, svc.GetContextExecutor()); err != nil {
+	spanCtx, span := log.StartSpan(ctx, "Group.UpdateGroupPaths")
+	defer span.End()
+	if _, err := queries.Raw(updateGroupPathsQuery, tenantID).ExecContext(spanCtx, svc.GetContextExecutor()); err != nil {
 		log.WithTenantID(tenantID).WithCustom("query", updateGroupPathsQuery).Error(err)
 		return err
 	}
@@ -390,12 +408,16 @@ func (svc *GroupService) UpdateGroupPaths(ctx context.Context, tenantID string) 
 }
 
 func (svc *GroupService) Reload(ctx context.Context, group *models.Group) error {
-	return group.Reload(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Group.Reload")
+	defer span.End()
+	return group.Reload(spanCtx, svc.GetContextExecutor())
 }
 
 func (svc *GroupService) DeleteByID(ctx context.Context, id, tenantID string) error {
+	spanCtx, span := log.StartSpan(ctx, "Group.DeleteById")
+	defer span.End()
 	group := &models.Group{ID: id, TenantID: tenantID}
-	numAffected, err := group.Delete(ctx, svc.GetContextExecutor())
+	numAffected, err := group.Delete(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return err
 	}
@@ -406,8 +428,10 @@ func (svc *GroupService) DeleteByID(ctx context.Context, id, tenantID string) er
 }
 
 func (svc *GroupService) SoftDeleteByID(ctx context.Context, id, tenantID, userID string) error {
+	spanCtx, span := log.StartSpan(ctx, "Group.SoftDeleteById")
+	defer span.End()
 	group := &models.Group{ID: id, TenantID: tenantID, UpdatedBy: userID, Status: "inactive", UpdatedAt: time.Now().UTC()}
-	numAffected, err := group.Update(ctx, svc.GetContextExecutor(), boil.Whitelist("updated_at", "updated_by", "status"))
+	numAffected, err := group.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("updated_at", "updated_by", "status"))
 	if err != nil {
 		return err
 	}
@@ -424,7 +448,9 @@ const (
 )
 
 func (svc *GroupService) SoftDeleteTenantGroups(ctx context.Context, tenantID, userID string) error {
-	_, err := queries.Raw(softDeleteTenantGroupsQuery, userID, tenantID).ExecContext(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Group.SoftDeleteTenantGroups")
+	defer span.End()
+	_, err := queries.Raw(softDeleteTenantGroupsQuery, userID, tenantID).ExecContext(spanCtx, svc.GetContextExecutor())
 	return err
 }
 
@@ -435,7 +461,9 @@ const (
 )
 
 func (svc *GroupService) TransferGroupChildrenParent(ctx context.Context, groupID, tenantID, userID string) error {
-	_, err := queries.Raw(transferGroupChildrenParentQuery, groupID, tenantID, userID).ExecContext(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Group.TransferGroupChildrenParent")
+	defer span.End()
+	_, err := queries.Raw(transferGroupChildrenParentQuery, groupID, tenantID, userID).ExecContext(spanCtx, svc.GetContextExecutor())
 	return err
 }
 
@@ -446,7 +474,9 @@ const (
 )
 
 func (svc *GroupService) RemoveGroupMembers(ctx context.Context, groupID, tenantID, userID string) error {
-	_, err := queries.Raw(removeGroupMembersQuery, groupID, tenantID, userID).ExecContext(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Group.RemoveGroupMembers")
+	defer span.End()
+	_, err := queries.Raw(removeGroupMembersQuery, groupID, tenantID, userID).ExecContext(spanCtx, svc.GetContextExecutor())
 	return err
 }
 
@@ -457,7 +487,9 @@ const (
 )
 
 func (svc *GroupService) RemoveAllGroupMembers(ctx context.Context, tenantID, userID string) error {
-	_, err := queries.Raw(removeAllGroupMembersQuery, userID, tenantID).ExecContext(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Group.RemoveAllGroupMembers")
+	defer span.End()
+	_, err := queries.Raw(removeAllGroupMembersQuery, userID, tenantID).ExecContext(spanCtx, svc.GetContextExecutor())
 	return err
 }
 
@@ -485,8 +517,10 @@ type IsCRMSyncedResult struct {
 }
 
 func (svc *GroupService) IsCRMSynced(ctx context.Context, tenantID string) (bool, error) {
+	spanCtx, span := log.StartSpan(ctx, "Group.IsCRMSynced")
+	defer span.End()
 	result := &IsCRMSyncedResult{}
-	err := queries.Raw(isCRMSyncedQuery, tenantID).Bind(ctx, svc.GetContextExecutor(), result)
+	err := queries.Raw(isCRMSyncedQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), result)
 	if err != nil && err != sql.ErrNoRows {
 		log.WithTenantID(tenantID).WithCustom("query", isCRMSyncedQuery).Error(err)
 		return false, err
@@ -543,7 +577,9 @@ const (
 )
 
 func (svc *GroupService) SyncGroups(ctx context.Context, tenantID string) error {
-	if _, err := queries.Raw(syncGroupsQuery, tenantID).ExecContext(ctx, svc.GetContextExecutor()); err != nil {
+	spanCtx, span := log.StartSpan(ctx, "Group.SyncGroups")
+	defer span.End()
+	if _, err := queries.Raw(syncGroupsQuery, tenantID).ExecContext(spanCtx, svc.GetContextExecutor()); err != nil {
 		log.WithTenantID(tenantID).WithCustom("query", syncGroupsQuery).Error(err)
 		return err
 	}
@@ -561,7 +597,9 @@ const (
 )
 
 func (svc *GroupService) DeleteUnSyncedGroups(ctx context.Context, tenantID string) error {
-	if _, err := queries.Raw(deleteUnSyncedGroupsQuery, tenantID).ExecContext(ctx, svc.GetContextExecutor()); err != nil {
+	spanCtx, span := log.StartSpan(ctx, "Group.DeleteUnSyncedGroups")
+	defer span.End()
+	if _, err := queries.Raw(deleteUnSyncedGroupsQuery, tenantID).ExecContext(spanCtx, svc.GetContextExecutor()); err != nil {
 		log.WithTenantID(tenantID).WithCustom("query", deleteUnSyncedGroupsQuery).Error(err)
 		return err
 	}
@@ -581,7 +619,9 @@ const (
 )
 
 func (svc *GroupService) UpdateGroupTypes(ctx context.Context, tenantID string) error {
-	if _, err := queries.Raw(updateGroupTypesQuery, tenantID).ExecContext(ctx, svc.GetContextExecutor()); err != nil {
+	spanCtx, span := log.StartSpan(ctx, "Group.UpdateGroupTypes")
+	defer span.End()
+	if _, err := queries.Raw(updateGroupTypesQuery, tenantID).ExecContext(spanCtx, svc.GetContextExecutor()); err != nil {
 		log.WithTenantID(tenantID).WithCustom("query", updateGroupTypesQuery).Error(err)
 		return err
 	}
@@ -593,7 +633,9 @@ const (
 )
 
 func (svc *GroupService) DeleteAllTenantGroups(ctx context.Context, tenantID string) error {
-	if _, err := queries.Raw(deleteAllTenantGroupQuery, tenantID).ExecContext(ctx, svc.GetContextExecutor()); err != nil {
+	spanCtx, span := log.StartSpan(ctx, "Group.DeleteAllTenantGroups")
+	defer span.End()
+	if _, err := queries.Raw(deleteAllTenantGroupQuery, tenantID).ExecContext(spanCtx, svc.GetContextExecutor()); err != nil {
 		log.WithTenantID(tenantID).WithCustom("query", deleteAllTenantGroupQuery).Error(err)
 		return err
 	}

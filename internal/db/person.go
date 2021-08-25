@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	null "github.com/volatiletech/null/v8"
@@ -17,8 +18,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/types"
 )
-
-// TODO: Add tracing
 
 type PersonService struct {
 	*DBService
@@ -103,7 +102,9 @@ var (
 )
 
 func (svc *PersonService) Insert(ctx context.Context, p *models.Person) error {
-	return p.Insert(ctx, svc.GetContextExecutor(), boil.Whitelist(personInsertWhitelist...))
+	spanCtx, span := log.StartSpan(ctx, "Person.Insert")
+	defer span.End()
+	return p.Insert(spanCtx, svc.GetContextExecutor(), boil.Whitelist(personInsertWhitelist...))
 }
 
 const (
@@ -114,6 +115,9 @@ ON CONFLICT (tenant_id, id) DO
 )
 
 func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person) error {
+	spanCtx, span := log.StartSpan(ctx, "Person.UpsertAll")
+	defer span.End()
+
 	subs := []string{}
 	vals := []interface{}{}
 
@@ -134,7 +138,7 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 
 	query := strings.ReplaceAll(personUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 
-	_, err := queries.Raw(query, vals...).ExecContext(ctx, svc.GetContextExecutor())
+	_, err := queries.Raw(query, vals...).ExecContext(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		argsRaw, _ := json.Marshal(vals)
 		// Printing to stdout because query/args may be too long for stackdriver logging to pick up, still should probably clean this up though
@@ -147,7 +151,9 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 }
 
 func (svc *PersonService) GetByID(ctx context.Context, id, tenantID string) (*models.Person, error) {
-	person, err := models.People(qm.Where("id=$1 AND tenant_id=$2", id, tenantID)).One(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Person.GetByID")
+	defer span.End()
+	person, err := models.People(qm.Where("id=$1 AND tenant_id=$2", id, tenantID)).One(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +162,9 @@ func (svc *PersonService) GetByID(ctx context.Context, id, tenantID string) (*mo
 }
 
 func (svc *PersonService) GetByIDs(ctx context.Context, tenantID string, ids ...interface{}) ([]*models.Person, error) {
-	people, err := models.People(qm.WhereIn("id IN ?", ids...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Person.GetByIDs")
+	defer span.End()
+	people, err := models.People(qm.WhereIn("id IN ?", ids...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +172,9 @@ func (svc *PersonService) GetByIDs(ctx context.Context, tenantID string, ids ...
 }
 
 func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string) (*models.Person, error) {
-	person, err := models.People(qm.Where("tenant_id = $1 AND email = $2", tenantID, email)).One(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Person.GetByEmail")
+	defer span.End()
+	person, err := models.People(qm.Where("tenant_id = $1 AND email = $2", tenantID, email)).One(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -181,6 +191,8 @@ type PersonFilter struct {
 }
 
 func (svc *PersonService) Search(ctx context.Context, tenantID, query string, limit, offset int, filters ...PersonFilter) ([]*models.Person, int64, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.Search")
+	defer span.End()
 	queryParts := []qm.QueryMod{}
 	queryParts = append(queryParts, qm.Where("tenant_id=$1", tenantID))
 	paramIdx := 2
@@ -216,14 +228,14 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 		paramIdx++
 	}
 
-	total, err := models.People(queryParts...).Count(ctx, svc.GetContextExecutor())
+	total, err := models.People(queryParts...).Count(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, 0, err
 	}
 
 	queryParts = append(queryParts, qm.OrderBy("name"), qm.Limit(limit), qm.Offset(offset))
 
-	people, err := models.People(queryParts...).All(ctx, svc.GetContextExecutor())
+	people, err := models.People(queryParts...).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, total, err
 	}
@@ -232,7 +244,9 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 }
 
 func (svc *PersonService) GetPeopleByGroupId(ctx context.Context, tenantID, groupID string) ([]*models.Person, error) {
-	people, err := models.People(qm.Where("tenant_id = $1 AND group_id = $2", tenantID, groupID)).All(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Person.GetPeopleByGroupId")
+	defer span.End()
+	people, err := models.People(qm.Where("tenant_id = $1 AND group_id = $2", tenantID, groupID)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -248,6 +262,8 @@ var (
 )
 
 func (svc *PersonService) Update(ctx context.Context, p *models.Person, onlyFields []string) error {
+	spanCtx, span := log.StartSpan(ctx, "Person.Update")
+	defer span.End()
 	whitelist := defaultPersonUpdateWhitelist
 	if len(onlyFields) > 0 {
 		whitelist = onlyFields
@@ -268,7 +284,7 @@ func (svc *PersonService) Update(ctx context.Context, p *models.Person, onlyFiel
 		whitelist = append(whitelist, "updated_by")
 	}
 
-	numAffected, err := p.Update(ctx, svc.GetContextExecutor(), boil.Whitelist(whitelist...))
+	numAffected, err := p.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist(whitelist...))
 	if err != nil {
 		return err
 	}
@@ -305,13 +321,17 @@ const (
 )
 
 func (svc *PersonService) UpdatePersonGroups(ctx context.Context, tenantID string) error {
-	_, err := queries.Raw(updatedPersonGroupsQuery, tenantID).ExecContext(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "Person.UpdatePersonGroups")
+	defer span.End()
+	_, err := queries.Raw(updatedPersonGroupsQuery, tenantID).ExecContext(spanCtx, svc.GetContextExecutor())
 	return err
 }
 
 func (svc *PersonService) DeleteByID(ctx context.Context, id, tenantID string) error {
+	spanCtx, span := log.StartSpan(ctx, "Person.DeleteById")
+	defer span.End()
 	person := &models.Person{ID: id, TenantID: tenantID}
-	numAffected, err := person.Delete(ctx, svc.GetContextExecutor())
+	numAffected, err := person.Delete(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return err
 	}
@@ -322,8 +342,10 @@ func (svc *PersonService) DeleteByID(ctx context.Context, id, tenantID string) e
 }
 
 func (svc *PersonService) SoftDeleteByID(ctx context.Context, id, tenantID, userID string) error {
+	spanCtx, span := log.StartSpan(ctx, "Person.SoftDeleteByID")
+	defer span.End()
 	person := &models.Person{ID: id, TenantID: tenantID, UpdatedBy: userID, UpdatedAt: time.Now().UTC(), Status: "inactive"}
-	numAffected, err := person.Update(ctx, svc.GetContextExecutor(), boil.Whitelist("updated_by", "updated_at", "status"))
+	numAffected, err := person.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("updated_by", "updated_at", "status"))
 	if err != nil {
 		return err
 	}

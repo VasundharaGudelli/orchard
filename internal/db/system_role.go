@@ -7,14 +7,13 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	null "github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
-
-// TODO: Add tracing
 
 type SystemRoleService struct {
 	*DBService
@@ -103,14 +102,18 @@ var (
 )
 
 func (svc *SystemRoleService) Insert(ctx context.Context, sr *models.SystemRole) error {
+	spanCtx, span := log.StartSpan(ctx, "SystemRole.Insert")
+	defer span.End()
 	now := time.Now().UTC()
 	sr.CreatedAt = now
 	sr.UpdatedAt = now
-	return sr.Insert(ctx, svc.GetContextExecutor(), boil.Whitelist(systemRoleInsertWhitelist...))
+	return sr.Insert(spanCtx, svc.GetContextExecutor(), boil.Whitelist(systemRoleInsertWhitelist...))
 }
 
 func (svc *SystemRoleService) GetByID(ctx context.Context, id string) (*models.SystemRole, error) {
-	sr, err := models.FindSystemRole(ctx, svc.GetContextExecutor(), id)
+	spanCtx, span := log.StartSpan(ctx, "SystemRole.GetByID")
+	defer span.End()
+	sr, err := models.FindSystemRole(spanCtx, svc.GetContextExecutor(), id)
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +121,9 @@ func (svc *SystemRoleService) GetByID(ctx context.Context, id string) (*models.S
 }
 
 func (svc *SystemRoleService) Search(ctx context.Context, tenantID, query string) ([]*models.SystemRole, error) {
+	spanCtx, span := log.StartSpan(ctx, "SystemRole.Search")
+	defer span.End()
+
 	queryParts := []qm.QueryMod{}
 
 	paramIdx := 1
@@ -134,7 +140,7 @@ func (svc *SystemRoleService) Search(ctx context.Context, tenantID, query string
 		paramIdx++ // NOTE: not actually necessary, but just in case we add any more params
 	}
 
-	systemRoles, err := models.SystemRoles(queryParts...).All(ctx, svc.GetContextExecutor())
+	systemRoles, err := models.SystemRoles(queryParts...).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +156,9 @@ var (
 )
 
 func (svc *SystemRoleService) Update(ctx context.Context, sr *models.SystemRole, onlyFields []string) error {
+	spanCtx, span := log.StartSpan(ctx, "SystemRole.Update")
+	defer span.End()
+
 	whitelist := defaultSystemRoleUpdateWhitelist
 	if len(onlyFields) > 0 {
 		whitelist = onlyFields
@@ -166,7 +175,7 @@ func (svc *SystemRoleService) Update(ctx context.Context, sr *models.SystemRole,
 
 	sr.UpdatedAt = time.Now().UTC()
 
-	numAffected, err := sr.Update(ctx, svc.GetContextExecutor(), boil.Whitelist(whitelist...))
+	numAffected, err := sr.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist(whitelist...))
 	if err != nil {
 		return err
 	}
@@ -178,8 +187,10 @@ func (svc *SystemRoleService) Update(ctx context.Context, sr *models.SystemRole,
 }
 
 func (svc *SystemRoleService) DeleteByID(ctx context.Context, id string) error {
+	spanCtx, span := log.StartSpan(ctx, "SystemRole.DeleteByID")
+	defer span.End()
 	sr := &models.SystemRole{ID: id}
-	numAffected, err := sr.Delete(ctx, svc.GetContextExecutor())
+	numAffected, err := sr.Delete(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return err
 	}
@@ -190,8 +201,10 @@ func (svc *SystemRoleService) DeleteByID(ctx context.Context, id string) error {
 }
 
 func (svc *SystemRoleService) SoftDeleteByID(ctx context.Context, id, userID string) error {
+	spanCtx, span := log.StartSpan(ctx, "SystemRole.SoftDeleteByID")
+	defer span.End()
 	sr := &models.SystemRole{ID: id, UpdatedBy: userID, UpdatedAt: time.Now().UTC(), Status: "inactive"}
-	numAffected, err := sr.Update(ctx, svc.GetContextExecutor(), boil.Whitelist("updated_by", "updated_at", "status"))
+	numAffected, err := sr.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("updated_by", "updated_at", "status"))
 	if err != nil {
 		return err
 	}

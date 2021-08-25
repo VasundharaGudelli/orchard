@@ -16,8 +16,6 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-// TODO: Add tracing
-
 type CRMRoleService struct {
 	*DBService
 }
@@ -62,7 +60,9 @@ var (
 )
 
 func (svc *CRMRoleService) Insert(ctx context.Context, cr *models.CRMRole) error {
-	return cr.Insert(ctx, svc.GetContextExecutor(), boil.Whitelist(crmRoleInsertWhitelist...))
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.Insert")
+	defer span.End()
+	return cr.Insert(spanCtx, svc.GetContextExecutor(), boil.Whitelist(crmRoleInsertWhitelist...))
 }
 
 const (
@@ -70,6 +70,9 @@ const (
 )
 
 func (svc *CRMRoleService) UpsertAll(ctx context.Context, crmRoles []*models.CRMRole) error {
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.UpsertAll")
+	defer span.End()
+
 	subs := []string{}
 	vals := []interface{}{}
 
@@ -82,7 +85,7 @@ func (svc *CRMRoleService) UpsertAll(ctx context.Context, crmRoles []*models.CRM
 
 	query := strings.ReplaceAll(crmRoleUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 
-	_, err := queries.Raw(query, vals...).ExecContext(ctx, svc.GetContextExecutor())
+	_, err := queries.Raw(query, vals...).ExecContext(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		argsRaw, _ := json.Marshal(vals)
 		fmt.Println("QUERY", query)
@@ -94,7 +97,10 @@ func (svc *CRMRoleService) UpsertAll(ctx context.Context, crmRoles []*models.CRM
 }
 
 func (svc *CRMRoleService) GetByID(ctx context.Context, id, tenantID string) (*models.CRMRole, error) {
-	cr, err := models.CRMRoles(qm.Where("id=$1 AND tenant_id=$2", id, tenantID)).One(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetByID")
+	defer span.End()
+
+	cr, err := models.CRMRoles(qm.Where("id=$1 AND tenant_id=$2", id, tenantID)).One(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +108,14 @@ func (svc *CRMRoleService) GetByID(ctx context.Context, id, tenantID string) (*m
 }
 
 func (svc *CRMRoleService) GetByIDs(ctx context.Context, tenantID string, ids ...string) ([]*models.CRMRole, error) {
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetByIDs")
+	defer span.End()
+
 	idsParam := make([]interface{}, len(ids))
 	for i, id := range ids {
 		idsParam[i] = id
 	}
-	crs, err := models.CRMRoles(qm.WhereIn("id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(ctx, svc.GetContextExecutor())
+	crs, err := models.CRMRoles(qm.WhereIn("id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +131,11 @@ const (
 )
 
 func (svc *CRMRoleService) GetUnsynced(ctx context.Context, tenantID string) ([]*models.CRMRole, error) {
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetUnsynced")
+	defer span.End()
+
 	results := []*models.CRMRole{}
-	if err := queries.Raw(getUnsyncedCRMRolesQuery, tenantID).Bind(ctx, svc.GetContextExecutor(), &results); err != nil {
+	if err := queries.Raw(getUnsyncedCRMRolesQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
 		log.WithTenantID(tenantID).WithCustom("query", getUnsyncedCRMRolesQuery).Error(err)
 		return nil, err
 	}
@@ -131,8 +143,10 @@ func (svc *CRMRoleService) GetUnsynced(ctx context.Context, tenantID string) ([]
 }
 
 func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, limit, offset int) ([]*models.CRMRole, int64, error) {
-	queryParts := []qm.QueryMod{}
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.Search")
+	defer span.End()
 
+	queryParts := []qm.QueryMod{}
 	paramIdx := 1
 
 	if tenantID != "" {
@@ -145,14 +159,14 @@ func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, l
 		paramIdx++ // NOTE: not actually necessary, but just in case we add any more params
 	}
 
-	total, err := models.CRMRoles(queryParts...).Count(ctx, Global)
+	total, err := models.CRMRoles(queryParts...).Count(spanCtx, Global)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	queryParts = append(queryParts, qm.OrderBy("name"), qm.Offset(offset), qm.Limit(limit))
 
-	crmRoles, err := models.CRMRoles(queryParts...).All(ctx, svc.GetContextExecutor())
+	crmRoles, err := models.CRMRoles(queryParts...).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, total, err
 	}
@@ -161,8 +175,11 @@ func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, l
 }
 
 func (svc *CRMRoleService) DeleteByID(ctx context.Context, id, tenantID string) error {
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.DeleteByID")
+	defer span.End()
+
 	cr := &models.CRMRole{ID: id, TenantID: tenantID}
-	numAffected, err := cr.Delete(ctx, svc.GetContextExecutor())
+	numAffected, err := cr.Delete(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return err
 	}
@@ -173,7 +190,10 @@ func (svc *CRMRoleService) DeleteByID(ctx context.Context, id, tenantID string) 
 }
 
 func (svc *CRMRoleService) DeleteUnSynced(ctx context.Context, tenantID string, syncedIDs ...interface{}) error {
-	_, err := models.CRMRoles(qm.WhereNotIn("id NOT IN ?", syncedIDs...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(syncedIDs)+1), tenantID)).DeleteAll(ctx, svc.GetContextExecutor())
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.DeleteUnSynced")
+	defer span.End()
+
+	_, err := models.CRMRoles(qm.WhereNotIn("id NOT IN ?", syncedIDs...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(syncedIDs)+1), tenantID)).DeleteAll(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return err
 	}
