@@ -204,7 +204,7 @@ func (server *OrchardGRPCServer) DeleteSystemRoleById(ctx context.Context, in *s
 	}
 
 	if in.UserId == "" {
-		in.UserId = "00000000-0000-0000-0000-000000000000"
+		in.UserId = db.DefaultTenantID
 	}
 
 	svc := db.NewSystemRoleService()

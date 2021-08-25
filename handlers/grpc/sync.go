@@ -75,7 +75,7 @@ func (server *OrchardGRPCServer) ReSyncCRM(ctx context.Context, in *servicePb.Re
 		return nil, err.AsGRPC()
 	}
 
-	if err := groupSvc.RemoveAllGroupMembers(spanCtx, in.TenantId, "00000000-0000-0000-0000-000000000000"); err != nil {
+	if err := groupSvc.RemoveAllGroupMembers(spanCtx, in.TenantId, db.DefaultTenantID); err != nil {
 		err := errors.Wrap(err, "error removing all group members for tenant")
 		logger.Error(err)
 		if err := groupSvc.Rollback(); err != nil {

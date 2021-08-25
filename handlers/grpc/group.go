@@ -498,7 +498,7 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 	}
 
 	if in.UserId == "" {
-		in.UserId = "00000000-0000-0000-0000-000000000000"
+		in.UserId = db.DefaultTenantID
 	}
 
 	svc := db.NewGroupService()
@@ -562,7 +562,7 @@ func (server *OrchardGRPCServer) ResetHierarchy(ctx context.Context, in *service
 	userID := act.GetUserID(ctx)
 
 	if userID == "" {
-		userID = "00000000-0000-0000-0000-000000000000"
+		userID = db.DefaultTenantID
 	}
 
 	svc := db.NewGroupService()
