@@ -64,6 +64,8 @@ func New(cfg config.Config) (*DB, error) {
 	db.SetConnMaxLifetime(30 * time.Minute)
 	boil.SetDB(db)
 	boil.DebugMode = cfg.DBDebug
+	Global = db
+
 	return &DB{
 		db: db,
 	}, nil
