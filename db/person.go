@@ -313,16 +313,27 @@ func (svc *PersonService) Update(ctx context.Context, p *models.Person, onlyFiel
 }
 
 const (
-	updatedPersonGroupsQuery = `WITH UpdatedPersonGroups AS (
+	updatedPersonGroupsQuery = `WITH UpdatedSyncedPersonGroups AS (
 		SELECT
 			p.id, p.tenant_id, g.id as group_id
 		FROM person p
 		INNER JOIN "group" g ON p.crm_role_ids && g.crm_role_ids AND p.tenant_id = g.tenant_id
 		WHERE p.tenant_id = $1 AND p.is_synced
 	)
+	, UpdatedUnSyncedPersonGroups AS (
+		SELECT
+			p.id, p.tenant_id, g.id as group_id
+		FROM person p
+		LEFT OUTER JOIN "group" g ON g.id = p.group_id AND g.tenant_id = p.tenant_id
+		WHERE p.tenant_id = $1 AND (NOT p.is_synced OR p.created_by <> '00000000-0000-0000-0000-000000000000')
+	)
 	UPDATE person
 	SET group_id = g.group_id
-	FROM UpdatedPersonGroups g
+	FROM (
+		SELECT * FROM UpdatedSyncedPersonGroups
+		UNION ALL
+		SELECT * FROM UpdatedUnSyncedPersonGroups
+	) g
 	WHERE person.id = g.id AND person.tenant_id = g.tenant_id`
 )
 
