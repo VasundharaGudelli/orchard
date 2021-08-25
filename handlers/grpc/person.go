@@ -37,6 +37,9 @@ func (server *OrchardGRPCServer) CreatePerson(ctx context.Context, in *servicePb
 	}
 
 	in.Person.Id = db.MakeID()
+	in.Person.IsSynced = false
+	in.Person.IsProvisioned = true
+	in.Person.Status = orchardPb.BasicStatus_Active
 
 	svc := db.NewPersonService()
 
@@ -400,7 +403,7 @@ func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb
 	}
 
 	if in.Person.UpdatedBy == "" {
-		in.Person.UpdatedBy = "00000000-0000-0000-0000-000000000000"
+		in.Person.UpdatedBy = db.DefaultTenantID
 	}
 
 	logger = logger.WithCustom("personId", in.Person.Id)
@@ -410,6 +413,12 @@ func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb
 
 	// Check if we're updating a person's system_roles
 	changeRoles := strUtil.Strings(in.OnlyFields).Has("role_ids") || len(in.OnlyFields) == 0
+
+	// Check if groupId changed
+	changeGroup := strUtil.Strings(in.OnlyFields).Has("group_id")
+	if changeGroup {
+		in.Person.IsSynced = false
+	}
 
 	svc := db.NewPersonService()
 	if err := svc.WithTransaction(spanCtx); err != nil {
@@ -501,7 +510,7 @@ func (server *OrchardGRPCServer) DeletePersonById(ctx context.Context, in *servi
 	}
 
 	if in.UserId == "" {
-		in.UserId = "00000000-0000-0000-0000-000000000000"
+		in.UserId = db.DefaultTenantID
 	}
 
 	svc := db.NewPersonService()

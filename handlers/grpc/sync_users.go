@@ -50,7 +50,7 @@ func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.Sy
 	for i, person := range latestCRMUsers {
 		p := personSvc.FromProto(person)
 		p.TenantID = in.TenantId
-		p.UpdatedBy = "00000000-0000-0000-0000-000000000000"
+		p.UpdatedBy = db.DefaultTenantID
 		p.UpdatedAt = time.Now().UTC()
 		if current, ok := existingPeople[person.Id]; ok {
 			if len(p.RoleIds) == 0 {
@@ -60,8 +60,11 @@ func (server *OrchardGRPCServer) SyncUsers(ctx context.Context, in *servicePb.Sy
 				p.GroupID = current.GroupID
 			}
 			p.IsSynced = current.IsSynced
+			p.IsProvisioned = current.IsProvisioned
+			p.Status = current.Status
 		} else {
-			p.CreatedBy = "00000000-0000-0000-0000-000000000000"
+			p.CreatedBy = db.DefaultTenantID
+			p.CreatedAt = time.Now().UTC()
 			p.IsSynced = true
 		}
 		upsertPeople[i] = p
