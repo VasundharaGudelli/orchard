@@ -159,7 +159,7 @@ func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, l
 		paramIdx++ // NOTE: not actually necessary, but just in case we add any more params
 	}
 
-	total, err := models.CRMRoles(queryParts...).Count(spanCtx, svc.db)
+	total, err := models.CRMRoles(queryParts...).Count(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, 0, err
 	}
