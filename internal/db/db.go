@@ -19,10 +19,6 @@ const DefaultDBTimeout = 30 * time.Second
 const DefaultTenantID = "00000000-0000-0000-0000-000000000000"
 
 var (
-	Global *sql.DB
-)
-
-var (
 	DefaultHealthCheckPolicy = ekg.HealthCheckPolicy{
 		Interval:               "0/5 * * * *",
 		FailureCondition:       ekg.FailureConditionCount,
@@ -64,8 +60,6 @@ func New(cfg config.Config) (*DB, error) {
 	db.SetConnMaxLifetime(30 * time.Minute)
 	boil.SetDB(db)
 	boil.DebugMode = cfg.DBDebug
-	Global = db
-
 	return &DB{
 		db: db,
 	}, nil
