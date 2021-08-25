@@ -1,0 +1,85 @@
+# This Deployment manifest defines:
+# - single-replica deployment of the container image, with label "app: go-hello-world"
+# - Pod exposes port 8080
+# - specify PORT environment variable to the container process
+# Syntax reference https://kubernetes.io/docs/concepts/configuration/overview/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchard
+  labels:
+    app: orchard
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orchard
+  template:
+    metadata:
+      labels:
+        app: orchard
+    spec:
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: pubsub-key
+      containers:
+        - name: orchard
+          image: gcr.io/loupe-dev/orchard:latest
+          ports:
+            - name: grpc-server
+              containerPort: 50051
+          envFrom:
+            - configMapRef:
+                name: orchard
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/google/key.json
+            - name: PORT
+              value: "80"
+            - name: AUTH_0_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: auth0
+                  key: client.id
+            - name: AUTH_0_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth0
+                  key: client.secret
+            - name: BQ_TIER_REALTIME
+              valueFrom:
+                configMapKeyRef:
+                  name: bigquery-client
+                  key: bq.tier.realtime
+            - name: BQ_TIER_FRONTLINE
+              valueFrom:
+                configMapKeyRef:
+                  name: bigquery-client
+                  key: bq.tier.frontline
+            - name: BQ_TIER_CORE
+              valueFrom:
+                configMapKeyRef:
+                  name: bigquery-client
+                  key: bq.tier.core
+            - name: BQ_TIER_ETL
+              valueFrom:
+                configMapKeyRef:
+                  name: bigquery-client
+                  key: bq.tier.etl
+            - name: BQ_TIER_BACKGROUND
+              valueFrom:
+                configMapKeyRef:
+                  name: bigquery-client
+                  key: bq.tier.background
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /var/secrets/google
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "100m"
