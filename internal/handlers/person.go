@@ -388,6 +388,43 @@ func (h *Handlers) GetUngroupedPeople(ctx context.Context, in *servicePb.GetUngr
 	}, nil
 }
 
+func (h *Handlers) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtualUsersRequest) (*servicePb.GetVirtualUsersResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "GetVirtualUsers")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := h.db.NewPersonService()
+
+	peeps, err := svc.GetVirtualUsers(spanCtx, in.TenantId)
+	if err != nil {
+		err := errors.Wrap(err, "error getting virtual user records")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	people := make([]*orchardPb.Person, len(peeps))
+	for i, peep := range peeps {
+		p, err := svc.ToProto(peep)
+		if err != nil {
+			err := errors.Wrap(err, "error converting person db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		people[i] = p
+	}
+
+	return &servicePb.GetVirtualUsersResponse{
+		People: people,
+	}, nil
+}
+
 func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonRequest) (*servicePb.UpdatePersonResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "UpdatePerson")
 	defer span.End()

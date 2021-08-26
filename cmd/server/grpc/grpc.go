@@ -159,6 +159,10 @@ func (server *OrchardGRPCServer) GetUngroupedPeople(ctx context.Context, in *ser
 	return server.handlers.GetUngroupedPeople(ctx, in)
 }
 
+func (server *OrchardGRPCServer) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtualUsersRequest) (*servicePb.GetVirtualUsersResponse, error) {
+	return server.handlers.GetVirtualUsers(ctx, in)
+}
+
 func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonRequest) (*servicePb.UpdatePersonResponse, error) {
 	return server.handlers.UpdatePerson(ctx, in)
 }

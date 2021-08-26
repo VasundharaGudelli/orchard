@@ -23,3 +23,6 @@ fixtures/results/
 
 # default go build binary
 orchard
+
+# Build bins
+bin/server

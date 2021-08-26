@@ -68,7 +68,9 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 			}
 			p.IsSynced = current.IsSynced
 			p.IsProvisioned = current.IsProvisioned
-			p.Status = current.Status
+			if current.CreatedBy != db.DefaultTenantID {
+				p.Status = current.Status
+			}
 		} else {
 			p.CreatedBy = db.DefaultTenantID
 			p.CreatedAt = time.Now().UTC()

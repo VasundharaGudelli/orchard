@@ -253,6 +253,16 @@ func (svc *PersonService) GetPeopleByGroupId(ctx context.Context, tenantID, grou
 	return people, nil
 }
 
+func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string) ([]*models.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetVirtualUsers")
+	defer span.End()
+	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2", tenantID, DefaultTenantID)).All(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return nil, err
+	}
+	return people, nil
+}
+
 var (
 	defaultPersonUpdateWhitelist = []string{
 		"name", "first_name", "last_name", "email",

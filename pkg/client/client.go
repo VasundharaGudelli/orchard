@@ -175,6 +175,10 @@ func (client *OrchardClient) GetUngroupedPeople(ctx context.Context, in *service
 	return client.client.GetUngroupedPeople(ctx, in)
 }
 
+func (client *OrchardClient) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtualUsersRequest) (*servicePb.GetVirtualUsersResponse, error) {
+	return client.client.GetVirtualUsers(ctx, in)
+}
+
 func (client *OrchardClient) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonRequest) (*servicePb.UpdatePersonResponse, error) {
 	return client.client.UpdatePerson(ctx, in)
 }
