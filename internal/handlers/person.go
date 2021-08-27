@@ -445,7 +445,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		in.Person.UpdatedBy = db.DefaultTenantID
 	}
 
-	logger = logger.WithCustom("personId", in.Person.Id)
+	logger = logger.WithCustom("personId", in.Person.Id).WithCustom("onlyFields", in.OnlyFields).WithCustom("person", in.Person)
 
 	// Check if we are updating a person's provisioning
 	changeProvisioning := strUtil.Strings(in.OnlyFields).Has("is_provisioned")
