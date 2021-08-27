@@ -513,7 +513,7 @@ const (
 )
 
 type IsCRMSyncedResult struct {
-	IsNotSynced bool `boil:"is_not_synced" json:"is_not_synced"`
+	IsNotSynced sql.NullBool `boil:"is_not_synced" json:"is_not_synced"`
 }
 
 func (svc *GroupService) IsCRMSynced(ctx context.Context, tenantID string) (bool, error) {
@@ -528,7 +528,11 @@ func (svc *GroupService) IsCRMSynced(ctx context.Context, tenantID string) (bool
 	if err == sql.ErrNoRows { // This should only happen if the tenant has no crm_roles and no groups in postgres, in which case there is nothing to sync anyway
 		return false, nil
 	}
-	return !result.IsNotSynced, nil
+	isSynced := false
+	if !result.IsNotSynced.Valid || !result.IsNotSynced.Bool {
+		isSynced = true
+	}
+	return isSynced, nil
 }
 
 const (

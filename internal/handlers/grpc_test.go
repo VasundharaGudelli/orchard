@@ -41,6 +41,9 @@ func setup() (*Handlers, error) {
 		configUtil.SetDefaultENV("DB_DEBUG", "true"),
 		configUtil.SetDefaultENV("TENANT_SERVICE_ADDR", "localhost:50051"),
 		configUtil.SetDefaultENV("CRM_SERVICE_ADDR", "localhost:50052"),
+		configUtil.SetDefaultENV("AUTH_0_ISSUER", "loupe-dev.auth0.com"),
+		configUtil.SetDefaultENV("AUTH_0_AUDIENCE", "Fb8FuT6ezfLFG2tabZeFh2r8NsTD4AAm"),
+		configUtil.SetDefaultENV("AUTH_0_DOMAIN", "https://loupe-dev.auth0.com"),
 	)
 	if err != nil {
 		panic("Error parsing config from environment")
@@ -57,10 +60,11 @@ func setup() (*Handlers, error) {
 	if err != nil {
 		return nil, err
 	}
+	auth0Client := clients.NewAuth0Client(cfg)
 	if err := seed(dbClient); err != nil {
 		return nil, err
 	}
-	return &Handlers{cfg: cfg, db: dbClient, tenantClient: tenantClient, crmClient: crmClient}, nil
+	return &Handlers{cfg: cfg, db: dbClient, tenantClient: tenantClient, crmClient: crmClient, auth0Client: auth0Client}, nil
 }
 
 func seed(dbClient *db.DB) error {

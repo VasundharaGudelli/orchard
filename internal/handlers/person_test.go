@@ -8,6 +8,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/loupe-co/go-common/fixtures"
+	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
 
@@ -461,6 +462,32 @@ func TestUpdatePerson(t *testing.T) {
 	}
 
 	if err := fixtures.WriteTestResult("../../fixtures/results/TestUpdatePerson.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
+func TestCreateDevDevUser(t *testing.T) {
+	req := &servicePb.CreatePersonRequest{
+		TenantId: "62106dc5-53f6-465b-befc-eef69d0783ce",
+		Person: &orchardPb.Person{
+			TenantId:      "62106dc5-53f6-465b-befc-eef69d0783ce",
+			Name:          "Alex Hester",
+			FirstName:     "Alex",
+			LastName:      "Hester",
+			Email:         "alex@canopy.io",
+			RoleIds:       []string{"aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"},
+			IsProvisioned: true,
+			IsSynced:      false,
+			Status:        orchardPb.BasicStatus_Active,
+			CreatedBy:     "00000000-0000-0000-0000-000000000000",
+			UpdatedBy:     "00000000-0000-0000-0000-000000000000",
+		},
+	}
+
+	_, err := testServer.CreatePerson(context.Background(), req)
+	if err != nil {
 		t.Log(err)
 		t.Fail()
 		return
