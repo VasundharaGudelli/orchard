@@ -539,6 +539,24 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	}, nil
 }
 
+func (h *Handlers) UpdatePersonGroups(ctx context.Context, in *servicePb.UpdatePersonGroupsRequest) (*servicePb.UpdatePersonGroupsResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "UpdatePersonGroups")
+	defer span.End()
+
+	logger := log.WithTenantID(in.TenantId)
+
+	personSvc := h.db.NewPersonService()
+
+	if err := personSvc.UpdatePersonGroups(spanCtx, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error updating person groups")
+		logger.Error(err)
+		personSvc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.UpdatePersonGroupsResponse{}, nil
+}
+
 func (h *Handlers) DeletePersonById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
 	spanCtx, span := log.StartSpan(ctx, "DeletePersonById")
 	defer span.End()

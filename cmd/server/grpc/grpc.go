@@ -75,6 +75,7 @@ func (server *OrchardGRPCServer) GetLegacyTeamStructure(ctx context.Context, in 
 	return server.handlers.GetLegacyTeamStructure(ctx, in)
 }
 
+// System Roles
 func (server *OrchardGRPCServer) CreateSystemRole(ctx context.Context, in *servicePb.CreateSystemRoleRequest) (*servicePb.CreateSystemRoleResponse, error) {
 	return server.handlers.CreateSystemRole(ctx, in)
 }
@@ -115,6 +116,7 @@ func (server *OrchardGRPCServer) DeleteCRMRoleById(ctx context.Context, in *serv
 	return server.handlers.DeleteCRMRoleById(ctx, in)
 }
 
+// Group Viewers
 func (server *OrchardGRPCServer) InsertGroupViewer(ctx context.Context, in *servicePb.InsertGroupViewerRequest) (*servicePb.InsertGroupViewerResponse, error) {
 	return server.handlers.InsertGroupViewer(ctx, in)
 }
@@ -135,6 +137,7 @@ func (server *OrchardGRPCServer) DeleteGroupViewerById(ctx context.Context, in *
 	return server.handlers.DeleteGroupViewerById(ctx, in)
 }
 
+// Person
 func (server *OrchardGRPCServer) CreatePerson(ctx context.Context, in *servicePb.CreatePersonRequest) (*servicePb.CreatePersonResponse, error) {
 	return server.handlers.CreatePerson(ctx, in)
 }
@@ -167,10 +170,15 @@ func (server *OrchardGRPCServer) UpdatePerson(ctx context.Context, in *servicePb
 	return server.handlers.UpdatePerson(ctx, in)
 }
 
+func (server *OrchardGRPCServer) UpdatePersonGroups(ctx context.Context, in *servicePb.UpdatePersonGroupsRequest) (*servicePb.UpdatePersonGroupsResponse, error) {
+	return server.handlers.UpdatePersonGroups(ctx, in)
+}
+
 func (server *OrchardGRPCServer) DeletePersonById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
 	return server.handlers.DeletePersonById(ctx, in)
 }
 
+// Groups
 func (server *OrchardGRPCServer) CreateGroup(ctx context.Context, in *servicePb.CreateGroupRequest) (*servicePb.CreateGroupResponse, error) {
 	return server.handlers.CreateGroup(ctx, in)
 }
