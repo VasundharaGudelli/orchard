@@ -43,7 +43,7 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 		if l < cursor+batchSize {
 			batchSize = l - cursor
 		}
-		wp.Go(h.createPeopleBatch(spanCtx, in.TenantId, personSvc, latestCRMUsers[cursor:batchSize], results, i))
+		wp.Go(h.createPeopleBatch(spanCtx, in.TenantId, personSvc, latestCRMUsers[cursor:batchSize+cursor], results, i))
 	}
 	if err := wp.Wait(); err != nil {
 		err := errors.Wrap(err, "error waiting for upsert person batches to create")
