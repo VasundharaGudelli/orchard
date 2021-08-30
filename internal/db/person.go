@@ -128,7 +128,7 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 		subs = append(
 			subs,
 			fmt.Sprintf(
-				"($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, %d)",
+				"($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
 				paramIdx, paramIdx+1, paramIdx+2, paramIdx+3, paramIdx+4, paramIdx+5,
 				paramIdx+6, paramIdx+7, paramIdx+8, paramIdx+9, paramIdx+10, paramIdx+11,
 				paramIdx+12, paramIdx+13, paramIdx+14, paramIdx+15, paramIdx+16, paramIdx+17,
