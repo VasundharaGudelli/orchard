@@ -568,7 +568,7 @@ func testPeopleSelect(t *testing.T) {
 }
 
 var (
-	personDBTypes = map[string]string{`ID`: `text`, `TenantID`: `uuid`, `Name`: `text`, `FirstName`: `text`, `LastName`: `text`, `Email`: `text`, `ManagerID`: `text`, `RoleIds`: `ARRAYtext`, `CRMRoleIds`: `ARRAYtext`, `IsProvisioned`: `boolean`, `IsSynced`: `boolean`, `Status`: `enum.person_status('active','inactive')`, `CreatedBy`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedBy`: `text`, `UpdatedAt`: `timestamp without time zone`, `GroupID`: `text`, `Type`: `enum.person_type('internal','manager','ic')`}
+	personDBTypes = map[string]string{`ID`: `text`, `TenantID`: `uuid`, `Name`: `text`, `FirstName`: `text`, `LastName`: `text`, `Email`: `text`, `ManagerID`: `text`, `RoleIds`: `ARRAYtext`, `CRMRoleIds`: `ARRAYtext`, `IsProvisioned`: `boolean`, `IsSynced`: `boolean`, `Status`: `enum.person_status('active','inactive')`, `CreatedBy`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedBy`: `text`, `UpdatedAt`: `timestamp without time zone`, `GroupID`: `text`, `Type`: `enum.person_type('internal','manager','ic')`, `PhotoURL`: `text`}
 	_             = bytes.MinRead
 )
 

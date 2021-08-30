@@ -40,6 +40,7 @@ func (svc *PersonService) FromProto(p *orchardPb.Person) *models.Person {
 		FirstName:     null.NewString(p.FirstName, p.FirstName != ""),
 		LastName:      null.NewString(p.LastName, p.LastName != ""),
 		Email:         null.NewString(p.Email, p.Email != ""),
+		PhotoURL:      null.NewString(p.PhotoUrl, p.PhotoUrl != ""),
 		ManagerID:     null.NewString(p.ManagerId, p.ManagerId != ""),
 		GroupID:       null.NewString(p.GroupId, p.GroupId != ""),
 		RoleIds:       types.StringArray(p.RoleIds),
@@ -78,6 +79,7 @@ func (svc *PersonService) ToProto(p *models.Person) (*orchardPb.Person, error) {
 		FirstName:     p.FirstName.String,
 		LastName:      p.LastName.String,
 		Email:         p.Email.String,
+		PhotoUrl:      p.PhotoURL.String,
 		ManagerId:     p.ManagerID.String,
 		GroupId:       p.GroupID.String,
 		RoleIds:       []string(p.RoleIds),
@@ -95,7 +97,7 @@ func (svc *PersonService) ToProto(p *models.Person) (*orchardPb.Person, error) {
 var (
 	personInsertWhitelist = []string{
 		"id", "tenant_id", "name", "first_name", "last_name", "email",
-		"manager_id", "group_id", "role_ids", "crm_role_ids",
+		"photo_url", "manager_id", "group_id", "role_ids", "crm_role_ids",
 		"is_provisioned", "is_synced", "status",
 		"created_at", "created_by", "updated_at", "updated_by",
 	}
@@ -108,10 +110,10 @@ func (svc *PersonService) Insert(ctx context.Context, p *models.Person) error {
 }
 
 const (
-	personUpsertAllQuery = `INSERT INTO person (id, tenant_id, "name", first_name, last_name, email, manager_id, group_id, role_ids, crm_role_ids, is_provisioned, is_synced, status, created_at, created_by, updated_at, updated_by) VALUES
+	personUpsertAllQuery = `INSERT INTO person (id, tenant_id, "name", first_name, last_name, email, photo_url, manager_id, group_id, role_ids, crm_role_ids, is_provisioned, is_synced, status, created_at, created_by, updated_at, updated_by) VALUES
 	{SUBS}
 ON CONFLICT (tenant_id, id) DO
-	UPDATE SET name = EXCLUDED.name, first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name, email = EXCLUDED.email, manager_id = EXCLUDED.manager_id, group_id = EXCLUDED.group_id, role_ids = EXCLUDED.role_ids, crm_role_ids = EXCLUDED.crm_role_ids, is_provisioned = EXCLUDED.is_provisioned, is_synced = EXCLUDED.is_synced, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by;`
+	UPDATE SET name = EXCLUDED.name, first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name, email = EXCLUDED.email, photo_url = EXCLUDED.photo_url, manager_id = EXCLUDED.manager_id, group_id = EXCLUDED.group_id, role_ids = EXCLUDED.role_ids, crm_role_ids = EXCLUDED.crm_role_ids, is_provisioned = EXCLUDED.is_provisioned, is_synced = EXCLUDED.is_synced, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by;`
 )
 
 func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person) error {
@@ -126,14 +128,14 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 		subs = append(
 			subs,
 			fmt.Sprintf(
-				"($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+				"($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, %d)",
 				paramIdx, paramIdx+1, paramIdx+2, paramIdx+3, paramIdx+4, paramIdx+5,
 				paramIdx+6, paramIdx+7, paramIdx+8, paramIdx+9, paramIdx+10, paramIdx+11,
-				paramIdx+12, paramIdx+13, paramIdx+14, paramIdx+15, paramIdx+16,
+				paramIdx+12, paramIdx+13, paramIdx+14, paramIdx+15, paramIdx+16, paramIdx+17,
 			),
 		)
-		paramIdx += 17
-		vals = append(vals, p.ID, p.TenantID, p.Name, p.FirstName, p.LastName, p.Email, p.ManagerID, p.GroupID, p.RoleIds, p.CRMRoleIds, p.IsProvisioned, p.IsSynced, p.Status, p.CreatedAt, p.CreatedBy, p.UpdatedAt, p.UpdatedBy)
+		paramIdx += 18
+		vals = append(vals, p.ID, p.TenantID, p.Name, p.FirstName, p.LastName, p.Email, p.PhotoURL, p.ManagerID, p.GroupID, p.RoleIds, p.CRMRoleIds, p.IsProvisioned, p.IsSynced, p.Status, p.CreatedAt, p.CreatedBy, p.UpdatedAt, p.UpdatedBy)
 	}
 
 	query := strings.ReplaceAll(personUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
@@ -265,7 +267,7 @@ func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string) 
 
 var (
 	defaultPersonUpdateWhitelist = []string{
-		"name", "first_name", "last_name", "email",
+		"name", "first_name", "last_name", "email", "photo_url",
 		"manager_id", "group_id", "role_ids", "crm_role_ids",
 		"is_provisioned", "is_synced", "status", "updated_at", "updated_by",
 	}
