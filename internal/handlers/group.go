@@ -518,16 +518,9 @@ func (h *Handlers) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest)
 	svc := h.db.NewGroupService()
 	svc.SetTransaction(tx)
 
-	if err := svc.TransferGroupChildrenParent(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
+	if err := svc.SoftDeleteGroupChildren(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
 		svc.Rollback()
-		err := errors.Wrap(err, "error transferring deleted group's children's parent")
-		logger.Error(err)
-		return nil, err.AsGRPC()
-	}
-
-	if err := svc.RemoveGroupMembers(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
-		svc.Rollback()
-		err := errors.Wrap(err, "error removing deleted group's members")
+		err := errors.Wrap(err, "error soft deleting group children groups")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}

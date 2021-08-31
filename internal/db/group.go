@@ -442,6 +442,46 @@ func (svc *GroupService) SoftDeleteByID(ctx context.Context, id, tenantID, userI
 }
 
 const (
+	softDeleteGroupChildrenQuery = `UPDATE "group"
+	SET parent_id = g.parent_id, updated_at = CURRENT_TIMESTAMP, updated_by = $3
+	FROM (
+		SELECT id, tenant_id, '' AS parent_id
+		FROM "group" g
+		WHERE g.tenant_id = $2 AND g.group_path <@ (SELECT group_path FROM "group" WHERE id = $1 AND tenant_id = $2)
+	) g
+	WHERE "group".id = g.id AND "group".tenant_id = g.tenant_id`
+
+	removeGroupMembersRecursiveQuery = `UPDATE person
+	SET group_id = '', updated_at = CURRENT_TIMESTAMP, updated_by = $3
+	FROM (
+		SELECT p.id, p.tenant_id
+		FROM person p
+		INNER JOIN (
+			SELECT id, tenant_id
+			FROM "group" g
+			WHERE g.tenant_id = $2 AND g.group_path <@ (SELECT group_path FROM "group" WHERE id = $1 AND tenant_id = $2)
+		) g ON p.group_id = g.id AND p.tenant_id = g.tenant_id
+		WHERE p.tenant_id = $2
+	) p
+	WHERE person.id = p.id AND person.tenant_id = p.tenant_id`
+)
+
+func (svc *GroupService) SoftDeleteGroupChildren(ctx context.Context, id, tenantID, userID string) error {
+	spanCtx, span := log.StartSpan(ctx, "Group.SoftDeleteGroupChildren")
+	defer span.End()
+
+	if _, err := queries.Raw(softDeleteGroupChildrenQuery, id, tenantID, userID).ExecContext(spanCtx, svc.GetContextExecutor()); err != nil {
+		return err
+	}
+
+	if _, err := queries.Raw(removeGroupMembersRecursiveQuery, id, tenantID, userID).ExecContext(spanCtx, svc.GetContextExecutor()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const (
 	softDeleteTenantGroupsQuery = `UPDATE "group"
 	SET status = 'inactive', updated_by = $1, updated_at = CURRENT_TIMESTAMP
 	WHERE tenant_id = $2`
