@@ -533,6 +533,13 @@ func (h *Handlers) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest)
 		return nil, err.AsGRPC()
 	}
 
+	if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error updating group paths")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
 	if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
 		svc.Rollback()
 		err := errors.Wrap(err, "error ensuring tenant group sync state")
