@@ -206,3 +206,7 @@ func (server *OrchardGRPCServer) UpdateGroupTypes(ctx context.Context, in *servi
 func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
 	return server.handlers.DeleteGroupById(ctx, in)
 }
+
+func (server *OrchardGRPCServer) GetTenantGroupsLastModifiedTS(ctx context.Context, in *servicePb.GetTenantGroupsLastModifiedTSRequest) (*servicePb.GetTenantGroupsLastModifiedTSResponse, error) {
+	return server.handlers.GetTenantGroupsLastModifiedTS(ctx, in)
+}

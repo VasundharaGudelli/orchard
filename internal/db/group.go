@@ -685,3 +685,25 @@ func (svc *GroupService) DeleteAllTenantGroups(ctx context.Context, tenantID str
 	}
 	return nil
 }
+
+const (
+	getLastModifiedTSQuery = `SELECT MAX(updated_at) as latest_modified_ts
+	FROM "group"
+	WHERE tenant_id = 'c3918dc8-c002-4b94-af3b-2fb4c1ff8608'
+	GROUP BY tenant_id`
+)
+
+type GetLatestModifiedTSResult struct {
+	LatestModifiedTS time.Time `json:"latestModifiedTS" boil:"latest_modified_ts"`
+}
+
+func (svc *GroupService) GetLatestModifiedTS(ctx context.Context, tenantID string) (time.Time, error) {
+	spanCtx, span := log.StartSpan(ctx, "Group.GetLatestModifiedTS")
+	defer span.End()
+	res := GetLatestModifiedTSResult{}
+	if err := queries.Raw(getLastModifiedTSQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &res); err != nil {
+		log.WithTenantID(tenantID).WithCustom("query", getLastModifiedTSQuery).Error(err)
+		return time.Time{}, err
+	}
+	return res.LatestModifiedTS, nil
+}
