@@ -443,7 +443,7 @@ func (svc *GroupService) SoftDeleteByID(ctx context.Context, id, tenantID, userI
 
 const (
 	softDeleteGroupChildrenQuery = `UPDATE "group"
-	SET parent_id = NULL, updated_at = CURRENT_TIMESTAMP, updated_by = $3
+	SET parent_id = NULL, status = 'inactive', group_path = REPLACE($2, '-', '_'), updated_at = CURRENT_TIMESTAMP, updated_by = $3
 	FROM (
 		SELECT id, tenant_id
 		FROM "group" g
