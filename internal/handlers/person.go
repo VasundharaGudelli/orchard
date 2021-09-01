@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"time"
 
 	strUtil "github.com/loupe-co/go-common/data-structures/slice/string"
@@ -188,6 +189,9 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 	limit := 20
 	if in.PageSize > 0 {
 		limit = int(in.PageSize)
+	}
+	if in.PageSize == -1 {
+		limit = math.MaxInt32
 	}
 	offset := 0
 	if in.Page > 0 {
