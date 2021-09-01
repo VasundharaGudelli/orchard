@@ -691,7 +691,7 @@ func (svc *GroupService) DeleteAllTenantGroups(ctx context.Context, tenantID str
 const (
 	getLastModifiedTSQuery = `SELECT MAX(updated_at) as latest_modified_ts
 	FROM "group"
-	WHERE tenant_id = 'c3918dc8-c002-4b94-af3b-2fb4c1ff8608'
+	WHERE tenant_id = $1
 	GROUP BY tenant_id`
 )
 
