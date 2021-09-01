@@ -430,8 +430,8 @@ func (svc *GroupService) DeleteByID(ctx context.Context, id, tenantID string) er
 func (svc *GroupService) SoftDeleteByID(ctx context.Context, id, tenantID, userID string) error {
 	spanCtx, span := log.StartSpan(ctx, "Group.SoftDeleteById")
 	defer span.End()
-	group := &models.Group{ID: id, TenantID: tenantID, UpdatedBy: userID, Status: "inactive", UpdatedAt: time.Now().UTC()}
-	numAffected, err := group.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("updated_at", "updated_by", "status"))
+	group := &models.Group{ID: id, TenantID: tenantID, UpdatedBy: userID, Status: "inactive", UpdatedAt: time.Now().UTC(), CRMRoleIds: types.StringArray{}}
+	numAffected, err := group.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("updated_at", "updated_by", "status", "crm_role_ids"))
 	if err != nil {
 		return err
 	}
@@ -443,7 +443,7 @@ func (svc *GroupService) SoftDeleteByID(ctx context.Context, id, tenantID, userI
 
 const (
 	softDeleteGroupChildrenQuery = `UPDATE "group"
-	SET parent_id = NULL, status = 'inactive', group_path = (REPLACE($2::text, '-', '_'))::ltree, updated_at = CURRENT_TIMESTAMP, updated_by = $3
+	SET parent_id = NULL, status = 'inactive', crm_role_ids = '{}', updated_at = CURRENT_TIMESTAMP, updated_by = $3
 	FROM (
 		SELECT id, tenant_id
 		FROM "group" g
@@ -485,7 +485,7 @@ func (svc *GroupService) SoftDeleteGroupChildren(ctx context.Context, id, tenant
 
 const (
 	softDeleteTenantGroupsQuery = `UPDATE "group"
-	SET status = 'inactive', updated_by = $1, updated_at = CURRENT_TIMESTAMP
+	SET status = 'inactive', crm_role_ids = '{}', updated_by = $1, updated_at = CURRENT_TIMESTAMP
 	WHERE tenant_id = $2`
 )
 
