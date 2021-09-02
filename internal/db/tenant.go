@@ -12,6 +12,7 @@ import (
 	null "github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
@@ -177,4 +178,14 @@ func (svc *TenantService) UpdateGroupSyncMetadata(ctx context.Context, tenantID 
 		return errors.Wrap(err, "error updating tenant in sql")
 	}
 	return nil
+}
+
+func (svc *TenantService) GetActiveTenants(ctx context.Context) ([]*models.Tenant, error) {
+	spanCtx, span := log.StartSpan(ctx, "Tenant.GetActiveTenants")
+	defer span.End()
+	tenants, err := models.Tenants(qm.Where("status NOT IN ('expired', 'deleted')")).All(spanCtx, svc.db)
+	if err != nil {
+		return nil, errors.Wrap(err, "error querying for active tenants")
+	}
+	return tenants, nil
 }

@@ -463,6 +463,14 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		in.Person.IsSynced = false
 	}
 
+	// Check if this is virtual user that is no longer provisioned: -> status=inactive
+	if !in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID {
+		in.Person.Status = orchardPb.BasicStatus_Inactive
+		if len(in.OnlyFields) > 0 {
+			in.OnlyFields = append(in.OnlyFields, "status")
+		}
+	}
+
 	tx, err := h.db.NewTransaction(spanCtx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating update person transaction")

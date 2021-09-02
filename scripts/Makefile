@@ -10,6 +10,12 @@ default:
 	done
 
 models:
-	pushd ../internal > /dev/null && \
+	@pushd ../internal > /dev/null && \
 	sqlboiler psql && \
+	popd > /dev/null
+
+install:
+	@pushd ../cmd/cli > /dev/null && \
+	echo "installing orchard cli at ${GOPATH}/bin" && \
+	go build -o ${GOPATH}/bin/orchard && \
 	popd > /dev/null

@@ -199,7 +199,7 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 	paramIdx := 2
 	if query != "" {
 		paramIdx = 3
-		searchClause := "LOWER(name) LIKE $2 OR LOWER(email) LIKE $2"
+		searchClause := "(LOWER(name) LIKE $2 OR LOWER(email) LIKE $2)"
 		queryParts = append(queryParts, qm.And(searchClause, "%"+strings.ToLower(query)+"%"))
 	}
 
