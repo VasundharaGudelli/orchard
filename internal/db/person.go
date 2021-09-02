@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -204,7 +203,9 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 	if len(strings.TrimSpace(query)) >= 3 {
 		paramIdx = 3
 		searchClause := "LOWER(name) LIKE $2 OR LOWER(email) LIKE $2"
-		queryParts = append(queryParts, qm.And(searchClause, "%"+strings.ToLower(query)+"%"))
+		p := qm.And(searchClause, "%"+strings.ToLower(query)+"%")
+		fmt.Println("p", p)
+		queryParts = append(queryParts, p)
 	}
 
 	for _, filter := range filters {
@@ -233,8 +234,7 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 		paramIdx++
 	}
 
-	b, _ := json.Marshal(queryParts)
-	fmt.Println(string(b))
+	fmt.Println(queryParts)
 	total, err := models.People(queryParts...).Count(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, 0, err
