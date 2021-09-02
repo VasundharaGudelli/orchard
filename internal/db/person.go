@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -197,7 +198,7 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 	queryParts := []qm.QueryMod{}
 	queryParts = append(queryParts, qm.Where("tenant_id=$1", tenantID))
 	paramIdx := 2
-	if query != "" {
+	if len(strings.TrimSpace(query)) >= 3 {
 		paramIdx = 3
 		searchClause := "LOWER(name) LIKE $2 OR LOWER(email) LIKE $2"
 		queryParts = append(queryParts, qm.And(searchClause, "%"+strings.ToLower(query)+"%"))
@@ -229,6 +230,8 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 		paramIdx++
 	}
 
+	b, _ := json.Marshal(queryParts)
+	fmt.Println(string(b))
 	total, err := models.People(queryParts...).Count(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, 0, err
