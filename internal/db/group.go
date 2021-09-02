@@ -661,7 +661,18 @@ const (
 		LEFT OUTER JOIN "group" g2 ON g.tenant_id = g2.tenant_id AND g.id = g2.parent_id
 		WHERE g.tenant_id = $1
 	) groups
-	WHERE "group".id = groups.id AND "group".tenant_id = groups.tenant_id`
+	WHERE "group".id = groups.id AND "group".tenant_id = groups.tenant_id;
+	
+	UPDATE person
+	SET "type" = pg."type"::person_type, updated_by = '00000000-0000-0000-0000-000000000000', updated_at = CURRENT_TIMESTAMP
+	FROM (
+		SELECT p.id, p.tenant_id, g."type"::text
+		FROM person p
+		INNER JOIN "group" g ON p.group_id = g.id AND p.tenant_id = g.tenant_id
+		WHERE p.tenant_id = $1
+	) pg
+	WHERE person.id = pg.id AND person.tenant_id = pg.tenant_id;
+	`
 )
 
 func (svc *GroupService) UpdateGroupTypes(ctx context.Context, tenantID string) error {
