@@ -662,7 +662,7 @@ const (
 		WHERE g.tenant_id = $1
 	) groups
 	WHERE "group".id = groups.id AND "group".tenant_id = groups.tenant_id;
-	
+
 	UPDATE person
 	SET "type" = pg."type"::person_type, updated_by = '00000000-0000-0000-0000-000000000000', updated_at = CURRENT_TIMESTAMP
 	FROM (

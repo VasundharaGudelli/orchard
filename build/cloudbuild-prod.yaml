@@ -13,7 +13,7 @@ steps:
   - name: 'ssh'
     path: /root/.ssh
 
-- name: "golang:1.14"
+- name: "golang:1.16"
   id: 'Build'
   entrypoint: "bash"
   args:
@@ -22,14 +22,14 @@ steps:
       ssh-keyscan github.com > /root/.ssh/known_hosts
       git config --global --add url."git@github.com:".insteadOf "https://github.com/"
       chmod 0600 /root/.ssh/id_rsa
-      GOOS=linux CGO_ENABLED=0 go mod tidy && GOOS=linux CGO_ENABLED=0 go build -a -installsuffix cgo -o ./bin/orchard ./cmd/server
+      GOOS=linux CGO_ENABLED=0 go mod tidy && GOOS=linux CGO_ENABLED=0 go build -a -installsuffix cgo -o /go/bin/orchard ./cmd/server
   volumes:
   - name: 'ssh'
     path: /root/.ssh
 
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Docker Build'
-  args: ['build', '-f', './build/Dockerfile', '--tag=gcr.io/loupe-prod/orchard:$TAG_NAME', '.']
+  args: ['build', '-f', 'build/Dockerfile', '--tag=gcr.io/loupe-prod/orchard:$TAG_NAME', '/go']
 
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Push'
