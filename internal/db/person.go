@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -242,7 +243,9 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 		return nil, total, err
 	}
 
-	fmt.Println(people)
+	b, _ := json.Marshal(people)
+
+	fmt.Println(queryParts, string(b))
 
 	return people, total, nil
 }
