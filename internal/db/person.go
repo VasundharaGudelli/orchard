@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -125,6 +124,9 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 
 	paramIdx := 1
 	for _, p := range people {
+		if p == nil {
+			continue
+		}
 		subs = append(
 			subs,
 			fmt.Sprintf(
@@ -142,10 +144,7 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 
 	_, err := queries.Raw(query, vals...).ExecContext(spanCtx, svc.GetContextExecutor())
 	if err != nil {
-		argsRaw, _ := json.Marshal(vals)
-		// Printing to stdout because query/args may be too long for stackdriver logging to pick up, still should probably clean this up though
-		fmt.Println("QUERY", query)
-		fmt.Println("ARGS", string(argsRaw))
+		log.WithCustom("query", query).Debug("error running upsert person query")
 		return err
 	}
 

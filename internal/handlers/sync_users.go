@@ -117,6 +117,10 @@ func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, svc *
 			p.UpdatedBy = db.DefaultTenantID
 			p.UpdatedAt = time.Now().UTC()
 			if current, ok := existingPeople[person.Id]; ok {
+				if current.CreatedBy != db.DefaultTenantID {
+					batch[i] = nil
+					continue
+				}
 				if len(p.RoleIds) == 0 {
 					p.RoleIds = current.RoleIds
 				}
@@ -125,9 +129,6 @@ func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, svc *
 				}
 				p.IsSynced = current.IsSynced
 				p.IsProvisioned = current.IsProvisioned
-				if current.CreatedBy != db.DefaultTenantID {
-					p.Status = current.Status
-				}
 			} else {
 				p.CreatedBy = db.DefaultTenantID
 				p.CreatedAt = time.Now().UTC()
