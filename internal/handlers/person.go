@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"time"
 
@@ -178,9 +177,6 @@ func (h *Handlers) GetPersonById(ctx context.Context, in *servicePb.IdRequest) (
 func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleRequest) (*servicePb.SearchPeopleResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "SearchPeople")
 	defer span.End()
-
-	b, _ := json.Marshal(in)
-	fmt.Println(string(b))
 
 	logger := log.WithTenantID(in.TenantId).WithCustom("search", in.Search).WithCustom("page", in.Page).WithCustom("pageSize", in.PageSize)
 

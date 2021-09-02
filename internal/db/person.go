@@ -192,9 +192,6 @@ type PersonFilter struct {
 }
 
 func (svc *PersonService) Search(ctx context.Context, tenantID, query string, limit, offset int, filters ...PersonFilter) ([]*models.Person, int64, error) {
-
-	fmt.Println(query, filters)
-
 	spanCtx, span := log.StartSpan(ctx, "Person.Search")
 	defer span.End()
 	queryParts := []qm.QueryMod{}
@@ -204,7 +201,6 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 		paramIdx = 3
 		searchClause := "LOWER(name) LIKE $2 OR LOWER(email) LIKE $2"
 		p := qm.And(searchClause, "%"+strings.ToLower(query)+"%")
-		fmt.Println("p", p)
 		queryParts = append(queryParts, p)
 	}
 
@@ -234,7 +230,6 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 		paramIdx++
 	}
 
-	fmt.Println(queryParts)
 	total, err := models.People(queryParts...).Count(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, 0, err
@@ -246,6 +241,8 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 	if err != nil {
 		return nil, total, err
 	}
+
+	fmt.Println(people)
 
 	return people, total, nil
 }
