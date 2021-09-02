@@ -197,9 +197,9 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 	queryParts := []qm.QueryMod{}
 	queryParts = append(queryParts, qm.Where("tenant_id=$1", tenantID))
 	paramIdx := 2
-	if query != "" {
+	if len(strings.TrimSpace(query)) >= 3 {
 		paramIdx = 3
-		searchClause := "(LOWER(name) LIKE $2 OR LOWER(email) LIKE $2)"
+		searchClause := "LOWER(name) LIKE $2 OR LOWER(email) LIKE $2"
 		queryParts = append(queryParts, qm.And(searchClause, "%"+strings.ToLower(query)+"%"))
 	}
 
