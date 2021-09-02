@@ -160,3 +160,16 @@ func (ac Auth0Client) getByUserID(ctx context.Context, client *management.Manage
 	}
 	return users.Users[0], nil
 }
+
+func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.Management, tenantID, email string) ([]*management.User, error) {
+	q := fmt.Sprintf(`app_metadata.tenant_id:"%s" AND email:"%s"`, tenantID, email)
+	mQ := management.Query(q)
+	users, err := client.User.List(mQ, management.PerPage(1000), management.Parameter("search_engine", "v3"))
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting list of users from auth0")
+	}
+	if users == nil || len(users.Users) == 0 {
+		return nil, nil
+	}
+	return users.Users, nil
+}

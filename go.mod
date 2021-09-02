@@ -16,6 +16,7 @@ require (
 	github.com/loupe-co/go-loupe-logger v1.0.0
 	github.com/loupe-co/protos v0.0.0-20210831162257-772694f22c53
 	github.com/spf13/viper v1.8.1
+	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/randomize v0.0.1
 	github.com/volatiletech/sqlboiler/v4 v4.6.0
