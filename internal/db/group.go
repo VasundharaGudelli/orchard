@@ -120,8 +120,11 @@ func (svc *GroupService) GetByID(ctx context.Context, id, tenantID string) (*mod
 	spanCtx, span := log.StartSpan(ctx, "Group.GetById")
 	defer span.End()
 	group, err := models.Groups(qm.Where("id=$1 AND tenant_id=$2", id, tenantID)).One(spanCtx, svc.GetContextExecutor())
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
+	}
+	if err == sql.ErrNoRows || group == nil {
+		return nil, nil
 	}
 
 	return group, nil

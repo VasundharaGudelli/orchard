@@ -192,6 +192,10 @@ func (h *Handlers) GetGroupById(ctx context.Context, in *servicePb.IdRequest) (*
 		return nil, err.AsGRPC()
 	}
 
+	if g == nil {
+		return nil, errors.New("group not found").WithCode(codes.NotFound).AsGRPC()
+	}
+
 	group, err := svc.ToProto(g)
 	if err != nil {
 		err := errors.Wrap(err, "error converting group db model to proto")
