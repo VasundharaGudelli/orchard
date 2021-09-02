@@ -193,6 +193,9 @@ type PersonFilter struct {
 }
 
 func (svc *PersonService) Search(ctx context.Context, tenantID, query string, limit, offset int, filters ...PersonFilter) ([]*models.Person, int64, error) {
+
+	fmt.Println(query, filters)
+
 	spanCtx, span := log.StartSpan(ctx, "Person.Search")
 	defer span.End()
 	queryParts := []qm.QueryMod{}
