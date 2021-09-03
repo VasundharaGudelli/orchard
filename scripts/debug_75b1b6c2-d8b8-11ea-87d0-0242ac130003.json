@@ -1,0 +1,114 @@
+{
+  "people": [
+    {
+      "id": "39796290",
+      "tenant_id": "75b1b6c2-d8b8-11ea-87d0-0242ac130003",
+      "name": "Kayla Stamatis",
+      "first_name": "Kayla",
+      "last_name": "Stamatis",
+      "email": "kayla@revunit.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.991255Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.991255Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    },
+    {
+      "id": "55172639",
+      "tenant_id": "75b1b6c2-d8b8-11ea-87d0-0242ac130003",
+      "name": "Danny Estavillo",
+      "first_name": "Danny",
+      "last_name": "Estavillo",
+      "email": "danny@revunit.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.991258Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.991258Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    },
+    {
+      "id": "30154170",
+      "tenant_id": "75b1b6c2-d8b8-11ea-87d0-0242ac130003",
+      "name": "Brian Hughes",
+      "first_name": "Brian",
+      "last_name": "Hughes",
+      "email": "brian.hughes@revunit.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.991259Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.991259Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    },
+    {
+      "id": "63188767",
+      "tenant_id": "75b1b6c2-d8b8-11ea-87d0-0242ac130003",
+      "name": "Josh Husereau",
+      "first_name": "Josh",
+      "last_name": "Husereau",
+      "email": "josh.husereau@revunit.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.991259Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.991259Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    },
+    {
+      "id": "43099509",
+      "tenant_id": "75b1b6c2-d8b8-11ea-87d0-0242ac130003",
+      "name": "Bri Suitt",
+      "first_name": "Bri",
+      "last_name": "Suitt",
+      "email": "bri@revunit.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.99126Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.99126Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    }
+  ]
+}

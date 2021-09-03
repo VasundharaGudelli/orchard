@@ -1,0 +1,26 @@
+{
+  "people": [
+    {
+      "id": "00537000000N1N2AAK",
+      "tenant_id": "6c83e33f-444b-4a0c-8b78-708a6661200e",
+      "name": "Mark Garcia",
+      "first_name": "Mark",
+      "last_name": "Garcia",
+      "email": "mark@buildout.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:15.399986Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:15.399986Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://c.na71.content.force.com/profilephoto/729370000004L2K/F"
+    }
+  ]
+}

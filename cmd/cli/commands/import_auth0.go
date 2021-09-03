@@ -67,6 +67,8 @@ func importAuth0Users(ctx context.Context, env string, debug bool) error {
 		roleUserMap[roleID] = people
 	}
 	userRoles := getAuth0UserRoleMap(roleUserMap)
+	rawUserRoles, _ := json.MarshalIndent(userRoles, "", "  ")
+	fixtures.WriteTestResult("./userRoles.json", rawUserRoles)
 
 	parGroup, _ := commonSync.NewWorkerPool(ctx, 1)
 	for _, tenant := range tenants {
@@ -87,6 +89,7 @@ func runTenantAuth0Users(ctx context.Context, env, tenantID string, dbClient *db
 			return err
 		}
 		people = mergeAuth0Users(people)
+		people = mergeAuth0UsersByID(people)
 
 		ids := make([]interface{}, len(people))
 		for i, person := range people {
@@ -118,9 +121,6 @@ func runTenantAuth0Users(ctx context.Context, env, tenantID string, dbClient *db
 			p.IsProvisioned = true
 			p.IsSynced = false
 			p.Status = strings.ToLower(orchard.BasicStatus_Active.String())
-			role := userRoles[p.Email.String]
-			p.RoleIds = []string{role}
-			p.Type = roleTypes[role]
 			if current, ok := existingPeople[person.Id]; ok {
 				if current.Name.Valid {
 					p.Name = current.Name
@@ -150,11 +150,19 @@ func runTenantAuth0Users(ctx context.Context, env, tenantID string, dbClient *db
 				p.Status = current.Status
 				p.Type = current.Type
 			}
+			role := userRoles[p.Email.String]
+			if role != "" {
+				p.RoleIds = []string{role}
+			}
+			p.Type = roleTypes[role]
 			batch[i] = p
 		}
 
 		fmt.Println("Upserting provisioned users for tenant", tenantID)
 		if !debug {
+			if len(batch) == 0 {
+				return nil
+			}
 			if err := personSvc.UpsertAll(ctx, batch); err != nil {
 				return err
 			}
@@ -177,6 +185,24 @@ func mergeAuth0Users(people []*orchard.Person) []*orchard.Person {
 	mergeMap := make(map[string][]*orchard.Person)
 	for _, person := range people {
 		key := person.Email
+		if _, ok := mergeMap[key]; !ok {
+			mergeMap[key] = []*orchard.Person{}
+		}
+		mergeMap[key] = append(mergeMap[key], person)
+	}
+	merged := make([]*orchard.Person, len(mergeMap))
+	i := 0
+	for _, samePeeps := range mergeMap {
+		merged[i] = mergeUsers(samePeeps)
+		i++
+	}
+	return merged
+}
+
+func mergeAuth0UsersByID(people []*orchard.Person) []*orchard.Person {
+	mergeMap := make(map[string][]*orchard.Person)
+	for _, person := range people {
+		key := person.Id
 		if _, ok := mergeMap[key]; !ok {
 			mergeMap[key] = []*orchard.Person{}
 		}

@@ -1,0 +1,136 @@
+{
+  "people": [
+    {
+      "id": "73407099",
+      "tenant_id": "a37b948b-c83a-4445-905e-57eeada75d67",
+      "name": "Joe Richlen",
+      "first_name": "Joe",
+      "last_name": "Richlen",
+      "email": "joe.richlen@msidata.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.334794Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.334794Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    },
+    {
+      "id": "34767906",
+      "tenant_id": "a37b948b-c83a-4445-905e-57eeada75d67",
+      "name": "Zach Eder",
+      "first_name": "Zach",
+      "last_name": "Eder",
+      "email": "zach.eder@msidata.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.334795Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.334795Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    },
+    {
+      "id": "44830955",
+      "tenant_id": "a37b948b-c83a-4445-905e-57eeada75d67",
+      "name": "Geoff Surkamer",
+      "first_name": "Geoff",
+      "last_name": "Surkamer",
+      "email": "geoff.surkamer@msidata.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.334797Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.334797Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    },
+    {
+      "id": "17",
+      "tenant_id": "a37b948b-c83a-4445-905e-57eeada75d67",
+      "name": "Mike Pandl",
+      "first_name": "Mike",
+      "last_name": "Pandl",
+      "email": "mikep@msidata.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.334797Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.334798Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    },
+    {
+      "id": "2257155",
+      "tenant_id": "a37b948b-c83a-4445-905e-57eeada75d67",
+      "name": "Adam Bartos",
+      "first_name": "Adam",
+      "last_name": "Bartos",
+      "email": "adamb@msidata.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.334798Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.334798Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    },
+    {
+      "id": "17",
+      "tenant_id": "a37b948b-c83a-4445-905e-57eeada75d67",
+      "name": "Mike Pandl",
+      "first_name": "Mike",
+      "last_name": "Pandl",
+      "email": "mikep@msidata.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:18.334799Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:18.334799Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    }
+  ]
+}

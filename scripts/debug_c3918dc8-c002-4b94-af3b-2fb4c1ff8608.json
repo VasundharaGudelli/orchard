@@ -1,6 +1,81 @@
 {
   "people": [
     {
+      "id": "0053o000008AlucAAC",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "David Rubinstein",
+      "first_name": "David",
+      "last_name": "Rubinstein",
+      "email": "david.rubinstein@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BnHkUAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654043Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654043Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007uH0EQAU",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Tom Castley",
+      "first_name": "Tom",
+      "last_name": "Castley",
+      "email": "tom.castley@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002PBDoEAO"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654045Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654045Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/7290V000000wwBU/F"
+    },
+    {
+      "id": "0053o000008tGAwAAM",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Mark Poynton",
+      "first_name": "Mark",
+      "last_name": "Poynton",
+      "email": "mark.poynton@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002PBDnEAO"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654046Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654046Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
       "id": "005d0000001bcPeAAI",
       "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
       "name": "Manny Medina",
@@ -18,23 +93,23 @@
       "is_synced": true,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:31.398702Z",
+      "created_at": "2021-09-03T01:46:11.654047Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:31.398702Z",
-      "group_id": "91302fe4-0b31-11ec-a997-4201ac1f700d",
-      "type": "ic",
+      "updated_at": "2021-09-03T01:46:11.654047Z",
+      "group_id": null,
+      "type": "manager",
       "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/729d0000000QQes/F"
     },
     {
-      "id": "0050V000007s1zvQAA",
+      "id": "0053o000008t32pAAA",
       "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
-      "name": "James Lee",
-      "first_name": "James",
-      "last_name": "Lee",
-      "email": "jim.lee@outreach.io",
+      "name": "Feras Abdel",
+      "first_name": "Feras",
+      "last_name": "Abdel",
+      "email": "feras.abdel@outreach.io",
       "manager_id": null,
       "role_ids": [
-        "8d94bd88-78a5-467c-a0d8-079f26b412d9"
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
       ],
       "crm_role_ids": [
         "00Ed0000000eEgwEAE"
@@ -43,11 +118,305 @@
       "is_synced": true,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:31.398704Z",
+      "created_at": "2021-09-03T01:46:11.654048Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:31.398704Z",
-      "group_id": "91306112-0b31-11ec-a997-4201ac1f700d",
-      "type": "ic",
+      "updated_at": "2021-09-03T01:46:11.654048Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008AHiAAAW",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Sean Gentry",
+      "first_name": "Sean",
+      "last_name": "Gentry",
+      "email": "sean.gentry@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o0000028HvdEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.65405Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.65405Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008A6FuAAK",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Amritansh Raghav",
+      "first_name": "Amritansh",
+      "last_name": "Raghav",
+      "email": "amritansh.raghav@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eQXYEA2"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654051Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654051Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "005d00000052FE3AAM",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "David Brudnicki",
+      "first_name": "David",
+      "last_name": "Brudnicki",
+      "email": "david.brudnicki@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000001UubbEAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654052Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654052Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "005d0000003lePaAAI",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Mark Kosoglow",
+      "first_name": "Mark",
+      "last_name": "Kosoglow",
+      "email": "mark.kosoglow@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BnHxUAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654053Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654053Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/729d0000000Qbc1/F"
+    },
+    {
+      "id": "0053o000008A5zhAAC",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Eugene Ho",
+      "first_name": "Eugene",
+      "last_name": "Ho",
+      "email": "eugene.ho@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed00000018BQwEAM"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654054Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654054Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000006jePQQAY",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Nathan Broome",
+      "first_name": "Nathan",
+      "last_name": "Broome",
+      "email": "nathan.broome@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BnHlUAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654054Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654054Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/7290V0000019PMJ/F"
+    },
+    {
+      "id": "0053o000008FNRiAAO",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Adrien Marienne",
+      "first_name": "Adrien",
+      "last_name": "Marienne",
+      "email": "adrien.marienne@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed00000018AScEAM"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654055Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654055Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008FR0RAAW",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Harish Mohan",
+      "first_name": "Harish",
+      "last_name": "Mohan",
+      "email": "harish.mohan@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEgwEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654056Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654056Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008uBgZAAU",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Matthew Power",
+      "first_name": "Matthew",
+      "last_name": "Power",
+      "email": "matthew.power@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BnHrUAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654056Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654057Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008ttI2AAI",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Mary Shea",
+      "first_name": "Mary",
+      "last_name": "Shea",
+      "email": "mary.shea@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654057Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654057Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008uABVAA2",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "David Ona",
+      "first_name": "David",
+      "last_name": "Ona",
+      "email": "david.ona@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000001rJ2YEAU"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654058Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654058Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008vdpZAAQ",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Eli Sonkin",
+      "first_name": "Eli",
+      "last_name": "Sonkin",
+      "email": "eli.sonkin@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654059Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654059Z",
+      "group_id": null,
+      "type": "manager",
       "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
     },
     {
@@ -68,79 +437,537 @@
       "is_synced": true,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:31.398706Z",
+      "created_at": "2021-09-03T01:46:11.654059Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:31.398706Z",
-      "group_id": "91302fe4-0b31-11ec-a997-4201ac1f700d",
-      "type": "ic",
+      "updated_at": "2021-09-03T01:46:11.654059Z",
+      "group_id": null,
+      "type": "manager",
       "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
     },
     {
-      "id": "caa80769-0b32-11ec-ab2e-162327c35b29",
+      "id": "0053o000008A8awAAC",
       "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
-      "name": "Nick Ambrose",
-      "first_name": "Nick",
-      "last_name": "Ambrose",
-      "email": "nick.ambrose@outreach.io",
+      "name": "Lucas Dillow",
+      "first_name": "Lucas",
+      "last_name": "Dillow",
+      "email": "lucas.dillow@outreach.io",
       "manager_id": null,
       "role_ids": [
         "a2e39cf5-e016-44a4-b037-057a16fe14fc"
       ],
-      "is_provisioned": true,
-      "is_synced": false,
-      "status": "active",
-      "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:31.398707Z",
-      "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:31.398707Z",
-      "group_id": "91306112-0b31-11ec-a997-4201ac1f700d",
-      "type": "ic",
-      "photo_url": null
-    },
-    {
-      "id": "21372efe-0b79-11ec-ab2e-162327c35b29",
-      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
-      "name": "Some User",
-      "first_name": "Some",
-      "last_name": "User",
-      "email": "will.jaynes@outreach.io",
-      "manager_id": null,
-      "role_ids": [
-        "6f71019d-25cf-4c6a-a31e-bdd25472ba26",
-        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      "crm_role_ids": [
+        "00E3o000001rIEFEA2"
       ],
       "is_provisioned": true,
-      "is_synced": false,
+      "is_synced": true,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:31.398707Z",
+      "created_at": "2021-09-03T01:46:11.65406Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:31.398707Z",
+      "updated_at": "2021-09-03T01:46:11.65406Z",
       "group_id": null,
-      "type": "ic",
-      "photo_url": null
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
     },
     {
-      "id": "2e046c12-0b79-11ec-ab2e-162327c35b29",
+      "id": "0053o000008AlqzAAC",
       "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
-      "name": "Test User",
-      "first_name": "Test",
-      "last_name": "User",
-      "email": "some@user.com",
+      "name": "Rajit Joseph",
+      "first_name": "Rajit",
+      "last_name": "Joseph",
+      "email": "rajit.joseph@outreach.io",
       "manager_id": null,
       "role_ids": [
-        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed00000018BQwEAM"
       ],
       "is_provisioned": true,
-      "is_synced": false,
+      "is_synced": true,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:31.398708Z",
+      "created_at": "2021-09-03T01:46:11.65406Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:31.398708Z",
-      "group_id": "91306112-0b31-11ec-a997-4201ac1f700d",
-      "type": "ic",
-      "photo_url": null
+      "updated_at": "2021-09-03T01:46:11.65406Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/7293o000001h71P/F"
+    },
+    {
+      "id": "0053o000008uVJJAA2",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Ian Varonin",
+      "first_name": "Ian",
+      "last_name": "Varonin",
+      "email": "ian.varonin@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEgwEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654061Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654061Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007uGzzQAE",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Chris Albro",
+      "first_name": "Chris",
+      "last_name": "Albro",
+      "email": "chris.albro@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BnHmUAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654062Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654062Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008F62JAAS",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Drew Laxton",
+      "first_name": "Drew",
+      "last_name": "Laxton",
+      "email": "drew.laxton@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed00000018AScEAM"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654062Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654062Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007LD9bQAG",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Jonathan Muller",
+      "first_name": "Jonathan",
+      "last_name": "Muller",
+      "email": "jonathan.muller@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEgwEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654063Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654063Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/7290V000001Hq18/F"
+    },
+    {
+      "id": "0053o000008t9WMAAY",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Justin Hammergren",
+      "first_name": "Justin",
+      "last_name": "Hammergren",
+      "email": "justin.hammergren@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed00000018AScEAM"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654064Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654064Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007s1zvQAA",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "James Lee",
+      "first_name": "James",
+      "last_name": "Lee",
+      "email": "jim.lee@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEgwEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654075Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654076Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007s1zvQAA",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "James Lee",
+      "first_name": "James",
+      "last_name": "Lee",
+      "email": "jim.lee@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEgwEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654077Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654077Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000006kiDaQAI",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Mike Zinne",
+      "first_name": "Mike",
+      "last_name": "Zinne",
+      "email": "mike.zinne@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BnHvUAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654077Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654077Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008NCl2AAG",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Chad O'Connor",
+      "first_name": "Chad",
+      "last_name": "O'Connor",
+      "email": "chad.oconnor@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000002AxuuEAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654078Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654078Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008uxPFAAY",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Kevin Mould",
+      "first_name": "Kevin",
+      "last_name": "Mould",
+      "email": "kevin.mould@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000001pxG9EAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654079Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654079Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007s9sYQAQ",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Shay Keeler",
+      "first_name": "Shay",
+      "last_name": "Keeler",
+      "email": "shay.keeler@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BnHqUAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654079Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654079Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008AVQ9AAO",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Elliott Straube",
+      "first_name": "Elliott",
+      "last_name": "Straube",
+      "email": "elliott.straube@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEgwEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.65408Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.65408Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008AnQUAA0",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Mark Fagundes",
+      "first_name": "Mark",
+      "last_name": "Fagundes",
+      "email": "mark.fagundes@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BnHpUAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.65408Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654081Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/7293o000001h71y/F"
+    },
+    {
+      "id": "0050V000007rrQCQAY",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Phu Bui",
+      "first_name": "Phu",
+      "last_name": "Bui",
+      "email": "phu.bui@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEgwEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "inactive",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654081Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654081Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/7290V000000wuCf/F"
+    },
+    {
+      "id": "005d00000063HNIAA2",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Maarten Vandewinkel",
+      "first_name": "Maarten",
+      "last_name": "Vandewinkel",
+      "email": "maarten.vandewinkel@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEgwEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654082Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654082Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008sdPnAAI",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Riyaz Habibbhai",
+      "first_name": "Riyaz",
+      "last_name": "Habibbhai",
+      "email": "riyaz.habibbhai@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000001pxG9EAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654083Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654083Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007LYu4QAG",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Brett Madres",
+      "first_name": "Brett",
+      "last_name": "Madres",
+      "email": "brett.madres@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEgwEAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654083Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654083Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008NcGRAA0",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Melissa Fisher",
+      "first_name": "Melissa",
+      "last_name": "Fisher",
+      "email": "melissa.fisher@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ed0000000eEh1EAE"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654084Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654084Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007sV7FQAU",
+      "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
+      "name": "Levi Thomas",
+      "first_name": "Levi",
+      "last_name": "Thomas",
+      "email": "levi.thomas@outreach.io",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BnHsUAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:11.654084Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:11.654084Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://outreach--c.na118.content.force.com/profilephoto/005/F"
     }
   ]
 }

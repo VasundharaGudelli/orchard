@@ -1,0 +1,79 @@
+{
+  "people": [
+    {
+      "id": "0056g00000479nmAAA",
+      "tenant_id": "c7dd7c2d-8127-4be5-b25c-b2a54f6e6d89",
+      "name": "Kenny Stevens",
+      "first_name": "Kenny",
+      "last_name": "Stevens",
+      "email": "kenny.stevens@leasequery.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E6g000000DemjEAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:17.657319Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:17.657319Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://leasequery--c.documentforce.com/profilephoto/005/F"
+    },
+    {
+      "id": "0056g000004zMpZAAU",
+      "tenant_id": "c7dd7c2d-8127-4be5-b25c-b2a54f6e6d89",
+      "name": "Brenton Heffernan",
+      "first_name": "Brenton",
+      "last_name": "Heffernan",
+      "email": "brenton.heffernan@leasequery.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E6g000000Den8EAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:17.657321Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:17.657321Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://leasequery--c.documentforce.com/profilephoto/005/F"
+    },
+    {
+      "id": "0056g000004zMpaAAE",
+      "tenant_id": "c7dd7c2d-8127-4be5-b25c-b2a54f6e6d89",
+      "name": "JJ Imbeaux",
+      "first_name": "JJ",
+      "last_name": "Imbeaux",
+      "email": "jj.imbeaux@leasequery.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E6g000000Den8EAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:17.657322Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:17.657322Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://leasequery--c.documentforce.com/profilephoto/005/F"
+    }
+  ]
+}

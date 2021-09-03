@@ -1,6 +1,50 @@
 {
   "people": [
     {
+      "id": "0053k00000BFxx4AAD",
+      "tenant_id": "921c8950-1a0c-43bd-ba37-e8357c93c8e9",
+      "name": "Dan Langfield",
+      "first_name": "Dan",
+      "last_name": "Langfield",
+      "email": "dan@canopy.io",
+      "manager_id": null,
+      "role_ids": [
+        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:10.826055Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:10.826055Z",
+      "group_id": null,
+      "type": "internal",
+      "photo_url": "https://loupe123--c.documentforce.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053k00000BFz4pAAD",
+      "tenant_id": "921c8950-1a0c-43bd-ba37-e8357c93c8e9",
+      "name": "Olivia Huff",
+      "first_name": "Olivia",
+      "last_name": "Huff",
+      "email": "olivia@canopy.io",
+      "manager_id": null,
+      "role_ids": [
+        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:10.826059Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:10.826059Z",
+      "group_id": null,
+      "type": "internal",
+      "photo_url": "https://loupe123--c.documentforce.com/profilephoto/005/F"
+    },
+    {
       "id": "0053k00000AukyKAAR",
       "tenant_id": "921c8950-1a0c-43bd-ba37-e8357c93c8e9",
       "name": "Adam Cuzzort",
@@ -8,18 +52,15 @@
       "last_name": "Cuzzort",
       "email": "adam@loupe.co",
       "manager_id": null,
-      "role_ids": [
-        "8d94bd88-78a5-467c-a0d8-079f26b412d9"
-      ],
       "is_provisioned": true,
       "is_synced": true,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:30.708384Z",
+      "created_at": "2021-09-03T01:46:10.826062Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:30.708384Z",
-      "group_id": "ab9c66e3-0764-11ec-a7fb-1e54545024f6",
-      "type": "ic",
+      "updated_at": "2021-09-03T01:46:10.826062Z",
+      "group_id": null,
+      "type": "",
       "photo_url": "https://loupe123--c.documentforce.com/profilephoto/005/F"
     },
     {
@@ -31,17 +72,61 @@
       "email": "brandon@canopy.io",
       "manager_id": null,
       "role_ids": [
-        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
       ],
       "is_provisioned": true,
       "is_synced": true,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:30.708386Z",
+      "created_at": "2021-09-03T01:46:10.826064Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:30.708386Z",
-      "group_id": "b24b6a6f-0764-11ec-a7fb-1e54545024f6",
-      "type": "ic",
+      "updated_at": "2021-09-03T01:46:10.826064Z",
+      "group_id": null,
+      "type": "internal",
+      "photo_url": "https://loupe123--c.documentforce.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053k00000A4Ub2AAF",
+      "tenant_id": "921c8950-1a0c-43bd-ba37-e8357c93c8e9",
+      "name": "Patrick Rodgers",
+      "first_name": "Patrick",
+      "last_name": "Rodgers",
+      "email": "pat@canopy.io",
+      "manager_id": null,
+      "role_ids": [
+        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "inactive",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:10.826065Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:10.826066Z",
+      "group_id": null,
+      "type": "internal",
+      "photo_url": "https://loupe123--c.documentforce.com/profilephoto/005/F"
+    },
+    {
+      "id": "0054z000009cxhfAAA",
+      "tenant_id": "921c8950-1a0c-43bd-ba37-e8357c93c8e9",
+      "name": "Will Jaynes",
+      "first_name": "Will",
+      "last_name": "Jaynes",
+      "email": "will@canopy.io",
+      "manager_id": null,
+      "role_ids": [
+        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:10.826084Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:10.826084Z",
+      "group_id": null,
+      "type": "internal",
       "photo_url": "https://loupe123--c.documentforce.com/profilephoto/005/F"
     }
   ]
