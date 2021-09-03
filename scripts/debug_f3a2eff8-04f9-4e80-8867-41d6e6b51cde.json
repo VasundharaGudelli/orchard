@@ -1,0 +1,51 @@
+{
+  "people": [
+    {
+      "id": "0053h0000032ko6AAA",
+      "tenant_id": "f3a2eff8-04f9-4e80-8867-41d6e6b51cde",
+      "name": "Ryan Cupari",
+      "first_name": "Ryan",
+      "last_name": "Cupari",
+      "email": "rcupari@patriotsoftware.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:13.244926Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:13.244926Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://patriotsoftware--c.documentforce.com/profilephoto/7293h000000HfBR/F"
+    },
+    {
+      "id": "0053h000000cCvoAAE",
+      "tenant_id": "f3a2eff8-04f9-4e80-8867-41d6e6b51cde",
+      "name": "Steve Hoffman",
+      "first_name": "Steve",
+      "last_name": "Hoffman",
+      "email": "shoffman@patriotsoftware.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3h000000YNp8EAG"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:13.244928Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:13.244928Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://patriotsoftware--c.documentforce.com/profilephoto/005/F"
+    }
+  ]
+}

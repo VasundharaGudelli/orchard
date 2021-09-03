@@ -1,0 +1,79 @@
+{
+  "people": [
+    {
+      "id": "0054S000000uCqrQAE",
+      "tenant_id": "f1b1168a-433e-44f3-8615-69d28ae03221",
+      "name": "Nate Jones",
+      "first_name": "Nate",
+      "last_name": "Jones",
+      "email": "nate@screencastify.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E4S000000t7uVUAQ"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:09.254355Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:09.254355Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://screencastify--c.documentforce.com/profilephoto/005/F"
+    },
+    {
+      "id": "0054S000000uCqhQAE",
+      "tenant_id": "f1b1168a-433e-44f3-8615-69d28ae03221",
+      "name": "Brian Collins",
+      "first_name": "Brian",
+      "last_name": "Collins",
+      "email": "brian@screencastify.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E4S000000t7uLUAQ"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:09.254363Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:09.254363Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://screencastify--c.documentforce.com/profilephoto/005/F"
+    },
+    {
+      "id": "0054S000000uCqwQAE",
+      "tenant_id": "f1b1168a-433e-44f3-8615-69d28ae03221",
+      "name": "Mike Gangel",
+      "first_name": "Mike",
+      "last_name": "Gangel",
+      "email": "mike@screencastify.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E4S000000t7uVUAQ"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:09.254364Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:09.254364Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://screencastify--c.documentforce.com/profilephoto/005/F"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "people": [
+    {
+      "id": "38403307",
+      "tenant_id": "21354994-018d-11eb-adc1-0242ac120002",
+      "name": "Danny Freed",
+      "first_name": "Danny",
+      "last_name": "Freed",
+      "email": "danny@blueprint-health.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:14.711445Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:14.711445Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": null
+    }
+  ]
+}

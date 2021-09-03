@@ -1,0 +1,51 @@
+{
+  "people": [
+    {
+      "id": "005f4000005yzf7AAA",
+      "tenant_id": "ff1ee597-031a-4e8c-a83c-4ac059be1d27",
+      "name": "Doug Fraser",
+      "first_name": "Doug",
+      "last_name": "Fraser",
+      "email": "doug@mentorcollective.org",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:14.043361Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:14.043361Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://1234mentorcollective--c.documentforce.com/profilephoto/005/F"
+    },
+    {
+      "id": "005f40000059mj2AAA",
+      "tenant_id": "ff1ee597-031a-4e8c-a83c-4ac059be1d27",
+      "name": "Matt Moss-Hawkins",
+      "first_name": "Matt",
+      "last_name": "Moss-Hawkins",
+      "email": "mattmosshawkins@mentorcollective.org",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00Ef4000001T5UqEAK"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:14.043363Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:14.043363Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://1234mentorcollective--c.documentforce.com/profilephoto/005/F"
+    }
+  ]
+}

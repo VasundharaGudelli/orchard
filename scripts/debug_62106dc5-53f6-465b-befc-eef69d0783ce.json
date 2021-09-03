@@ -1,259 +1,79 @@
 {
   "people": [
     {
-      "id": "0051U000005rfAMQAY",
-      "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
-      "name": "Dino Carlos",
-      "first_name": "Dino",
-      "last_name": "Carlos",
-      "email": "dino@loupe.co",
-      "manager_id": null,
-      "role_ids": [
-        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
-      ],
-      "crm_role_ids": [
-        "00E1U000001cd0VUAQ"
-      ],
-      "is_provisioned": true,
-      "is_synced": true,
-      "status": "active",
-      "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.130516Z",
-      "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.130516Z",
-      "group_id": "8a5f35b8-0b52-11ec-aeeb-4201ac1f700d",
-      "type": "ic",
-      "photo_url": "https://c.na85.content.force.com/profilephoto/7291U000000hACM/F"
-    },
-    {
-      "id": "0051U000005rfAMQAY",
-      "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
-      "name": "Dino Carlos",
-      "first_name": "Dino",
-      "last_name": "Carlos",
-      "email": "dino@loupe.co",
-      "manager_id": null,
-      "role_ids": [
-        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
-      ],
-      "crm_role_ids": [
-        "00E1U000001cd0VUAQ"
-      ],
-      "is_provisioned": true,
-      "is_synced": true,
-      "status": "active",
-      "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.130518Z",
-      "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.130518Z",
-      "group_id": "8a5f35b8-0b52-11ec-aeeb-4201ac1f700d",
-      "type": "ic",
-      "photo_url": "https://c.na85.content.force.com/profilephoto/7291U000000hACM/F"
-    },
-    {
-      "id": "0051U000005rfAMQAY",
-      "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
-      "name": "Dino Carlos",
-      "first_name": "Dino",
-      "last_name": "Carlos",
-      "email": "dino@loupe.co",
-      "manager_id": null,
-      "role_ids": [
-        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
-      ],
-      "crm_role_ids": [
-        "00E1U000001cd0VUAQ"
-      ],
-      "is_provisioned": true,
-      "is_synced": true,
-      "status": "active",
-      "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.130519Z",
-      "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.130519Z",
-      "group_id": "8a5f35b8-0b52-11ec-aeeb-4201ac1f700d",
-      "type": "ic",
-      "photo_url": "https://c.na85.content.force.com/profilephoto/7291U000000hACM/F"
-    },
-    {
-      "id": "0051U000004VFVpQAO",
-      "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
-      "name": "Adam Cuzzort",
-      "first_name": "Adam",
-      "last_name": "Cuzzort",
-      "email": "adam@canopy.io",
-      "manager_id": null,
-      "role_ids": [
-        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5",
-        "8d94bd88-78a5-467c-a0d8-079f26b412d9"
-      ],
-      "crm_role_ids": [
-        "00E1U000001cd0LUAQ"
-      ],
-      "is_provisioned": true,
-      "is_synced": true,
-      "status": "active",
-      "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.130519Z",
-      "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.13052Z",
-      "group_id": "8a5f3d92-0b52-11ec-aeeb-4201ac1f700d",
-      "type": "ic",
-      "photo_url": "https://c.na85.content.force.com/profilephoto/7291U000000hACR/F"
-    },
-    {
-      "id": "6ccd1117-0757-11ec-a7fb-1e54545024f6",
-      "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
-      "name": "Jason Luebke",
-      "first_name": "Jason",
-      "last_name": "Luebke",
-      "email": "jason@canopy.io",
-      "manager_id": null,
-      "role_ids": [
-        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
-      ],
-      "is_provisioned": true,
-      "is_synced": false,
-      "status": "active",
-      "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.13052Z",
-      "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.13052Z",
-      "group_id": null,
-      "type": "ic",
-      "photo_url": null
-    },
-    {
-      "id": "a49cd280-01c5-11ec-b797-aefc0f0d4710",
-      "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
-      "name": "Will Jaynes",
-      "first_name": "Will",
-      "last_name": "Jaynes",
-      "email": "will@canopy.io",
-      "manager_id": null,
-      "role_ids": [
-        "8d94bd88-78a5-467c-a0d8-079f26b412d9",
-        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
-      ],
-      "is_provisioned": true,
-      "is_synced": false,
-      "status": "active",
-      "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.130521Z",
-      "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.130521Z",
-      "group_id": null,
-      "type": "ic",
-      "photo_url": null
-    },
-    {
-      "id": "cdfc9084-0c17-11ec-b84a-acde48001122",
+      "id": "b69b71da-0c58-11ec-978e-acde48001122",
       "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
       "name": null,
       "first_name": null,
       "last_name": null,
       "email": null,
       "manager_id": null,
-      "role_ids": [
-        ""
-      ],
       "is_provisioned": true,
       "is_synced": false,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.13062Z",
+      "created_at": "2021-09-03T01:46:10.193942Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.13062Z",
+      "updated_at": "2021-09-03T01:46:10.193942Z",
       "group_id": null,
       "type": "",
       "photo_url": null
     },
     {
-      "id": "bb6cf2eb-0732-11ec-b327-4ed0f1885230",
-      "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
-      "name": "Alex Hester",
-      "first_name": "Alex",
-      "last_name": "Hester",
-      "email": "alex@canopy.io",
-      "manager_id": null,
-      "role_ids": [
-        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
-      ],
-      "is_provisioned": true,
-      "is_synced": false,
-      "status": "active",
-      "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.130623Z",
-      "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.130623Z",
-      "group_id": null,
-      "type": "ic",
-      "photo_url": null
-    },
-    {
-      "id": "0053k00000BFxx4AAD",
+      "id": "b69b74f0-0c58-11ec-978e-acde48001122",
       "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
       "name": null,
       "first_name": null,
       "last_name": null,
       "email": null,
       "manager_id": null,
-      "role_ids": [
-        ""
-      ],
       "is_provisioned": true,
       "is_synced": false,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.130624Z",
+      "created_at": "2021-09-03T01:46:10.193944Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.130624Z",
+      "updated_at": "2021-09-03T01:46:10.193944Z",
       "group_id": null,
       "type": "",
       "photo_url": null
     },
     {
-      "id": "cdfc948a-0c17-11ec-b84a-acde48001122",
+      "id": "b69b74fa-0c58-11ec-978e-acde48001122",
       "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
       "name": null,
       "first_name": null,
       "last_name": null,
       "email": null,
       "manager_id": null,
-      "role_ids": [
-        ""
-      ],
       "is_provisioned": true,
       "is_synced": false,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.130625Z",
+      "created_at": "2021-09-03T01:46:10.193945Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.130625Z",
+      "updated_at": "2021-09-03T01:46:10.193945Z",
       "group_id": null,
       "type": "",
       "photo_url": null
     },
     {
-      "id": "62a52ca3-0757-11ec-a7fb-1e54545024f6",
+      "id": "0051U000005rfAMQAY",
       "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
-      "name": "Kyle Jaebker",
-      "first_name": "Kyle",
-      "last_name": "Jaebker",
-      "email": "kyle@canopy.io",
+      "name": null,
+      "first_name": null,
+      "last_name": null,
+      "email": null,
       "manager_id": null,
-      "role_ids": [
-        "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
-      ],
       "is_provisioned": true,
       "is_synced": false,
       "status": "active",
       "created_by": "00000000-0000-0000-0000-000000000000",
-      "created_at": "2021-09-02T18:01:32.130626Z",
+      "created_at": "2021-09-03T01:46:10.193945Z",
       "updated_by": "00000000-0000-0000-0000-000000000000",
-      "updated_at": "2021-09-02T18:01:32.130626Z",
+      "updated_at": "2021-09-03T01:46:10.193945Z",
       "group_id": null,
-      "type": "ic",
+      "type": "",
       "photo_url": null
     }
   ]

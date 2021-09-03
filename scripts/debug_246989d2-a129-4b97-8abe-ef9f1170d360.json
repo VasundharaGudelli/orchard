@@ -1,0 +1,826 @@
+{
+  "people": [
+    {
+      "id": "0050V0000073YgGQAU",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Zahra Bukhari",
+      "first_name": "Zahra",
+      "last_name": "Bukhari",
+      "email": "zahra.bukhari@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000001v7XfUAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721262Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721262Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007uTdYQAU",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Ellie Granese",
+      "first_name": "Ellie",
+      "last_name": "Granese",
+      "email": "ellie.granese@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1m3EAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721266Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721266Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o0000096cTBAAY",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Danielle Tocci",
+      "first_name": "Danielle",
+      "last_name": "Tocci",
+      "email": "danielle.tocci@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1ltEAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721268Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721269Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008TeCwAAK",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Carlos Bonilla",
+      "first_name": "Carlos",
+      "last_name": "Bonilla",
+      "email": "carlos.bonilla@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000001v7XfUAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.72127Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.72127Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007Mj4pQAC",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Leigh Fernandez",
+      "first_name": "Leigh",
+      "last_name": "Fernandez",
+      "email": "leigh.fernandez@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1mNEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721272Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721272Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "005d0000006ExhvAAC",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Mitch Gruber",
+      "first_name": "Mitch",
+      "last_name": "Gruber",
+      "email": "mitch.gruber@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1lUEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721274Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721274Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007Mj4aQAC",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Morgan McCarthy",
+      "first_name": "Morgan",
+      "last_name": "McCarthy",
+      "email": "morgan.mccarthy@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1m3EAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721275Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721276Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000006lFdbQAE",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Cassidy Feerick",
+      "first_name": "Cassidy",
+      "last_name": "Feerick",
+      "email": "cassidy.feerick@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000001v7XfUAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721277Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721277Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007sOHwQAM",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Justin Khaksar",
+      "first_name": "Justin",
+      "last_name": "Khaksar",
+      "email": "justin.khaksar@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000002BcgdUAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721279Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721279Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008TeAvAAK",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Alex Mackenzie",
+      "first_name": "Alex",
+      "last_name": "Mackenzie",
+      "email": "alex.mackenzie@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "inactive",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.72128Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.72128Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007uOExQAM",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Ashley Bettencourt",
+      "first_name": "Ashley",
+      "last_name": "Bettencourt",
+      "email": "ashley.bettencourt@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000001v7XfUAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721282Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721282Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/7290V000000ww5R/F"
+    },
+    {
+      "id": "0050V000007sOIBQA2",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Jackie Condon",
+      "first_name": "Jackie",
+      "last_name": "Condon",
+      "email": "jackie.condon@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1leEAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721283Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721283Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/7290V000000wujK/F"
+    },
+    {
+      "id": "0050V000007tZMpQAM",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Noah Post-Hyatt",
+      "first_name": "Noah",
+      "last_name": "Post-Hyatt",
+      "email": "noah.posthyatt@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1m3EAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721285Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721285Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o000008e4hlAAA",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Steven Ginsburg",
+      "first_name": "Steven",
+      "last_name": "Ginsburg",
+      "email": "steven.ginsburg@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000001v7XfUAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "inactive",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721298Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721298Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "005d0000005qRxTAAU",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Spencer Dunfee",
+      "first_name": "Spencer",
+      "last_name": "Dunfee",
+      "email": "spencer.dunfee@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1mSEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.7213Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.7213Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000006lZsHQAU",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Joe Buttitta",
+      "first_name": "Joe",
+      "last_name": "Buttitta",
+      "email": "joe.buttitta@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1loEAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721301Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721302Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007u5bcQAA",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Edward Cooke",
+      "first_name": "Edward",
+      "last_name": "Cooke",
+      "email": "edward.cooke@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1mhEAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721303Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721303Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007uTe2QAE",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Mike Gartland",
+      "first_name": "Mike",
+      "last_name": "Gartland",
+      "email": "mike.gartland@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1IDEA0"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721305Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721305Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007LVvOQAW",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Ryan Bunyon",
+      "first_name": "Ryan",
+      "last_name": "Bunyon",
+      "email": "ryan.bunyon@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1m8EAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721306Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721306Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/7290V000001HrmF/F"
+    },
+    {
+      "id": "0053o000008VkVeAAK",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Robert Jones",
+      "first_name": "Robert",
+      "last_name": "Jones",
+      "email": "robert.jones@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1mXEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721308Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721308Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007u5aoQAA",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Lisa Knight",
+      "first_name": "Lisa",
+      "last_name": "Knight",
+      "email": "lisa.knight@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1mcEAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721309Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721309Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007LwjtQAC",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Catherine Curran",
+      "first_name": "Catherine",
+      "last_name": "Curran",
+      "email": "catherine.curran@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000001v7XfUAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721311Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721311Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/7290V000001Hqk8/F"
+    },
+    {
+      "id": "0050V000007M9SlQAK",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Hunter LaFond",
+      "first_name": "Hunter",
+      "last_name": "LaFond",
+      "email": "hunter.lafond@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1mIEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721312Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721313Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o0000082i7wAAA",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Jake Gilden",
+      "first_name": "Jake",
+      "last_name": "Gilden",
+      "email": "jake.gilden@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000001v7XfUAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721314Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721314Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/7293o0000019dcz/F"
+    },
+    {
+      "id": "0050V000007to8iQAA",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Evan Tinter",
+      "first_name": "Evan",
+      "last_name": "Tinter",
+      "email": "evan.tinter@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1lZEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721316Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721316Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000006d6TbQAI",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Connor Gallo",
+      "first_name": "Connor",
+      "last_name": "Gallo",
+      "email": "connor.gallo@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1ljEAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721317Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721317Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007uYayQAE",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Aidan Thibodeaux",
+      "first_name": "Aidan",
+      "last_name": "Thibodeaux",
+      "email": "aidan.thibodeaux@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1m3EAC"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721319Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721319Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0053o0000094sMQAAY",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Tom Beal",
+      "first_name": "Tom",
+      "last_name": "Beal",
+      "email": "tom.beal@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1mDEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.72132Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721321Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000006cuWiQAI",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Sean Marshall",
+      "first_name": "Sean",
+      "last_name": "Marshall",
+      "email": "sean.marshall@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E0V000001v7XkUAI"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721322Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721322Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V0000073YfmQAE",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Pat Makridakis",
+      "first_name": "Pat",
+      "last_name": "Makridakis",
+      "email": "pat.makridakis@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1lFEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721323Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721324Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007Mj4zQAC",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Pia Heilmann",
+      "first_name": "Pia",
+      "last_name": "Heilmann",
+      "email": "pia.heilmann@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000001ztAGEAY"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721325Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721325Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V000007sChOQAU",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Ryan Meadows",
+      "first_name": "Ryan",
+      "last_name": "Meadows",
+      "email": "ryan.meadows@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "a2e39cf5-e016-44a4-b037-057a16fe14fc"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1lAEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721326Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721327Z",
+      "group_id": null,
+      "type": "manager",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    },
+    {
+      "id": "0050V00000744OJQAY",
+      "tenant_id": "246989d2-a129-4b97-8abe-ef9f1170d360",
+      "name": "Jake Magner",
+      "first_name": "Jake",
+      "last_name": "Magner",
+      "email": "jake.magner@klaviyo.com",
+      "manager_id": null,
+      "role_ids": [
+        "6f71019d-25cf-4c6a-a31e-bdd25472ba26"
+      ],
+      "crm_role_ids": [
+        "00E3o000002G1mIEAS"
+      ],
+      "is_provisioned": true,
+      "is_synced": true,
+      "status": "active",
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "created_at": "2021-09-03T01:46:16.721328Z",
+      "updated_by": "00000000-0000-0000-0000-000000000000",
+      "updated_at": "2021-09-03T01:46:16.721328Z",
+      "group_id": null,
+      "type": "ic",
+      "photo_url": "https://klaviyo--c.na118.content.force.com/profilephoto/005/F"
+    }
+  ]
+}
