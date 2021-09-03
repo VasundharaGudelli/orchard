@@ -147,6 +147,12 @@ func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupReq
 		return nil, err.AsGRPC()
 	}
 
+	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error updating group types")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
 	if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
 		svc.Rollback()
 		err := errors.Wrap(err, "error ensuring tenant group sync state")
