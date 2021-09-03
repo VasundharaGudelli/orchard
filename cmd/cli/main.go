@@ -36,6 +36,7 @@ func getApp() *cli.App {
 		},
 		Commands: []*cli.Command{
 			commands.GetSyncCommand(),
+			commands.GetUpdateGroupTypesCommand(),
 		},
 	}
 	return app
