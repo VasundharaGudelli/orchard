@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
+	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
 	act "github.com/loupe-co/bouncer/pkg/context"
 	strUtils "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
@@ -705,12 +705,12 @@ func (h *Handlers) GetTenantGroupsLastModifiedTS(ctx context.Context, in *servic
 		return nil, err.AsGRPC()
 	}
 
-	protoTS, err := ptypes.TimestampProto(ts)
+	protoTS := timestamppb.Timestamp{Seconds: ts.Unix(), Nanos: int32(ts.Nanosecond())}
 	if err != nil {
 		err := errors.Wrap(err, "error converting timestamp to proto")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
 
-	return &servicePb.GetTenantGroupsLastModifiedTSResponse{LastModifiedTs: protoTS}, nil
+	return &servicePb.GetTenantGroupsLastModifiedTSResponse{LastModifiedTs: &protoTS}, nil
 }

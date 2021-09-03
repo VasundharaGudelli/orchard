@@ -721,9 +721,13 @@ func (svc *GroupService) GetLatestModifiedTS(ctx context.Context, tenantID strin
 	spanCtx, span := log.StartSpan(ctx, "Group.GetLatestModifiedTS")
 	defer span.End()
 	res := GetLatestModifiedTSResult{}
-	if err := queries.Raw(getLastModifiedTSQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &res); err != nil {
+	err := queries.Raw(getLastModifiedTSQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &res)
+	if err != nil && err != sql.ErrNoRows {
 		log.WithTenantID(tenantID).WithCustom("query", getLastModifiedTSQuery).Error(err)
 		return time.Time{}, err
+	}
+	if err == sql.ErrNoRows {
+		return time.Time{}, nil
 	}
 	return res.LatestModifiedTS, nil
 }

@@ -382,8 +382,6 @@ github.com/loupe-co/go-common v0.0.0-20210204235758-87781bae6eb8/go.mod h1:00jKI
 github.com/loupe-co/go-common v0.0.0-20210213010038-7c4647f827be/go.mod h1:sVLXYIjdLz5/6BwfnVoKfOo4Q2HKLgx51b0n2gRjOwg=
 github.com/loupe-co/go-common v0.0.0-20210502160614-4c172b77439c/go.mod h1:dIEhRU9MGUdu2DGjJWIkxAzGCcB5PcL7l4I2XYt5N0E=
 github.com/loupe-co/go-common v1.0.6/go.mod h1:8v8DGIYitAvfFAUjZm+Haa5sf6u8HJkwMkhJL5w3Qs8=
-github.com/loupe-co/go-common v1.0.10 h1:ExLtCHp0VX1N3iby1nu14vHyQ/hGmNjQOLuQfHlnwP8=
-github.com/loupe-co/go-common v1.0.10/go.mod h1:8v8DGIYitAvfFAUjZm+Haa5sf6u8HJkwMkhJL5w3Qs8=
 github.com/loupe-co/go-common v1.0.11 h1:FdZo6sV7aCwcBoGMxptM6nddUzoRX1rNgD/uMUS4pEQ=
 github.com/loupe-co/go-common v1.0.11/go.mod h1:8v8DGIYitAvfFAUjZm+Haa5sf6u8HJkwMkhJL5w3Qs8=
 github.com/loupe-co/go-loupe-logger v0.0.0-20200103145405-fcb4f3e22f62/go.mod h1:IhtahDiewlad9b5huqcC4hVJDHnz8zJA2lW1nNSEIPU=
@@ -401,16 +399,6 @@ github.com/loupe-co/protos v0.0.0-20210201205955-aec1ce4696ea/go.mod h1:e/4/PM0q
 github.com/loupe-co/protos v0.0.0-20210421165047-f9e6f43d4efc/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/loupe-co/protos v0.0.0-20210701162519-441164c563e0/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/loupe-co/protos v0.0.0-20210823112554-8ae16c6ec0c0/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
-github.com/loupe-co/protos v0.0.0-20210823154034-336c6df1deac h1:jRmVjUoNJGzmJTOgyC9wP4VfGWyE4ZJZ5DjxbHbE5tM=
-github.com/loupe-co/protos v0.0.0-20210823154034-336c6df1deac/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
-github.com/loupe-co/protos v0.0.0-20210826114154-246f7e53deed h1:oDSacUPqtgoWwW3ZDVsME5CaS5M6l9Stjardalxb1GU=
-github.com/loupe-co/protos v0.0.0-20210826114154-246f7e53deed/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
-github.com/loupe-co/protos v0.0.0-20210830114203-e81e88bccd88 h1:9ZJmQ4zNYbjlnCbpZcx6CQh9/jEFSMV4FCuEhiCzwH0=
-github.com/loupe-co/protos v0.0.0-20210830114203-e81e88bccd88/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
-github.com/loupe-co/protos v0.0.0-20210830115711-b6b7e6a067e9 h1:I7iZHlVTI+VNcTWS5F/3VTfNQzUd3oKyzdvmzH81CMo=
-github.com/loupe-co/protos v0.0.0-20210830115711-b6b7e6a067e9/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
-github.com/loupe-co/protos v0.0.0-20210830125244-64d3eced777d h1:bAqQPwhkStJuZ5F3orxwpzof4/ZBhiCcTTTYcOeYVTo=
-github.com/loupe-co/protos v0.0.0-20210830125244-64d3eced777d/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/loupe-co/protos v0.0.0-20210831162257-772694f22c53 h1:QlUhjc9yqbBrktfsDzNNvFmQ8i4PC+H6Fx/FytXXQxg=
 github.com/loupe-co/protos v0.0.0-20210831162257-772694f22c53/go.mod h1:e/4/PM0qPGC/dv4jgFlX/DMzXVMtQCiNQJuWSU0IK9c=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
