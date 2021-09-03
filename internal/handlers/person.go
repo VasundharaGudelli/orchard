@@ -461,6 +461,9 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	changeGroup := strUtil.Strings(in.OnlyFields).Has("group_id")
 	if changeGroup {
 		in.Person.IsSynced = false
+		if len(in.OnlyFields) > 0 {
+			in.OnlyFields = append(in.OnlyFields, "is_synced")
+		}
 	}
 
 	// Check if this is virtual user that is no longer provisioned: -> status=inactive
