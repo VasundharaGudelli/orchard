@@ -64,16 +64,16 @@ func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *mode
 	legacyRoles := commonSet.New()
 	for _, roleID := range user.RoleIds {
 		if LegacyUserRoleMappings.Has(roleID) {
-			legacyRoles.Set("rol_JbKBz2HaApjrd7yW")
+			legacyRoles.Set(ac.cfg.Auth0RoleIDUser)
 		}
 		if LegacyManagerRoleMappings.Has(roleID) {
-			legacyRoles.Set("rol_510TUetL44xR7zmm")
+			legacyRoles.Set(ac.cfg.Auth0RoleIDManager)
 		}
 		if LegacyAdminRoleMappings.Has(roleID) {
-			legacyRoles.Set("rol_6tBbx6gNRYgb47wM")
+			legacyRoles.Set(ac.cfg.Auth0RoleIDAdmin)
 		}
 		if LegacySuperAdminRoleMappings.Has(roleID) {
-			legacyRoles.Set("rol_42KN8JcK3EgysI0Q")
+			legacyRoles.Set(ac.cfg.Auth0RoleIDSuperAdmin)
 		}
 	}
 
