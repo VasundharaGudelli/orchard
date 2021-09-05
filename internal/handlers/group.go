@@ -262,7 +262,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 
 	svc := h.db.NewGroupService()
 
-	flatGroups, err := svc.GetGroupSubTree(spanCtx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers)
+	flatGroups, err := svc.GetGroupSubTree(spanCtx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers, in.Simplify)
 	if err != nil {
 		err := errors.Wrap(err, "error getting group and all subtrees from sql")
 		logger.Error(err)
@@ -374,6 +374,15 @@ func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*ser
 			maxDepth = max(recursivelyGetGroupChildren(g, groups, depth+1), maxDepth)
 			node.Children = append(node.Children, g)
 		}
+	}
+	shouldRollupSingleICGroupName := len(node.Members) != 1
+	if len(node.Children) == 1 && node.Children[0].Group.Type == orchardPb.SystemRoleType_IC && len(node.Children[0].Members) > 0 {
+		node.Members = append(node.Members, node.Children[0].Members...)
+		if shouldRollupSingleICGroupName {
+			node.Group.Name = node.Children[0].Group.Name
+		}
+		node.Children = []*servicePb.GroupWithMembers{}
+
 	}
 	return maxDepth
 }
