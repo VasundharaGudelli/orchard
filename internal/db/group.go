@@ -201,7 +201,7 @@ const (
 		NULL
 	) as "members_raw"
 FROM "group"
-LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id
+LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id {STATUS_PART}
 WHERE {GROUP_SELECT} AND "group".tenant_id = $2 AND "group".status = 'active'
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
@@ -229,7 +229,7 @@ ORDER BY "group.name"`
 	)`
 )
 
-func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool) ([]*GroupTreeNode, error) {
+func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool) ([]*GroupTreeNode, error) {
 	spanCtx, span := log.StartSpan(ctx, "Group.GetGroupSubTree")
 	defer span.End()
 
@@ -248,7 +248,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		personSelect = fullPersonSelectClause
 	} else if simplify {
 		personSelect = `JSONB_BUILD_OBJECT(
-			'id', p.id, 'tenant_id', p.tenant_id, 'name', p."name"
+			'id', p.id, 'name', p."name", 'status', p."status"
 		)`
 	}
 	groupSelect := rootGroupSelectorClause
@@ -257,7 +257,14 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		params[0] = strings.ReplaceAll(tenantID, "-", "_")
 	}
 
+	statusPart := ""
+
+	if activeUsers {
+		statusPart = `AND p."status" = 'active'`
+	}
+
 	query := strings.ReplaceAll(getGroupSubTreeQuery, "{PERSON_SELECT}", personSelect)
+	query = strings.ReplaceAll(getGroupSubTreeQuery, "{STATUS_PART}", statusPart)
 	query = strings.ReplaceAll(query, "{GROUP_SELECT}", groupSelect)
 
 	if simplify {
@@ -266,7 +273,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 SELECT
 "group.id",
 "group.tenant_id",
-CASE WHEN "group.type" = 'manager' AND array_length(members_raw, 1) = 1 THEN (members_raw[1]->>'name')
+CASE WHEN "group.type" = 'manager' AND array_length(members_raw, 1) = 1 AND members_raw[1]->>'status' = 'active'  THEN (members_raw[1]->>'name')
 ELSE "group.name" END AS "group.name",
 "group.type",
 "group.status",
