@@ -201,7 +201,7 @@ const (
 		NULL
 	) as "members_raw"
 FROM "group"
-LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id
+LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id {STATUS_PART}
 WHERE {GROUP_SELECT} AND "group".tenant_id = $2 AND "group".status = 'active'
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
@@ -227,9 +227,32 @@ ORDER BY "group.name"`
 			"group".group_path <@ $1::ltree AND (nlevel(group_path)) - (nlevel($1::ltree)) <= ($3 + 1)
 		)
 	)`
+
+	simplieHierarchyWrapperQuery = `SELECT
+	"group.id",
+	"group.tenant_id",
+	CASE WHEN "group.type" = 'manager' AND array_length(members_raw, 1) = 1 AND members_raw[1]->>'status' = 'active'  THEN (members_raw[1]->>'name')
+	ELSE "group.name" END AS "group.name",
+	"group.type",
+	"group.status",
+	"group.role_ids",
+	"group.crm_role_ids",
+	"group.parent_id",
+	"group.group_path",
+	"group.order",
+	"group.sync_filter",
+	"group.opportunity_filter",
+	"group.created_at",
+	"group.created_by",
+	"group.updated_at",
+	"group.updated_by",
+	"members_raw"
+FROM (
+	{INNER_QUERY}
+) x`
 )
 
-func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool) ([]*GroupTreeNode, error) {
+func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool, useManagerNames bool) ([]*GroupTreeNode, error) {
 	spanCtx, span := log.StartSpan(ctx, "Group.GetGroupSubTree")
 	defer span.End()
 
@@ -246,6 +269,10 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	personSelect := "p.id"
 	if hydrateUsers {
 		personSelect = fullPersonSelectClause
+	} else if useManagerNames {
+		personSelect = `JSONB_BUILD_OBJECT(
+			'id', p.id, 'name', p."name", 'status', p."status"
+		)`
 	}
 	groupSelect := rootGroupSelectorClause
 	if groupID == "" {
@@ -253,8 +280,19 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		params[0] = strings.ReplaceAll(tenantID, "-", "_")
 	}
 
+	statusPart := ""
+
+	if activeUsers {
+		statusPart = `AND p."status" = 'active'`
+	}
+
 	query := strings.ReplaceAll(getGroupSubTreeQuery, "{PERSON_SELECT}", personSelect)
+	query = strings.ReplaceAll(query, "{STATUS_PART}", statusPart)
 	query = strings.ReplaceAll(query, "{GROUP_SELECT}", groupSelect)
+
+	if useManagerNames {
+		query = strings.ReplaceAll(simplieHierarchyWrapperQuery, "{INNER_QUERY}", query)
+	}
 
 	results := []*GroupTreeNode{}
 	if err := queries.Raw(query, params...).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
