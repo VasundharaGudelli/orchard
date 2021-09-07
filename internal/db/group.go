@@ -252,7 +252,7 @@ FROM (
 ) x`
 )
 
-func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool) ([]*GroupTreeNode, error) {
+func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool, useManagerNames bool) ([]*GroupTreeNode, error) {
 	spanCtx, span := log.StartSpan(ctx, "Group.GetGroupSubTree")
 	defer span.End()
 
@@ -269,7 +269,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	personSelect := "p.id"
 	if hydrateUsers {
 		personSelect = fullPersonSelectClause
-	} else if simplify {
+	} else if useManagerNames {
 		personSelect = `JSONB_BUILD_OBJECT(
 			'id', p.id, 'name', p."name", 'status', p."status"
 		)`
@@ -290,7 +290,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	query = strings.ReplaceAll(query, "{STATUS_PART}", statusPart)
 	query = strings.ReplaceAll(query, "{GROUP_SELECT}", groupSelect)
 
-	if simplify {
+	if useManagerNames {
 		query = strings.ReplaceAll(simplieHierarchyWrapperQuery, "{INNER_QUERY}", query)
 	}
 

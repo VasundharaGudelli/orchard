@@ -74,7 +74,7 @@ func (h *Handlers) GetLegacyTeamStructure(ctx context.Context, in *servicePb.Get
 	for _, root := range roots {
 		wg.Add(1)
 		go func(w *sync.WaitGroup, r *servicePb.GroupWithMembers, all []*servicePb.GroupWithMembers) {
-			recursivelyGetGroupChildren(r, all, 1)
+			recursivelyGetGroupChildren(r, all, 1, false)
 			w.Done()
 		}(&wg, root, flatProtos)
 	}

@@ -262,7 +262,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 
 	svc := h.db.NewGroupService()
 
-	flatGroups, err := svc.GetGroupSubTree(spanCtx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers, in.Simplify, in.ActiveUsers)
+	flatGroups, err := svc.GetGroupSubTree(spanCtx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers, in.Simplify, in.ActiveUsers, in.UseManagerNames)
 	if err != nil {
 		err := errors.Wrap(err, "error getting group and all subtrees from sql")
 		logger.Error(err)
@@ -298,7 +298,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	for i, root := range roots {
 		wg.Add(1)
 		go func(w *sync.WaitGroup, r *servicePb.GroupWithMembers, all []*servicePb.GroupWithMembers, idx int) {
-			depth := recursivelyGetGroupChildren(r, all, 1)
+			depth := recursivelyGetGroupChildren(r, all, 1, in.Simplify)
 			finalRoots[idx] = &servicePb.GroupSubtreeRoot{
 				GroupId: r.Group.Id,
 				Depth:   int32(depth),
@@ -367,21 +367,23 @@ func (h *Handlers) runGroupTreeProtoConversion(ctx context.Context, idx int, g *
 	}
 }
 
-func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*servicePb.GroupWithMembers, depth int) int {
+func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*servicePb.GroupWithMembers, depth int, simplify bool) int {
 	maxDepth := depth
 	for _, g := range groups {
 		if g.Group.ParentId == node.Group.Id {
-			maxDepth = max(recursivelyGetGroupChildren(g, groups, depth+1), maxDepth)
+			maxDepth = max(recursivelyGetGroupChildren(g, groups, depth+1, simplify), maxDepth)
 			node.Children = append(node.Children, g)
 		}
 	}
-	shouldRollupSingleICGroupName := len(node.Members) != 1 || node.Members[0].Status != orchardPb.BasicStatus_Active
-	if len(node.Children) == 1 && node.Children[0].Group.Type == orchardPb.SystemRoleType_IC && len(node.Children[0].Members) > 0 {
-		node.Members = append(node.Members, node.Children[0].Members...)
-		if shouldRollupSingleICGroupName {
-			node.Group.Name = node.Children[0].Group.Name
+	if simplify {
+		shouldRollupSingleICGroupName := len(node.Members) != 1 || node.Members[0].Status != orchardPb.BasicStatus_Active
+		if len(node.Children) == 1 && node.Children[0].Group.Type == orchardPb.SystemRoleType_IC && len(node.Children[0].Members) > 0 {
+			node.Members = append(node.Members, node.Children[0].Members...)
+			if shouldRollupSingleICGroupName {
+				node.Group.Name = node.Children[0].Group.Name
+			}
+			node.Children = []*servicePb.GroupWithMembers{}
 		}
-		node.Children = []*servicePb.GroupWithMembers{}
 	}
 	return maxDepth
 }
