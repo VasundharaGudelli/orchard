@@ -227,6 +227,29 @@ ORDER BY "group.name"`
 			"group".group_path <@ $1::ltree AND (nlevel(group_path)) - (nlevel($1::ltree)) <= ($3 + 1)
 		)
 	)`
+
+	simplieHierarchyWrapperQuery = `SELECT
+	"group.id",
+	"group.tenant_id",
+	CASE WHEN "group.type" = 'manager' AND array_length(members_raw, 1) = 1 AND members_raw[1]->>'status' = 'active'  THEN (members_raw[1]->>'name')
+	ELSE "group.name" END AS "group.name",
+	"group.type",
+	"group.status",
+	"group.role_ids",
+	"group.crm_role_ids",
+	"group.parent_id",
+	"group.group_path",
+	"group.order",
+	"group.sync_filter",
+	"group.opportunity_filter",
+	"group.created_at",
+	"group.created_by",
+	"group.updated_at",
+	"group.updated_by",
+	"members_raw"
+FROM (
+	{INNER_QUERY}
+) x`
 )
 
 func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool) ([]*GroupTreeNode, error) {
@@ -264,35 +287,11 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	}
 
 	query := strings.ReplaceAll(getGroupSubTreeQuery, "{PERSON_SELECT}", personSelect)
-	query = strings.ReplaceAll(getGroupSubTreeQuery, "{STATUS_PART}", statusPart)
+	query = strings.ReplaceAll(query, "{STATUS_PART}", statusPart)
 	query = strings.ReplaceAll(query, "{GROUP_SELECT}", groupSelect)
 
 	if simplify {
-		query = fmt.Sprintf(
-			`
-SELECT
-"group.id",
-"group.tenant_id",
-CASE WHEN "group.type" = 'manager' AND array_length(members_raw, 1) = 1 AND members_raw[1]->>'status' = 'active'  THEN (members_raw[1]->>'name')
-ELSE "group.name" END AS "group.name",
-"group.type",
-"group.status",
-"group.role_ids",
-"group.crm_role_ids",
-"group.parent_id",
-"group.group_path",
-"group.order",
-"group.sync_filter",
-"group.opportunity_filter",
-"group.created_at",
-"group.created_by",
-"group.updated_at",
-"group.updated_by",
-"members_raw"
-FROM (
-	%s
-) x
-`, query)
+		query = strings.ReplaceAll(simplieHierarchyWrapperQuery, "{INNER_QUERY}", query)
 	}
 
 	results := []*GroupTreeNode{}
