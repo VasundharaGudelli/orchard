@@ -657,7 +657,7 @@ func (svc *GroupService) DeleteUnSyncedGroups(ctx context.Context, tenantID stri
 
 const (
 	updateGroupTypesQuery = `UPDATE "group"
-	SET "type" = groups."type"::GROUP_TYPE
+	SET "type" = groups."type"::GROUP_TYPE, updated_by = '00000000-0000-0000-0000-000000000000', updated_at = CURRENT_TIMESTAMP
 	FROM (
 		SELECT g.id, g.tenant_id, CASE WHEN g2.id IS NULL THEN 'ic' ELSE 'manager' END AS "type"
 		FROM "group" g

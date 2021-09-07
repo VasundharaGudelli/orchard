@@ -26,3 +26,4 @@ orchard
 
 # Build bins
 bin/server
+bin/cli
