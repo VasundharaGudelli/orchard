@@ -314,7 +314,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	}
 	wg.Wait()
 
-	b, _ = json.Marshal(finalRoots)
+	b, _ := json.Marshal(finalRoots)
 	fmt.Println(string(b), "finalRoots")
 
 	return &servicePb.GetGroupSubTreeResponse{
