@@ -316,7 +316,6 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 			results[i].Members[j] = member
 		}
 	}
-
 	return results, nil
 }
 

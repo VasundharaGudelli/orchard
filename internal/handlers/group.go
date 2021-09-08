@@ -271,9 +271,6 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		return nil, err.AsGRPC()
 	}
 
-	// b, _ := json.Marshal(flatGroups)
-	// fmt.Println(string(b))
-
 	// Convert db models to protos
 	parGroup, _ := commonSync.NewWorkerPool(spanCtx, 10)
 	flatProtos := make([]*servicePb.GroupWithMembers, len(flatGroups))
@@ -288,7 +285,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	// Form tree structure
 	roots := []*servicePb.GroupWithMembers{}
 	for _, g := range flatProtos {
-		if g.Group.ParentId == "" || g.Group.ParentId == in.GroupId {
+		if g.Group.ParentId == in.GroupId {
 			roots = append(roots, g)
 		}
 	}
