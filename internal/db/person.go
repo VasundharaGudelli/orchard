@@ -51,6 +51,7 @@ func (svc *PersonService) FromProto(p *orchardPb.Person) *models.Person {
 		CreatedBy:     p.CreatedBy,
 		UpdatedAt:     updatedAt,
 		UpdatedBy:     p.UpdatedBy,
+		Type:          p.Type,
 	}
 }
 
@@ -90,6 +91,7 @@ func (svc *PersonService) ToProto(p *models.Person) (*orchardPb.Person, error) {
 		CreatedBy:     p.CreatedBy,
 		UpdatedAt:     updatedAt,
 		UpdatedBy:     p.UpdatedBy,
+		Type:          p.Type,
 	}, nil
 }
 
