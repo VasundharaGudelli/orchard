@@ -10,13 +10,11 @@ data:
   PROJECT_ID: loupe-dev
   SERVER_NAME: orchard
   LOG_LEVEL: "info"
-  SENTRY_DSN: https://bcf02969cee648f8819d7cfdd973ce3f@sentry.io/1765772
   GRPC_HOST: ''
   GRPC_PORT: '50051'
+  PORT: '80'
   DB_HOST: 172.31.112.3
   DB_PORT: "5432"
-  DB_PASSWORD: "jLariybb1oe5FbDz"
-  DB_USER: "postgres"
   DB_NAME: "tenant"
   DB_MAX_CONNECTIONS: '20'
   EKG_POLICY_INTERVAL: "*/5 * * * *"
@@ -33,7 +31,6 @@ data:
   AUTH_0_DOMAIN: https://loupe-dev.auth0.com
   BOUNCER_ADDR: bouncer:50051
   REDIS_HOST: 10.0.0.3:6379
-  REDIS_PASS: ''
   AUTH_0_ROLE_SUPER_ADMIN: rol_42KN8JcK3EgysI0Q
   AUTH_0_ROLE_ADMIN: rol_6tBbx6gNRYgb47wM
   AUTH_0_ROLE_MANAGER: rol_510TUetL44xR7zmm
