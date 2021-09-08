@@ -19,9 +19,19 @@ import (
 )
 
 func main() {
-	// Get config
+	// Get the service config
 	cfg := config.Config{}
-	err := configUtil.Load(&cfg, configUtil.FromENV(), configUtil.SetDefaultENV("project", "local"))
+	err := configUtil.Load(
+		&cfg,
+		configUtil.FromENV(),
+		configUtil.FromLocalYAML("/var/app-secrets/credentials_postgres.yaml"),
+		configUtil.FromLocalYAML("/var/app-secrets/credentials_redis.yaml"),
+		configUtil.FromLocalYAML("/var/app-secrets/credentials_sentry.yaml"),
+		configUtil.FromLocalYAML("/var/app-secrets/credentials_auth0.yaml"),
+		configUtil.SetDefaultENV("project", "local"),
+		configUtil.SetExportENVFromConfig(true),
+	)
+
 	if err != nil {
 		panic("Error parsing config from environment")
 	}

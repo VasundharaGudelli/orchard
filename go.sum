@@ -384,6 +384,8 @@ github.com/loupe-co/go-common v0.0.0-20210502160614-4c172b77439c/go.mod h1:dIEhR
 github.com/loupe-co/go-common v1.0.6/go.mod h1:8v8DGIYitAvfFAUjZm+Haa5sf6u8HJkwMkhJL5w3Qs8=
 github.com/loupe-co/go-common v1.0.11 h1:FdZo6sV7aCwcBoGMxptM6nddUzoRX1rNgD/uMUS4pEQ=
 github.com/loupe-co/go-common v1.0.11/go.mod h1:8v8DGIYitAvfFAUjZm+Haa5sf6u8HJkwMkhJL5w3Qs8=
+github.com/loupe-co/go-common v1.0.17 h1:hwJwpOPPnuhyI5IpZhxxmUFbDZU8mmMVYFj3+sbzLMw=
+github.com/loupe-co/go-common v1.0.17/go.mod h1:8v8DGIYitAvfFAUjZm+Haa5sf6u8HJkwMkhJL5w3Qs8=
 github.com/loupe-co/go-loupe-logger v0.0.0-20200103145405-fcb4f3e22f62/go.mod h1:IhtahDiewlad9b5huqcC4hVJDHnz8zJA2lW1nNSEIPU=
 github.com/loupe-co/go-loupe-logger v0.0.0-20201016121042-920bce7c0a29/go.mod h1:F+f3U0Wu1IRq/rf+UUbshwLVcklVMXkLdEo6GNgaGUA=
 github.com/loupe-co/go-loupe-logger v1.0.0 h1:3Sl15QxUgkP+Q6ZZYsvvWl4ih+ugX0VV2vAFGNtiU8s=

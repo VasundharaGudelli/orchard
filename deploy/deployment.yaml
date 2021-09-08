@@ -1,8 +1,3 @@
-# This Deployment manifest defines:
-# - single-replica deployment of the container image, with label "app: go-hello-world"
-# - Pod exposes port 8080
-# - specify PORT environment variable to the container process
-# Syntax reference https://kubernetes.io/docs/concepts/configuration/overview/
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,6 +19,12 @@ spec:
         - name: google-cloud-key
           secret:
             secretName: pubsub-key
+        - name: app-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "orchard"
       containers:
         - name: orchard
           image: gcr.io/loupe-dev/orchard:latest
@@ -36,18 +37,6 @@ spec:
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /var/secrets/google/key.json
-            - name: PORT
-              value: "80"
-            - name: AUTH_0_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: auth0
-                  key: client.id
-            - name: AUTH_0_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: auth0
-                  key: client.secret
             - name: BQ_TIER_REALTIME
               valueFrom:
                 configMapKeyRef:
@@ -76,6 +65,8 @@ spec:
           volumeMounts:
             - name: google-cloud-key
               mountPath: /var/secrets/google
+            - name: app-secrets
+              mountPath: "/var/app-secrets"
           resources:
             requests:
               memory: "128Mi"
