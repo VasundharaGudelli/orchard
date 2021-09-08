@@ -359,6 +359,7 @@ func (svc *GroupService) GetFullTenantTree(ctx context.Context, tenantID string,
 	query := strings.ReplaceAll(getFullTenantTreeQuery, "{PERSON_SELECT}", personSelect)
 
 	results := []*GroupTreeNode{}
+	fmt.Println(query)
 	if err := queries.Raw(query, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
 		log.WithTenantID(tenantID).WithCustom("hydrateUsers", hydrateUsers).WithCustom("query", query).Error(err)
 		return nil, err
