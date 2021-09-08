@@ -271,8 +271,8 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		return nil, err.AsGRPC()
 	}
 
-	b, _ := json.Marshal(flatGroups)
-	fmt.Println(string(b))
+	// b, _ := json.Marshal(flatGroups)
+	// fmt.Println(string(b))
 
 	// Convert db models to protos
 	parGroup, _ := commonSync.NewWorkerPool(spanCtx, 10)
@@ -315,7 +315,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	wg.Wait()
 
 	b, _ = json.Marshal(finalRoots)
-	fmt.Println(string(b))
+	fmt.Println(string(b), "finalRoots")
 
 	return &servicePb.GetGroupSubTreeResponse{
 		Roots: finalRoots,
