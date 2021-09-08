@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
@@ -269,6 +271,9 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		return nil, err.AsGRPC()
 	}
 
+	b, _ := json.Marshal(flatGroups)
+	fmt.Println(string(b))
+
 	// Convert db models to protos
 	parGroup, _ := commonSync.NewWorkerPool(spanCtx, 10)
 	flatProtos := make([]*servicePb.GroupWithMembers, len(flatGroups))
@@ -308,6 +313,9 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		}(&wg, root, flatProtos, i)
 	}
 	wg.Wait()
+
+	b, _ = json.Marshal(finalRoots)
+	fmt.Println(string(b))
 
 	return &servicePb.GetGroupSubTreeResponse{
 		Roots: finalRoots,

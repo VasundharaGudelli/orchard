@@ -305,7 +305,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		results[i].Members = make([]models.Person, len(node.MembersRaw))
 		for j, memberRaw := range node.MembersRaw {
 			member := models.Person{}
-			if !hydrateUsers {
+			if !hydrateUsers && !useManagerNames {
 				member.ID = memberRaw
 				results[i].Members[j] = member
 				continue
@@ -359,7 +359,6 @@ func (svc *GroupService) GetFullTenantTree(ctx context.Context, tenantID string,
 	query := strings.ReplaceAll(getFullTenantTreeQuery, "{PERSON_SELECT}", personSelect)
 
 	results := []*GroupTreeNode{}
-	fmt.Println(query)
 	if err := queries.Raw(query, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
 		log.WithTenantID(tenantID).WithCustom("hydrateUsers", hydrateUsers).WithCustom("query", query).Error(err)
 		return nil, err
