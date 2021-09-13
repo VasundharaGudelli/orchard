@@ -47,10 +47,9 @@
   "TestGetGroupSubTreeBadRequestEmptyTenantID": {},
   "TestGetGroupSubTreeBadRequestEmptyGroupID": {},
   "TestGetGroupSubTreeDev": {
-    "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
+    "tenant_id": "c3918dc8-c002-4b94-af3b-2fb4c1ff8608",
     "group_id": "",
-    "max_depth": -1,
-    "hydrate_users": true
+    "max_depth": -1
   },
   "TestUpdateGroup": {
     "id": "bd170094-b284-41fb-8138-82f811dc6bd6",

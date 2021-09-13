@@ -283,7 +283,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	// Form tree structure
 	roots := []*servicePb.GroupWithMembers{}
 	for _, g := range flatProtos {
-		if g.Group.ParentId == "" {
+		if (in.GroupId != "" && g.Group.Id == in.GroupId) || (in.GroupId == "" && g.Group.ParentId == "") {
 			roots = append(roots, g)
 		}
 	}
