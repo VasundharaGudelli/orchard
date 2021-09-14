@@ -201,8 +201,8 @@ const (
 		NULL
 	) as "members_raw"
 FROM "group"
-LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id {STATUS_PART}
-WHERE {GROUP_SELECT} AND "group".tenant_id = $2 AND "group".status = 'active' {MANAGER_EXCLUSION_PART}
+LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id {STATUS_PART} {MANAGER_EXCLUSION_PART}
+WHERE {GROUP_SELECT} AND "group".tenant_id = $2 AND "group".status = 'active'
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
 	"group".group_path, "group".order, "group".sync_filter, "group".opportunity_filter, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by

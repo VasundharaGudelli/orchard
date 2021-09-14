@@ -674,7 +674,7 @@ func TestGetGroupSubTreeDev(t *testing.T) {
 		t.Fail()
 		return
 	}
-
+	req.ExcludeManagerUsers = true
 	res, err := testServer.GetGroupSubTree(context.Background(), req)
 	if err != nil {
 		t.Log(err)
