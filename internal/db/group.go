@@ -202,7 +202,7 @@ const (
 	) as "members_raw"
 FROM "group"
 LEFT OUTER JOIN person p ON p.group_id = "group".id AND p.tenant_id = "group".tenant_id {STATUS_PART}
-WHERE {GROUP_SELECT} AND "group".tenant_id = $2 AND "group".status = 'active'
+WHERE {GROUP_SELECT} AND "group".tenant_id = $2 AND "group".status = 'active' {MANAGER_EXCLUSION_PART}
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
 	"group".group_path, "group".order, "group".sync_filter, "group".opportunity_filter, "group".created_at, "group".created_by, "group".updated_at, "group".updated_by
@@ -253,7 +253,7 @@ FROM (
 ) x`
 )
 
-func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool, useManagerNames bool) ([]*GroupTreeNode, error) {
+func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool, useManagerNames bool, excludeManagerUsers bool) ([]*GroupTreeNode, error) {
 	spanCtx, span := log.StartSpan(ctx, "Group.GetGroupSubTree")
 	defer span.End()
 
@@ -267,7 +267,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		maxDepth,
 	}
 
-	personSelect := "p.id"
+	personSelect := `p.id,  p."type"`
 	if hydrateUsers {
 		personSelect = fullPersonSelectClause
 	} else if useManagerNames {
@@ -282,14 +282,19 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	}
 
 	statusPart := ""
-
 	if activeUsers {
 		statusPart = `AND p."status" = 'active'`
+	}
+
+	managerExclusionPart := ""
+	if excludeManagerUsers {
+		managerExclusionPart = `AND p."type" <> 'manager'`
 	}
 
 	query := strings.ReplaceAll(getGroupSubTreeQuery, "{PERSON_SELECT}", personSelect)
 	query = strings.ReplaceAll(query, "{STATUS_PART}", statusPart)
 	query = strings.ReplaceAll(query, "{GROUP_SELECT}", groupSelect)
+	query = strings.ReplaceAll(query, "{MANAGER_EXCLUSION_PART}", managerExclusionPart)
 
 	if useManagerNames {
 		query = strings.ReplaceAll(simplieHierarchyWrapperQuery, "{INNER_QUERY}", query)
