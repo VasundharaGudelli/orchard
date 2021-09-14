@@ -769,3 +769,23 @@ func (svc *GroupService) GetLatestModifiedTS(ctx context.Context, tenantID strin
 	}
 	return res.LatestModifiedTS, nil
 }
+
+func (svc *GroupService) GetTenantGroupCount(ctx context.Context, tenantID string) (int64, error) {
+	spanCtx, span := log.StartSpan(ctx, "Group.GetTenantGroupCount")
+	defer span.End()
+	count, err := models.Groups(qm.Where("tenant_id = $1", tenantID)).Count(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (svc *GroupService) GetTenantActiveGroupCount(ctx context.Context, tenantID string) (int64, error) {
+	spanCtx, span := log.StartSpan(ctx, "Group.GetTenantActiveGroupCount")
+	defer span.End()
+	count, err := models.Groups(qm.Where("tenant_id = $1 AND status = 'active'", tenantID)).Count(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}

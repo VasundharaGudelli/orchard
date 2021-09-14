@@ -558,6 +558,23 @@ func (h *Handlers) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest)
 		return nil, err.AsGRPC()
 	}
 
+	// Check the tenant's remaining group count and reset hierarchy if there are 0 active groups left
+	groupCount, err := svc.GetTenantActiveGroupCount(spanCtx, in.TenantId)
+	if err != nil {
+		svc.Rollback()
+		err := errors.Wrap(err, "error getting tenant groups count")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+	if groupCount == 0 {
+		if err := h.resetHierarchy(spanCtx, in.TenantId, in.UserId, tx); err != nil {
+			// resetHierarchy already takes care of commiting/rolling back transaction, so need to handle that here
+			err := errors.Wrap(err, "error resetting tenant hierarchy")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+	}
+
 	if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
 		svc.Rollback()
 		err := errors.Wrap(err, "error updating group paths")
@@ -600,11 +617,25 @@ func (h *Handlers) ResetHierarchy(ctx context.Context, in *servicePb.ResetHierar
 		userID = db.DefaultTenantID
 	}
 
-	tx, err := h.db.NewTransaction(spanCtx)
-	if err != nil {
-		err := errors.Wrap(err, "error starting reset hierarchy transaction")
+	if err := h.resetHierarchy(spanCtx, in.TenantId, userID, nil); err != nil {
+		err := errors.Wrap(err, "error resetting tenant hierarchy")
 		logger.Error(err)
 		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.ResetHierarchyResponse{}, nil
+}
+
+func (h *Handlers) resetHierarchy(ctx context.Context, tenantID, userID string, tx *sql.Tx) error {
+	spanCtx, span := log.StartSpan(ctx, "resetHierarchy")
+	defer span.End()
+
+	if tx == nil {
+		_tx, err := h.db.NewTransaction(spanCtx)
+		if err != nil {
+			return errors.Wrap(err, "error starting reset hierarchy transaction")
+		}
+		tx = _tx
 	}
 
 	svc := h.db.NewGroupService()
@@ -612,35 +643,27 @@ func (h *Handlers) ResetHierarchy(ctx context.Context, in *servicePb.ResetHierar
 	tenantSvc := h.db.NewTenantService()
 	tenantSvc.SetTransaction(tx)
 
-	if err := svc.RemoveAllGroupMembers(spanCtx, in.TenantId, userID); err != nil {
+	if err := svc.RemoveAllGroupMembers(spanCtx, tenantID, userID); err != nil {
 		svc.Rollback()
-		err := errors.Wrap(err, "error removing all groups members for tenant")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+		return errors.Wrap(err, "error removing all groups members for tenant")
 	}
 
-	if err := svc.SoftDeleteTenantGroups(spanCtx, in.TenantId, userID); err != nil {
+	if err := svc.DeleteAllTenantGroups(spanCtx, tenantID); err != nil {
 		svc.Rollback()
-		err := errors.Wrap(err, "error soft deleting tenant groups")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+		return errors.Wrap(err, "error soft deleting tenant groups")
 	}
 
-	if err := tenantSvc.UpdateGroupSyncState(spanCtx, in.TenantId, tenantPb.GroupSyncStatus_Inactive); err != nil {
+	if err := tenantSvc.UpdateGroupSyncState(spanCtx, tenantID, tenantPb.GroupSyncStatus_Inactive); err != nil {
 		svc.Rollback()
-		err := errors.Wrap(err, "error updating tenant group sync state")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+		return errors.Wrap(err, "error updating tenant group sync state")
 	}
 
 	if err := svc.Commit(); err != nil {
 		svc.Rollback()
-		err := errors.Wrap(err, "error commiting reset hierarchy transaction")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+		return errors.Wrap(err, "error commiting reset hierarchy transaction")
 	}
 
-	return &servicePb.ResetHierarchyResponse{}, nil
+	return nil
 }
 
 func (h *Handlers) ensureTenantGroupSyncState(ctx context.Context, tenantID string, tx *sql.Tx) error {
