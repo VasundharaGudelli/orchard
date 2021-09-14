@@ -573,6 +573,7 @@ func (h *Handlers) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest)
 			logger.Error(err)
 			return nil, err.AsGRPC()
 		}
+		return &servicePb.Empty{}, nil
 	}
 
 	if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
