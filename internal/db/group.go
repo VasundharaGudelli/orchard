@@ -288,7 +288,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 
 	managerExclusionPart := ""
 	if excludeManagerUsers {
-		managerExclusionPart = `AND p."type" <> 'manager'`
+		managerExclusionPart = `AND ("group".type  = 'ic')`
 	}
 
 	query := strings.ReplaceAll(getGroupSubTreeQuery, "{PERSON_SELECT}", personSelect)
