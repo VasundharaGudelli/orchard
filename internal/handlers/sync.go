@@ -8,6 +8,7 @@ import (
 	"github.com/loupe-co/orchard/internal/db"
 	tenantPb "github.com/loupe-co/protos/src/common/tenant"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"google.golang.org/grpc/codes"
 )
 
 func (h *Handlers) Sync(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
@@ -39,6 +40,8 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 
 	logger := log.WithTenantID(in.TenantId)
 
+	logger.Info("Re-Syncing CRM for tenant")
+
 	tx, err := h.db.NewTransaction(spanCtx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating transaction")
@@ -68,6 +71,23 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 		return &servicePb.ReSyncCRMResponse{Status: tenantPb.GroupSyncStatus_Active}, nil
 	}
 
+	// Check to make sure all the tenant's groups are currently delete before resyncing, because apparently that's an issue?
+	groupCount, err := groupSvc.GetTenantGroupCount(spanCtx, in.TenantId)
+	if err != nil {
+		err := errors.Wrap(err, "error getting count of tenant's groups")
+		logger.Error(err)
+		if err := groupSvc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+	if groupCount > 0 {
+		err := errors.New("hierarchy must be reset before switching back to full sync").WithCode(codes.FailedPrecondition)
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	// Delete all the tenant's groups just in case
 	if err := groupSvc.DeleteAllTenantGroups(spanCtx, in.TenantId); err != nil {
 		err := errors.Wrap(err, "error deleting existing tenant groups in sql")
 		logger.Error(err)
