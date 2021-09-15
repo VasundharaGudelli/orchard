@@ -519,18 +519,6 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		}
 	}
 
-	// If we updated the user's system roles, then bust their auth cache in bouncer
-	if changeRoles {
-		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
-			err := errors.Wrap(err, "error busting auth data cache for user")
-			logger.Error(err)
-			if err := svc.Rollback(); err != nil {
-				logger.Error(errors.Wrap(err, "error rolling back transaction"))
-			}
-			return nil, err.AsGRPC()
-		}
-	}
-
 	// Commit the update person transaction in sql
 	if err := svc.Commit(); err != nil {
 		err := errors.Wrap(err, "error commiting update person transaction")
@@ -539,6 +527,16 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
 		}
 		return nil, err.AsGRPC()
+	}
+
+	// If we updated the user's system roles, then bust their auth cache in bouncer
+	if changeRoles {
+		logger.Debug("change of user's role detected, busting user auth cache")
+		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+			err := errors.Wrap(err, "error busting auth data cache for user")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
 	}
 
 	// Convert the updated person db model to proto for response
