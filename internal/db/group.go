@@ -267,9 +267,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		maxDepth,
 	}
 
-	personSelect := `JSONB_BUILD_OBJECT(
-		'id', p.id, 'type', p."type"
-	)`
+	personSelect := `p.id`
 	if hydrateUsers {
 		personSelect = fullPersonSelectClause
 	} else if useManagerNames {
