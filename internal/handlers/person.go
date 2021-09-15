@@ -48,6 +48,22 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 	insertablePerson.CreatedAt = time.Now().UTC()
 	insertablePerson.UpdatedAt = time.Now().UTC()
 
+	srSVC := h.db.NewSystemRoleService()
+	srM, err := srSVC.GetInternalRoleIDs(spanCtx)
+	if err != nil {
+		err := errors.Wrap(err, "error getting internal roles")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	rIDs := []string{}
+	for _, id := range in.Person.RoleIds {
+		if _, ok := srM[id]; !ok {
+			rIDs = append(rIDs, id)
+		}
+	}
+	in.Person.RoleIds = rIDs
+
 	// Check if email already exists
 	existingPerson, err := svc.GetByEmail(spanCtx, in.TenantId, in.Person.Email)
 	if err != nil {
@@ -128,6 +144,24 @@ func (h *Handlers) UpsertPeople(ctx context.Context, in *servicePb.UpsertPeopleR
 	}
 
 	svc := h.db.NewPersonService()
+
+	srSVC := h.db.NewSystemRoleService()
+	srM, err := srSVC.GetInternalRoleIDs(spanCtx)
+	if err != nil {
+		err := errors.Wrap(err, "error getting internal roles")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	for _, p := range in.People {
+		rIDs := []string{}
+		for _, id := range p.RoleIds {
+			if _, ok := srM[id]; !ok {
+				rIDs = append(rIDs, id)
+			}
+		}
+		p.RoleIds = rIDs
+	}
 
 	upsertablePeople := make([]*models.Person, len(in.People))
 	for i, p := range in.People {
@@ -456,6 +490,24 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 
 	// Check if we're updating a person's system_roles
 	changeRoles := strUtil.Strings(in.OnlyFields).Has("role_ids") || len(in.OnlyFields) == 0
+
+	srSVC := h.db.NewSystemRoleService()
+	srM, err := srSVC.GetInternalRoleIDs(spanCtx)
+	if err != nil {
+		err := errors.Wrap(err, "error getting internal roles")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if changeRoles {
+		rIDs := []string{}
+		for _, id := range in.Person.RoleIds {
+			if _, ok := srM[id]; !ok {
+				rIDs = append(rIDs, id)
+			}
+		}
+		in.Person.RoleIds = rIDs
+	}
 
 	// Check if groupId changed
 	changeGroup := strUtil.Strings(in.OnlyFields).Has("group_id")
