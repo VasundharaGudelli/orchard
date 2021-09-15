@@ -573,7 +573,6 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 
 	// If we updated the user's system roles, then bust their auth cache in bouncer
 	if changeRoles {
-		log.Debugf("Busting Auth Cache in 'UpdatePerson' for %s > %s", in.TenantId, in.PersonId, in.Person.Id)
 		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: updatePerson.ID}); err != nil {
 			err := errors.Wrap(err, "error busting auth data cache for user")
 			logger.Error(err)
@@ -596,7 +595,6 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 
 	// If we updated the user's system roles, then bust their auth cache in bouncer
 	if changeRoles {
-		logger.Debug("change of user's role detected, busting user auth cache")
 		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
 			err := errors.Wrap(err, "error busting auth data cache for user")
 			logger.Error(err)
@@ -665,8 +663,6 @@ func (h *Handlers) DeletePersonById(ctx context.Context, in *servicePb.IdRequest
 		logger.Errorf("error deleting person by id: %s", err.Error())
 		return nil, err
 	}
-
-	log.Debugf("Busting Auth Cache in 'DeletePersonById' for %s > %s", in.TenantId, in.PersonId)
 
 	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
 		err := errors.Wrap(err, "error busting auth data cache for user")
