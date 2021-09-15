@@ -148,6 +148,26 @@ func (svc *SystemRoleService) Search(ctx context.Context, tenantID, query string
 	return systemRoles, nil
 }
 
+func (svc *SystemRoleService) GetInternalRoleIDs(ctx context.Context) (map[string]struct{}, error) {
+	spanCtx, span := log.StartSpan(ctx, "SystemRole.GetInternalRoleIDs")
+	defer span.End()
+
+	queryParts := []qm.QueryMod{qm.Where("type = 'internal'")}
+
+	systemRoles, err := models.SystemRoles(queryParts...).All(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return nil, err
+	}
+
+	ids := map[string]struct{}{}
+
+	for _, sr := range systemRoles {
+		ids[sr.ID] = struct{}{}
+	}
+
+	return ids, nil
+}
+
 var (
 	defaultSystemRoleUpdateWhitelist = []string{
 		"name", "description", "type", "permissions", "priority",
