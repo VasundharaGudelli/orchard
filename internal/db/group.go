@@ -161,15 +161,12 @@ func (svc *GroupService) Search(ctx context.Context, tenantID, query string) ([]
 	defer span.End()
 
 	queryParts := []qm.QueryMod{}
-
 	queryParts = append(queryParts, qm.Where("tenant_id=$1", tenantID))
 
 	if query != "" {
 		searchClause := "LOWER(name) LIKE $2"
 		queryParts = append(queryParts, qm.Where(searchClause, "%"+strings.ToLower(query)+"%"))
 	}
-
-	queryParts = append(queryParts, qm.Where("type <> 'internal'"))
 
 	queryParts = append(queryParts, qm.OrderBy("\"order\", name"))
 

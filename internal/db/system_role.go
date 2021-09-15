@@ -124,7 +124,7 @@ func (svc *SystemRoleService) Search(ctx context.Context, tenantID, query string
 	spanCtx, span := log.StartSpan(ctx, "SystemRole.Search")
 	defer span.End()
 
-	queryParts := []qm.QueryMod{}
+	queryParts := []qm.QueryMod{qm.Where("type <> 'internal'")}
 
 	paramIdx := 1
 	if tenantID == "" {
