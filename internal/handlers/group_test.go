@@ -674,7 +674,12 @@ func TestGetGroupSubTreeDev(t *testing.T) {
 		t.Fail()
 		return
 	}
+
 	req.ExcludeManagerUsers = true
+	req.Simplify = true
+	req.ActiveUsers = true
+	req.GroupId = "8a5f3d92-0b52-11ec-aeeb-4201ac1f700d"
+
 	res, err := testServer.GetGroupSubTree(context.Background(), req)
 	if err != nil {
 		t.Log(err)
