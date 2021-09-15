@@ -64,9 +64,9 @@
   },
   "TestUpdatePerson": {
     "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
-    "person_id": "0051U000004VFVpQAO",
+    "person_id": "bb6cf2eb-0732-11ec-b327-4ed0f1885230",
     "person": {
-        "id": "0051U000004VFVpQAO",
+        "id": "bb6cf2eb-0732-11ec-b327-4ed0f1885230",
         "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
         "name": "",
         "first_name": "",
@@ -75,7 +75,7 @@
         "manager_id": "",
         "group_id": "",
         "role_ids": [
-            "8d94bd88-78a5-467c-a0d8-079f26b412d9"
+            "aaff61e7-d5e1-4cf6-9682-00f4f38bf1f5"
         ],
         "roles": [],
         "crm_role_ids": [],
