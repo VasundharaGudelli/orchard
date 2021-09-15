@@ -36,6 +36,6 @@ func New(
 		tenantClient:  tenantClient,
 		crmClient:     crmClient,
 		auth0Client:   auth0Client,
-		bouncerClient: nil,
+		bouncerClient: bouncerClient,
 	}
 }
