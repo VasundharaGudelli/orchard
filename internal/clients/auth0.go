@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	commonSet "github.com/loupe-co/go-common/data-structures/set/string"
@@ -48,7 +49,14 @@ func NewAuth0Client(cfg config.Config) *Auth0Client {
 }
 
 func (ac Auth0Client) getClient(ctx context.Context) (*management.Management, error) {
-	return management.New(ac.cfg.Auth0Domain, ac.cfg.Auth0ClientID, ac.cfg.Auth0ClientSecret, management.WithContext(ctx))
+	x, err := management.New(ac.cfg.Auth0Domain, ac.cfg.Auth0ClientID, ac.cfg.Auth0ClientSecret, management.WithContext(ctx), management.WithDebug(true))
+	count := 0
+	for err != nil && strings.Contains(strings.ToLower(err.Error()), "unexpected eof") && count < 3 {
+		time.Sleep(100 * time.Millisecond)
+		x, err = management.New(ac.cfg.Auth0Domain, ac.cfg.Auth0ClientID, ac.cfg.Auth0ClientSecret, management.WithContext(ctx), management.WithDebug(true))
+		count++
+	}
+	return x, err
 }
 
 type Auth0License struct {
