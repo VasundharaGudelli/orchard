@@ -462,6 +462,18 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 		}
 	}
 
+	// re-sync users into groups if the group's crm_role_ids changed
+	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("crm_role_ids") {
+		personSvc := h.db.NewPersonService()
+		if err := personSvc.UpdatePersonGroups(spanCtx, in.TenantId); err != nil {
+			err := errors.Wrap(err, "error updating person groups")
+			logger.Error(err)
+			personSvc.Rollback()
+			return nil, err.AsGRPC()
+		}
+	}
+
+	// If the crm_role_ids changed or the status changed, then make sure to re-calculate/set the tenant's sync state
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Intersects([]string{"crm_role_ids", "status"}) {
 		if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
 			svc.Rollback()
