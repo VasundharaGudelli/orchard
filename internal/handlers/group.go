@@ -3,8 +3,6 @@ package handlers
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
@@ -251,6 +249,7 @@ func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest
 }
 
 func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSubTreeRequest) (*servicePb.GetGroupSubTreeResponse, error) {
+
 	spanCtx, span := log.StartSpan(ctx, "GetGroupSubTree")
 	defer span.End()
 
@@ -297,6 +296,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 
 	finalRoots := make([]*servicePb.GroupSubtreeRoot, len(roots))
 	wg := sync.WaitGroup{}
+
 	for i, root := range roots {
 		wg.Add(1)
 		go func(w *sync.WaitGroup, r *servicePb.GroupWithMembers, all []*servicePb.GroupWithMembers, idx int) {
@@ -311,8 +311,8 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	}
 	wg.Wait()
 
-	b, _ := json.Marshal(finalRoots)
-	fmt.Println(string(b), "finalRoots")
+	// b, _ := json.Marshal(finalRoots)
+	// fmt.Println(string(b), "finalRoots")
 
 	return &servicePb.GetGroupSubTreeResponse{
 		Roots: finalRoots,
@@ -388,6 +388,7 @@ func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*ser
 				node.Group.Name = node.Children[0].Group.Name
 			}
 			node.Children = []*servicePb.GroupWithMembers{}
+			node.Group.Type = orchardPb.SystemRoleType_IC
 		}
 	}
 	return maxDepth
