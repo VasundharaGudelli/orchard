@@ -209,7 +209,7 @@ ORDER BY "group.name"`
 
 	fullPersonSelectClause = `JSONB_BUILD_OBJECT(
 		'id', p.id, 'tenant_id', p.tenant_id, 'name', p."name", 'first_name', p.first_name, 'last_name', p.last_name, 'email', p.email, 'manager_id', p.manager_id,
-		'role_ids', p.role_ids, 'crm_role_ids', p.crm_role_ids, 'is_provisioned', p.is_provisioned, 'is_synced', p.is_synced, 'status', p.status,
+		'role_ids', p.role_ids, 'crm_role_ids', p.crm_role_ids, 'is_provisioned', p.is_provisioned, 'is_synced', p.is_synced, 'status', p.status, 'photoUrl', p.photoUrl,
 		'created_at', TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH:MI:SS"Z"'), 'created_by', p.created_by,
 		'updated_at', TO_CHAR(p.updated_at, 'YYYY-MM-DD"T"HH:MI:SS"Z"'), 'updated_by', p.updated_by,
 		'type', p."type"
@@ -271,7 +271,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		personSelect = fullPersonSelectClause
 	} else if useManagerNames {
 		personSelect = `JSONB_BUILD_OBJECT(
-			'id', p.id, 'name', p."name", 'status', p."status",	'type', p."type"
+			'id', p.id, 'name', p."name", 'status', p."status",	'type', p."type", 'photoUrl', p.photoUrl
 		)`
 	}
 	groupSelect := rootGroupSelectorClause
