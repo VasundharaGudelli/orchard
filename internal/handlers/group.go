@@ -381,12 +381,8 @@ func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*ser
 		}
 	}
 	if simplify {
-		shouldRollupSingleICGroupName := len(node.Members) != 1 || node.Members[0].Status != orchardPb.BasicStatus_Active
 		if len(node.Children) == 1 && node.Children[0].Group.Type == orchardPb.SystemRoleType_IC && len(node.Children[0].Members) > 0 && len(node.Children[0].Members) <= 25 {
 			node.Members = append(node.Members, node.Children[0].Members...)
-			if shouldRollupSingleICGroupName {
-				node.Group.Name = node.Children[0].Group.Name
-			}
 			node.Children = []*servicePb.GroupWithMembers{}
 			node.Group.Type = orchardPb.SystemRoleType_IC
 		}
