@@ -569,7 +569,7 @@ func (svc *GroupService) RemoveGroupMembers(ctx context.Context, groupID, tenant
 
 const (
 	removeAllGroupMembersQuery = `UPDATE person
-	SET group_id = NULL, updated_by = $1, updated_at = CURRENT_TIMESTAMP
+	SET group_id = NULL, is_synced = TRUE, updated_by = $1, updated_at = CURRENT_TIMESTAMP
 	WHERE tenant_id = $2`
 )
 
