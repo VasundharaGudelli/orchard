@@ -569,14 +569,22 @@ func (svc *GroupService) RemoveGroupMembers(ctx context.Context, groupID, tenant
 
 const (
 	removeAllGroupMembersQuery = `UPDATE person
-	SET group_id = NULL, is_synced = TRUE, updated_by = $1, updated_at = CURRENT_TIMESTAMP
+	SET group_id = NULL, updated_by = $1, updated_at = CURRENT_TIMESTAMP
 	WHERE tenant_id = $2`
+
+	resetGroupMembersSyncState = `UPDATE person
+	SET is_synced = TRUE
+	WHERE tenant_id = $1 AND created_by = '00000000-0000-0000-0000-000000000000'`
 )
 
 func (svc *GroupService) RemoveAllGroupMembers(ctx context.Context, tenantID, userID string) error {
 	spanCtx, span := log.StartSpan(ctx, "Group.RemoveAllGroupMembers")
 	defer span.End()
 	_, err := queries.Raw(removeAllGroupMembersQuery, userID, tenantID).ExecContext(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return err
+	}
+	_, err = queries.Raw(resetGroupMembersSyncState, tenantID).ExecContext(spanCtx, svc.GetContextExecutor())
 	return err
 }
 
