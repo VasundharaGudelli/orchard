@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/golang/protobuf/ptypes"
@@ -141,8 +142,10 @@ func (svc *TenantService) CheckPeopleSyncState(ctx context.Context, tenantID str
 	spanCtx, span := log.StartSpan(ctx, "Tenant.CheckPeopleSyncState")
 	defer span.End()
 	res := &CheckPeopleSyncedStateResponse{}
-	if err := queries.Raw(checkPeopleSyncStateQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), res); err != nil {
-		return false, errors.Wrap(err, "error checking people sync state in sql")
+	if err := queries.Raw(checkPeopleSyncStateQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), res); err != nil && err != sql.ErrNoRows {
+		err := errors.Wrap(err, "error checking people sync state in sql")
+		log.Debug(err.Error())
+		return false, err
 	}
 	return res.IsPeopleSynced, nil
 }
