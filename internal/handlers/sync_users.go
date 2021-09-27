@@ -12,6 +12,7 @@ import (
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"github.com/volatiletech/null/v8"
 )
 
 const DefaultBatchSize = 2000
@@ -136,6 +137,7 @@ func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, svc *
 			}
 			if p.Status == orchardPb.BasicStatus_Inactive.String() {
 				p.IsProvisioned = false
+				p.Email = null.String{String: "", Valid: false}
 			}
 			batch[i] = p
 		}
