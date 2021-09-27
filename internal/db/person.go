@@ -374,8 +374,8 @@ const (
 )
 
 type getPersonGroupIDsResponse struct {
-	ID      string `boil:"id" json:"id"`
-	GroupID string `boil:"group_id" json:"group_id"`
+	ID      string         `boil:"id" json:"id"`
+	GroupID sql.NullString `boil:"group_id" json:"group_id"`
 }
 
 func (svc *PersonService) GetPersonGroupIDs(ctx context.Context, tenantID string) (map[string]string, error) {
@@ -387,7 +387,9 @@ func (svc *PersonService) GetPersonGroupIDs(ctx context.Context, tenantID string
 	}
 	res := make(map[string]string, len(personGroupIDs))
 	for _, person := range personGroupIDs {
-		res[person.ID] = person.GroupID
+		if person.GroupID.Valid {
+			res[person.ID] = person.GroupID.String
+		}
 	}
 	return res, nil
 }
