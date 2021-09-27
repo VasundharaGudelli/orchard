@@ -67,7 +67,7 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 		}
 	}
 
-	if err := personSvc.UpdatePersonGroups(spanCtx, in.TenantId); err != nil {
+	if err := h.updatePersonGroups(spanCtx, in.TenantId, personSvc.GetTransaction()); err != nil {
 		err := errors.Wrap(err, "error updating person groups")
 		logger.Error(err)
 		personSvc.Rollback()

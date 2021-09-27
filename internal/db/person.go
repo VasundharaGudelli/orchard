@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/friendsofgo/errors"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
@@ -366,4 +367,27 @@ func (svc *PersonService) SoftDeleteByID(ctx context.Context, id, tenantID, user
 		return fmt.Errorf("error soft deleting person: delete affected 0 rows")
 	}
 	return nil
+}
+
+const (
+	getPersonGroupIDsQuery = `SELECT id, group_id FROM person WHERE tenant_id = $1 AND is_provisioned AND status = 'active'`
+)
+
+type getPersonGroupIDsResponse struct {
+	ID      string `boil:"id" json:"id"`
+	GroupID string `boil:"group_id" json:"group_id"`
+}
+
+func (svc *PersonService) GetPersonGroupIDs(ctx context.Context, tenantID string) (map[string]string, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetPersonGroupIDs")
+	defer span.End()
+	personGroupIDs := []*getPersonGroupIDsResponse{}
+	if err := queries.Raw(getPersonGroupIDsQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &personGroupIDs); err != nil {
+		return nil, errors.Wrap(err, "error querying sql for person group ids")
+	}
+	res := make(map[string]string, len(personGroupIDs))
+	for _, person := range personGroupIDs {
+		res[person.ID] = person.GroupID
+	}
+	return res, nil
 }

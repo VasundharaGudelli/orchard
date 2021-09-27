@@ -461,12 +461,10 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 
 	// re-sync users into groups if the group's crm_role_ids changed
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("crm_role_ids") {
-		personSvc := h.db.NewPersonService()
-		personSvc.SetTransaction(svc.GetTransaction())
-		if err := personSvc.UpdatePersonGroups(spanCtx, in.TenantId); err != nil {
+		if err := h.updatePersonGroups(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
 			err := errors.Wrap(err, "error updating person groups")
 			logger.Error(err)
-			personSvc.Rollback()
+			svc.Rollback()
 			return nil, err.AsGRPC()
 		}
 	}

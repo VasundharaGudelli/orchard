@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"math"
 	"time"
@@ -571,8 +572,8 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		}
 	}
 
-	// If we updated the user's system roles, then bust their auth cache in bouncer
-	if changeRoles {
+	// If we updated the user's system roles or group, then bust their auth cache in bouncer
+	if changeRoles || changeGroup {
 		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: updatePerson.ID}); err != nil {
 			err := errors.Wrap(err, "error busting auth data cache for user")
 			logger.Error(err)
@@ -621,16 +622,52 @@ func (h *Handlers) UpdatePersonGroups(ctx context.Context, in *servicePb.UpdateP
 
 	logger := log.WithTenantID(in.TenantId)
 
-	personSvc := h.db.NewPersonService()
-
-	if err := personSvc.UpdatePersonGroups(spanCtx, in.TenantId); err != nil {
+	if err := h.updatePersonGroups(spanCtx, in.TenantId, nil); err != nil {
 		err := errors.Wrap(err, "error updating person groups")
 		logger.Error(err)
-		personSvc.Rollback()
 		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.UpdatePersonGroupsResponse{}, nil
+}
+
+func (h *Handlers) updatePersonGroups(ctx context.Context, tenantID string, tx *sql.Tx) error {
+	spanCtx, span := log.StartSpan(ctx, "updatePersonGroups")
+	defer span.End()
+
+	personSvc := h.db.NewPersonService()
+	if tx != nil {
+		personSvc.SetTransaction(tx)
+	}
+
+	personGroups, err := personSvc.GetPersonGroupIDs(spanCtx, tenantID)
+	if err != nil {
+		return errors.Wrap(err, "error getting current person groups")
+	}
+
+	if err := personSvc.UpdatePersonGroups(spanCtx, tenantID); err != nil {
+		return errors.Wrap(err, "error updating person groups")
+	}
+
+	updatedPersonGroups, err := personSvc.GetPersonGroupIDs(spanCtx, tenantID)
+	if err != nil {
+		return errors.Wrap(err, "error getting updated person groups")
+	}
+
+	bustReqs := []*bouncerPb.BustAuthCacheRequest{}
+	for personID, groupID := range personGroups {
+		if newGroupID, ok := updatedPersonGroups[personID]; newGroupID != groupID || !ok {
+			bustReqs = append(bustReqs, &bouncerPb.BustAuthCacheRequest{TenantId: tenantID, UserId: personID})
+		}
+	}
+
+	if len(bustReqs) > 0 {
+		if err := h.bouncerClient.MultiBustAuthCache(spanCtx, bustReqs...); err != nil {
+			return errors.Wrap(err, "error busting auth cache for one or more users in bouncer")
+		}
+	}
+
+	return nil
 }
 
 func (h *Handlers) DeletePersonById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
