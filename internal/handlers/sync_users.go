@@ -134,6 +134,9 @@ func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, svc *
 				p.CreatedAt = time.Now().UTC()
 				p.IsSynced = true
 			}
+			if p.Status == orchardPb.BasicStatus_Inactive.String() {
+				p.IsProvisioned = false
+			}
 			batch[i] = p
 		}
 
