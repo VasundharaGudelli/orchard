@@ -23,7 +23,7 @@ func (h *Handlers) SyncGroups(ctx context.Context, in *servicePb.SyncRequest) (*
 	spanCtx, span := log.StartSpan(ctx, "SyncGroups")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -87,7 +87,7 @@ func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupReq
 	spanCtx, span := log.StartSpan(ctx, "CreateGroup")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -181,7 +181,7 @@ func (h *Handlers) GetGroupById(ctx context.Context, in *servicePb.IdRequest) (*
 	spanCtx, span := log.StartSpan(ctx, "GetGroupById")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
 		err := ErrBadRequest.New("tenantId and groupId can't be empty")
@@ -216,7 +216,7 @@ func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest
 	spanCtx, span := log.StartSpan(ctx, "GetGroups")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -253,7 +253,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	spanCtx, span := log.StartSpan(ctx, "GetGroupSubTree")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -401,7 +401,7 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 	spanCtx, span := log.StartSpan(ctx, "UpdateGroup")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -507,7 +507,7 @@ func (h *Handlers) UpdateGroupTypes(ctx context.Context, in *servicePb.UpdateGro
 	spanCtx, span := log.StartSpan(ctx, "UpdateGroupTypes")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -530,7 +530,7 @@ func (h *Handlers) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest)
 	spanCtx, span := log.StartSpan(ctx, "DeleteGroupById")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
 		err := ErrBadRequest.New("tenantId and GroupId can't be empty")
@@ -612,7 +612,7 @@ func (h *Handlers) ResetHierarchy(ctx context.Context, in *servicePb.ResetHierar
 	spanCtx, span := log.StartSpan(ctx, "ResetHierarchy")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -676,7 +676,7 @@ func (h *Handlers) resetHierarchy(ctx context.Context, tenantID, userID string, 
 }
 
 func (h *Handlers) ensureTenantGroupSyncState(ctx context.Context, tenantID string, tx *sql.Tx) error {
-	logger := log.WithTenantID(tenantID)
+	logger := log.WithContext(ctx).WithTenantID(tenantID)
 
 	if tx == nil {
 		_tx, err := h.db.NewTransaction(ctx)
@@ -744,7 +744,7 @@ func (h *Handlers) GetTenantGroupsLastModifiedTS(ctx context.Context, in *servic
 	spanCtx, span := log.StartSpan(ctx, "GetTenantGroupsLastModifiedTS")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		return nil, ErrBadRequest.New("tenantId is empty")

@@ -12,7 +12,7 @@ func (h *Handlers) IsHierarchySynced(ctx context.Context, in *servicePb.IsHierar
 	spanCtx, span := log.StartSpan(ctx, "IsHierarchySynced")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")

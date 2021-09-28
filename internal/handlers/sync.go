@@ -38,7 +38,7 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 	spanCtx, span := log.StartSpan(ctx, "ReSyncCRM")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	logger.Info("Re-Syncing CRM for tenant")
 

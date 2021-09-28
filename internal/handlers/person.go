@@ -22,7 +22,7 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 	spanCtx, span := log.StartSpan(ctx, "CreatePerson")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -132,7 +132,7 @@ func (h *Handlers) UpsertPeople(ctx context.Context, in *servicePb.UpsertPeopleR
 	spanCtx, span := log.StartSpan(ctx, "UpsertPeople")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -182,7 +182,7 @@ func (h *Handlers) GetPersonById(ctx context.Context, in *servicePb.IdRequest) (
 	spanCtx, span := log.StartSpan(ctx, "GetPersonById")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId and personId can't be empty")
@@ -213,7 +213,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 	spanCtx, span := log.StartSpan(ctx, "SearchPeople")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("search", in.Search).WithCustom("page", in.Page).WithCustom("pageSize", in.PageSize)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("search", in.Search).WithCustom("page", in.Page).WithCustom("pageSize", in.PageSize)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -356,7 +356,7 @@ func (h *Handlers) GetGroupMembers(ctx context.Context, in *servicePb.GetGroupMe
 	spanCtx, span := log.StartSpan(ctx, "GetGroupMembers")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
 		err := ErrBadRequest.New("tenantId and groupId can't be empty")
@@ -394,7 +394,7 @@ func (h *Handlers) GetUngroupedPeople(ctx context.Context, in *servicePb.GetUngr
 	spanCtx, span := log.StartSpan(ctx, "GetGroupMembers")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -431,7 +431,7 @@ func (h *Handlers) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtual
 	spanCtx, span := log.StartSpan(ctx, "GetVirtualUsers")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -468,7 +468,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	spanCtx, span := log.StartSpan(ctx, "UpdatePerson")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -620,7 +620,7 @@ func (h *Handlers) UpdatePersonGroups(ctx context.Context, in *servicePb.UpdateP
 	spanCtx, span := log.StartSpan(ctx, "UpdatePersonGroups")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if err := h.updatePersonGroups(spanCtx, in.TenantId, nil); err != nil {
 		err := errors.Wrap(err, "error updating person groups")
@@ -674,7 +674,7 @@ func (h *Handlers) DeletePersonById(ctx context.Context, in *servicePb.IdRequest
 	spanCtx, span := log.StartSpan(ctx, "DeletePersonById")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId and personId can't be empty")

@@ -13,7 +13,7 @@ func (h *Handlers) InsertGroupViewer(ctx context.Context, in *servicePb.InsertGr
 	spanCtx, span := log.StartSpan(ctx, "InsertGroupViewer")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.GroupViewer == nil {
 		err := ErrBadRequest.New("groupViewer can't be null")
@@ -51,7 +51,7 @@ func (h *Handlers) GetGroupViewers(ctx context.Context, in *servicePb.IdRequest)
 	spanCtx, span := log.StartSpan(ctx, "GetGroupViewers")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
 		err := ErrBadRequest.New("tenantId and groupId can't be empty")
@@ -92,7 +92,7 @@ func (h *Handlers) GetPersonViewableGroups(ctx context.Context, in *servicePb.Id
 	spanCtx, span := log.StartSpan(ctx, "GetPersonViewableGroups")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.GroupId == "" {
 		err := ErrBadRequest.New("tenantId and personId can't be empty")
@@ -133,7 +133,7 @@ func (h *Handlers) UpdateGroupViewer(ctx context.Context, in *servicePb.UpdateGr
 	spanCtx, span := log.StartSpan(ctx, "UpdateGroupViewer")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.GroupViewer == nil {
 		err := ErrBadRequest.New("groupViewer can't be null")
@@ -171,7 +171,7 @@ func (h *Handlers) DeleteGroupViewerById(ctx context.Context, in *servicePb.IdRe
 	spanCtx, span := log.StartSpan(ctx, "UpdateGroupViewer")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" || in.GroupId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId, groupId and personId can't be empty")

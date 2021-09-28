@@ -14,7 +14,7 @@ func (h *Handlers) GetLegacyTeamStructure(ctx context.Context, in *servicePb.Get
 	spanCtx, span := log.StartSpan(ctx, "GetLegacyTeamStructure")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")

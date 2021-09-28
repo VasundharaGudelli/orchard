@@ -9,6 +9,7 @@ import (
 	common "github.com/loupe-co/go-common"
 	configUtil "github.com/loupe-co/go-common/config"
 	ekg "github.com/loupe-co/go-common/ekg"
+	logGRPC "github.com/loupe-co/go-loupe-logger/grpc"
 	"github.com/loupe-co/go-loupe-logger/log"
 	grpcHandlers "github.com/loupe-co/orchard/cmd/server/grpc"
 	"github.com/loupe-co/orchard/internal/clients"
@@ -74,7 +75,13 @@ func main() {
 
 	// Create grpc server
 	orchardServer := grpcHandlers.New(cfg, dbClient, tenantClient, crmClient, auth0Client, bouncerClient)
-	grpcServer := common.NewGRPCServer(cfg.GRPCHost, cfg.GRPCPort, grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32))
+	grpcServer := common.NewGRPCServer(
+		cfg.GRPCHost,
+		cfg.GRPCPort,
+		grpc.MaxRecvMsgSize(math.MaxInt32),
+		grpc.MaxSendMsgSize(math.MaxInt32),
+		logGRPC.GetInterceptorOption(false),
+	)
 	grpcServer.Register(func(server *grpc.Server) {
 		servicePb.RegisterOrchardServer(server, orchardServer)
 	})

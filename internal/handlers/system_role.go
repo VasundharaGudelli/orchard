@@ -16,7 +16,7 @@ func (h *Handlers) CreateSystemRole(ctx context.Context, in *servicePb.CreateSys
 	spanCtx, span := log.StartSpan(ctx, "CreateSystemRole")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -66,7 +66,7 @@ func (h *Handlers) GetSystemRoleById(ctx context.Context, in *servicePb.IdReques
 	spanCtx, span := log.StartSpan(ctx, "GetSystemRoleById")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("id", in.Id)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
 		err := ErrBadRequest.New("id can't be empty")
@@ -97,7 +97,7 @@ func (h *Handlers) GetSystemRoles(ctx context.Context, in *servicePb.GetSystemRo
 	spanCtx, span := log.StartSpan(ctx, "GetSystemRoles")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("search", in.Search)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("search", in.Search)
 
 	svc := h.db.NewSystemRoleService()
 
@@ -130,7 +130,7 @@ func (h *Handlers) UpdateSystemRole(ctx context.Context, in *servicePb.UpdateSys
 
 	if in.SystemRole == nil {
 		err := ErrBadRequest.New("systemRole can't be null")
-		log.Warn(err.Error())
+		log.WithContext(spanCtx).Warn(err.Error())
 		return nil, err.AsGRPC()
 	}
 
@@ -139,11 +139,11 @@ func (h *Handlers) UpdateSystemRole(ctx context.Context, in *servicePb.UpdateSys
 	}
 	if in.SystemRole.Id == "" {
 		err := ErrBadRequest.New("id can't be empty")
-		log.Warn(err.Error())
+		log.WithContext(spanCtx).Warn(err.Error())
 		return nil, err.AsGRPC()
 	}
 
-	logger := log.WithTenantID(in.SystemRole.TenantId).WithCustom("id", in.Id)
+	logger := log.WithContext(spanCtx).WithTenantID(in.SystemRole.TenantId).WithCustom("id", in.Id)
 
 	tx, err := h.db.NewTransaction(spanCtx)
 	if err != nil {

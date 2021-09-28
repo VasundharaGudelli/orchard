@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/loupe-co/go-common/errors"
@@ -135,7 +136,7 @@ func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, svc *
 				p.CreatedAt = time.Now().UTC()
 				p.IsSynced = true
 			}
-			if p.Status == orchardPb.BasicStatus_Inactive.String() {
+			if strings.EqualFold(p.Status, orchardPb.BasicStatus_Inactive.String()) {
 				p.IsProvisioned = false
 				p.Email = null.String{String: "", Valid: false}
 			}

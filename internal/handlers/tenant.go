@@ -12,7 +12,7 @@ func (h *Handlers) GetGroupSyncSettings(ctx context.Context, in *servicePb.GetGr
 	spanCtx, span := log.StartSpan(ctx, "GetGroupSyncSettings")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	svc := h.db.NewTenantService()
 
@@ -40,7 +40,7 @@ func (h *Handlers) UpdateGroupSyncState(ctx context.Context, in *servicePb.Updat
 	spanCtx, span := log.StartSpan(ctx, "UpdateGroupSyncState")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	svc := h.db.NewTenantService()
 
@@ -58,7 +58,7 @@ func (h *Handlers) UpdateGroupSyncMetadata(ctx context.Context, in *servicePb.Up
 	spanCtx, span := log.StartSpan(ctx, "UpdateGroupSyncMetadata")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	svc := h.db.NewTenantService()
 

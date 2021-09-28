@@ -16,7 +16,7 @@ func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) 
 
 	syncSince := in.SyncSince.AsTime()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("syncSince", syncSince)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("syncSince", syncSince)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -81,7 +81,7 @@ func (h *Handlers) UpsertCRMRoles(ctx context.Context, in *servicePb.UpsertCRMRo
 	spanCtx, span := log.StartSpan(ctx, "UpsertCRMRoles")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -116,7 +116,7 @@ func (h *Handlers) GetCRMRoleById(ctx context.Context, in *servicePb.IdRequest) 
 	spanCtx, span := log.StartSpan(ctx, "GetCRMRoleById")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("id", in.Id)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
 		err := ErrBadRequest.New("id can't be empty")
@@ -153,7 +153,7 @@ func (h *Handlers) GetCRMRoles(ctx context.Context, in *servicePb.GetCRMRolesReq
 	spanCtx, span := log.StartSpan(ctx, "GetCRMRoles")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("search", in.Search)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("search", in.Search)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -197,7 +197,7 @@ func (h *Handlers) GetUnsyncedCRMRoles(ctx context.Context, in *servicePb.GetUns
 	spanCtx, span := log.StartSpan(ctx, "GetCRMRoles")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -232,7 +232,7 @@ func (h *Handlers) DeleteCRMRoleById(ctx context.Context, in *servicePb.IdReques
 	spanCtx, span := log.StartSpan(ctx, "DeleteCRMRoleById")
 	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("id", in.Id)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
 		err := ErrBadRequest.New("id can't be empty")
