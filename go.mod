@@ -11,9 +11,9 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/lib/pq v1.10.2
-	github.com/loupe-co/bouncer v1.0.4-rc.3
+	github.com/loupe-co/bouncer v1.0.4-rc.4
 	github.com/loupe-co/go-common v1.0.20
-	github.com/loupe-co/go-loupe-logger v1.0.3
+	github.com/loupe-co/go-loupe-logger v1.0.4
 	github.com/loupe-co/protos v0.0.0-20210927110517-48f7dc008d32
 	github.com/spf13/viper v1.8.1
 	github.com/urfave/cli/v2 v2.3.0
