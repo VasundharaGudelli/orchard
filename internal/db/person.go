@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/friendsofgo/errors"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
