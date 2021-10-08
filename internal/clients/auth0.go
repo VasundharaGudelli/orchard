@@ -113,9 +113,7 @@ func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *mode
 	if len(existingUsers) > 0 {
 		existingUser := existingUsers[0]
 		provisionedUser.ID = existingUser.ID
-		existingUser.AppMetadata["person_id"] = user.ID
-		existingUser.AppMetadata["license"] = &Auth0License{IsActive: true}
-		if err := client.User.Update(*existingUser.ID, existingUser); err != nil {
+		if err := client.User.Update(*provisionedUser.ID, provisionedUser); err != nil {
 			err := errors.Wrap(err, "error re-provisioning existing user in auth0")
 			logger.Error(err)
 			return err
