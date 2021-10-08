@@ -103,10 +103,29 @@ func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *mode
 		return err
 	}
 
-	if err := client.User.Create(provisionedUser); err != nil {
-		err := errors.Wrap(err, "error creating provisioned user in auth0")
+	existingUsers, err := ac.searchUserByEmail(spanCtx, client, tenantID, user.Email.String)
+	if err != nil {
+		err := errors.Wrap(err, "error checking for existing user in auth0 by email")
 		logger.Error(err)
 		return err
+	}
+
+	if len(existingUsers) > 0 {
+		existingUser := existingUsers[0]
+		provisionedUser.ID = existingUser.ID
+		existingUser.AppMetadata["person_id"] = user.ID
+		existingUser.AppMetadata["license"] = &Auth0License{IsActive: true}
+		if err := client.User.Update(*existingUser.ID, existingUser); err != nil {
+			err := errors.Wrap(err, "error re-provisioning existing user in auth0")
+			logger.Error(err)
+			return err
+		}
+	} else {
+		if err := client.User.Create(provisionedUser); err != nil {
+			err := errors.Wrap(err, "error creating provisioned user in auth0")
+			logger.Error(err)
+			return err
+		}
 	}
 
 	userRoles := make([]*management.Role, len(legacyRoles))
