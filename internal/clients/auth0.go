@@ -49,11 +49,11 @@ func NewAuth0Client(cfg config.Config) *Auth0Client {
 }
 
 func (ac Auth0Client) getClient(ctx context.Context) (*management.Management, error) {
-	x, err := management.New(ac.cfg.Auth0Domain, ac.cfg.Auth0ClientID, ac.cfg.Auth0ClientSecret, management.WithContext(ctx), management.WithDebug(true))
+	x, err := management.New(ac.cfg.Auth0Domain, ac.cfg.Auth0ClientID, ac.cfg.Auth0ClientSecret, management.WithContext(ctx), management.WithDebug(false))
 	count := 0
 	for err != nil && strings.Contains(strings.ToLower(err.Error()), "unexpected eof") && count < 3 {
 		time.Sleep(100 * time.Millisecond)
-		x, err = management.New(ac.cfg.Auth0Domain, ac.cfg.Auth0ClientID, ac.cfg.Auth0ClientSecret, management.WithContext(ctx), management.WithDebug(true))
+		x, err = management.New(ac.cfg.Auth0Domain, ac.cfg.Auth0ClientID, ac.cfg.Auth0ClientSecret, management.WithContext(ctx), management.WithDebug(false))
 		count++
 	}
 	return x, err
@@ -112,6 +112,7 @@ func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *mode
 
 	if len(existingUsers) > 0 {
 		existingUser := existingUsers[0]
+		provisionedUser.ID = existingUser.ID
 		if err := client.User.Update(*existingUser.ID, &management.User{AppMetadata: provisionedUser.AppMetadata}); err != nil {
 			err := errors.Wrap(err, "error re-provisioning existing user in auth0")
 			logger.Error(err)
