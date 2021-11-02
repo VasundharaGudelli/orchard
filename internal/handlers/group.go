@@ -150,6 +150,7 @@ func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupReq
 	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
 		err := errors.Wrap(err, "error updating group types")
 		logger.Error(err)
+		svc.Rollback()
 		return nil, err.AsGRPC()
 	}
 
@@ -467,6 +468,14 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 			svc.Rollback()
 			return nil, err.AsGRPC()
 		}
+	}
+
+	// Make sure group types are updated correctly
+	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error updating group types")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
 	}
 
 	// If the crm_role_ids changed or the status changed, then make sure to re-calculate/set the tenant's sync state
