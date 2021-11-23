@@ -43,6 +43,7 @@ func (svc *SystemRoleService) FromProto(sr *orchardPb.SystemRole) *models.System
 		Permissions: sr.Permissions,
 		Status:      strings.ToLower(sr.Status.String()),
 		Priority:    int(sr.Priority),
+		BaseRoleID:  null.NewString(sr.BaseRoleId, sr.BaseRoleId != ""),
 		CreatedBy:   sr.CreatedBy,
 		CreatedAt:   createdAt,
 		UpdatedBy:   sr.UpdatedBy,
@@ -77,6 +78,11 @@ func (svc *SystemRoleService) ToProto(sr *models.SystemRole) (*orchardPb.SystemR
 		status = orchardPb.BasicStatus_Active
 	}
 
+	var isCustom bool
+	if !strings.EqualFold(DefaultTenantID, sr.TenantID) || (sr.BaseRoleID.Valid && len(sr.BaseRoleID.String) > 0) {
+		isCustom = true
+	}
+
 	return &orchardPb.SystemRole{
 		Id:          sr.ID,
 		TenantId:    sr.TenantID,
@@ -86,6 +92,8 @@ func (svc *SystemRoleService) ToProto(sr *models.SystemRole) (*orchardPb.SystemR
 		Permissions: sr.Permissions,
 		Priority:    int32(sr.Priority),
 		Status:      status,
+		IsCustom:    isCustom,
+		BaseRoleId:  sr.BaseRoleID.String,
 		CreatedAt:   createdAt,
 		CreatedBy:   sr.CreatedBy,
 		UpdatedAt:   updatedAt,
@@ -171,7 +179,7 @@ func (svc *SystemRoleService) GetInternalRoleIDs(ctx context.Context) (map[strin
 var (
 	defaultSystemRoleUpdateWhitelist = []string{
 		"name", "description", "type", "permissions", "priority",
-		"status", "updated_at", "updated_by",
+		"status", "updated_at", "updated_by", "base_role_id",
 	}
 )
 
