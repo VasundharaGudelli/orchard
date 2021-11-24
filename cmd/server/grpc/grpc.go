@@ -80,6 +80,10 @@ func (server *OrchardGRPCServer) CreateSystemRole(ctx context.Context, in *servi
 	return server.handlers.CreateSystemRole(ctx, in)
 }
 
+func (server *OrchardGRPCServer) CloneSystemRole(ctx context.Context, in *servicePb.CloneSystemRoleRequest) (*servicePb.CloneSystemRoleResponse, error) {
+	return server.handlers.CloneSystemRole(ctx, in)
+}
+
 func (server *OrchardGRPCServer) GetSystemRoleById(ctx context.Context, in *servicePb.IdRequest) (*orchardPb.SystemRole, error) {
 	return server.handlers.GetSystemRoleById(ctx, in)
 }
