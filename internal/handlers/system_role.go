@@ -62,6 +62,82 @@ func (h *Handlers) CreateSystemRole(ctx context.Context, in *servicePb.CreateSys
 	return &servicePb.CreateSystemRoleResponse{SystemRole: systemRole}, nil
 }
 
+func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSystemRoleRequest) (*servicePb.CloneSystemRoleResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "CloneSystemRole")
+	defer span.End()
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	if in.BaseRoleId == "" {
+		err := ErrBadRequest.New("baseRoleId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	if in.NewSystemRole == nil {
+		err := ErrBadRequest.New("new system role can't be null")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	if in.NewSystemRole.Id != "" {
+		err := ErrBadRequest.New("can't insert record with existing id")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := h.db.NewSystemRoleService()
+
+	br, err := svc.GetByID(spanCtx, in.BaseRoleId)
+	if err != nil {
+		err := errors.Wrap(err, "error getting base system role")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if br == nil {
+		err := ErrBadRequest.New("base role not found")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	if br.TenantID != db.DefaultTenantID {
+		err := ErrBadRequest.New("base role can only belong to default tenant")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	in.NewSystemRole.Id = db.MakeID()
+
+	if in.TenantId != "" {
+		in.NewSystemRole.TenantId = in.TenantId
+	}
+
+	sr := svc.FromProto(in.NewSystemRole)
+	sr.Permissions = br.Permissions
+
+	if err := svc.Insert(spanCtx, sr); err != nil {
+		err := errors.Wrap(err, "error inserting system role into sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	systemRole, err := svc.ToProto(sr)
+	if err != nil {
+		err := errors.Wrap(err, "error converting systemRole db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.CloneSystemRoleResponse{SystemRole: systemRole}, nil
+}
+
 func (h *Handlers) GetSystemRoleById(ctx context.Context, in *servicePb.IdRequest) (*orchardPb.SystemRole, error) {
 	spanCtx, span := log.StartSpan(ctx, "GetSystemRoleById")
 	defer span.End()
