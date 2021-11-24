@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	null "github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -126,6 +128,32 @@ func (svc *SystemRoleService) GetByID(ctx context.Context, id string) (*models.S
 		return nil, err
 	}
 	return sr, nil
+}
+
+const (
+	systemRoleWithBaseQuery = `
+	WITH RECURSIVE system_role_and_base AS (
+	  SELECT *
+	    FROM system_role
+	   WHERE id = $1
+	   UNION ALL
+	  SELECT srA.*
+	    FROM system_role srA, system_role_and_base srB
+	   WHERE srB.base_role_id IS NOT NULL
+	     AND srA.id = srB.base_role_id
+	)
+	SELECT * FROM system_role_and_base;
+`
+)
+
+func (svc *SystemRoleService) GetByIDWithBaseRole(ctx context.Context, id string) ([]*models.SystemRole, error) {
+	spanCtx, span := log.StartSpan(ctx, "SystemRole.GetByIDWithBaseRole")
+	defer span.End()
+	systemRoles := []*models.SystemRole{}
+	if err := queries.Raw(systemRoleWithBaseQuery, id).Bind(spanCtx, svc.GetContextExecutor(), &systemRoles); err != nil {
+		return nil, errors.Wrap(err, "error querying sql for system role with base role")
+	}
+	return systemRoles, nil
 }
 
 func (svc *SystemRoleService) Search(ctx context.Context, tenantID, query string) ([]*models.SystemRole, error) {

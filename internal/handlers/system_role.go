@@ -180,6 +180,48 @@ func (h *Handlers) GetSystemRoleById(ctx context.Context, in *servicePb.IdReques
 	return systemRole, nil
 }
 
+func (h *Handlers) GetSystemRoleWithBaseRole(ctx context.Context, in *servicePb.IdRequest) (*servicePb.GetSystemRoleWithBaseRoleResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "GetSystemRoleWithBaseRole")
+	defer span.End()
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
+
+	if in.Id == "" {
+		err := ErrBadRequest.New("id can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := h.db.NewSystemRoleService()
+
+	srs, err := svc.GetByIDWithBaseRole(spanCtx, in.Id)
+	if err != nil {
+		err := errors.Wrap(err, "error getting systemRole with base role")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	res := &servicePb.GetSystemRoleWithBaseRoleResponse{}
+
+	for _, sr := range srs {
+		role, err := svc.ToProto(sr)
+		if err != nil {
+			err := errors.Wrap(err, "error converting systemRole db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+
+		if len(role.BaseRoleId) == 0 {
+			res.SystemRole = role
+			continue
+		}
+
+		res.BaseRole = role
+	}
+
+	return res, nil
+}
+
 func (h *Handlers) GetSystemRoles(ctx context.Context, in *servicePb.GetSystemRolesRequest) (*servicePb.GetSystemRolesResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "GetSystemRoles")
 	defer span.End()
