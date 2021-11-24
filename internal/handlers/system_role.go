@@ -115,8 +115,14 @@ func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSyste
 
 	in.NewSystemRole.Id = db.MakeID()
 
+	// make sure tenant id is set
 	if in.TenantId != "" {
 		in.NewSystemRole.TenantId = in.TenantId
+	}
+
+	// make sure base role id is set
+	if in.BaseRoleId != "" {
+		in.NewSystemRole.BaseRoleId = in.BaseRoleId
 	}
 
 	sr := svc.FromProto(in.NewSystemRole)
