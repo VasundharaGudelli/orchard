@@ -228,10 +228,10 @@ func (svc *SystemRoleService) DeleteByID(ctx context.Context, id string) error {
 	return nil
 }
 
-func (svc *SystemRoleService) SoftDeleteByID(ctx context.Context, id, userID string) error {
+func (svc *SystemRoleService) SoftDeleteByID(ctx context.Context, id, tenantID, userID string) error {
 	spanCtx, span := log.StartSpan(ctx, "SystemRole.SoftDeleteByID")
 	defer span.End()
-	sr := &models.SystemRole{ID: id, UpdatedBy: userID, UpdatedAt: time.Now().UTC(), Status: "inactive"}
+	sr := &models.SystemRole{ID: id, TenantID: tenantID, UpdatedBy: userID, UpdatedAt: time.Now().UTC(), Status: "inactive"}
 	numAffected, err := sr.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("updated_by", "updated_at", "status"))
 	if err != nil {
 		return err

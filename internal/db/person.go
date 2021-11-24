@@ -226,6 +226,8 @@ func (svc *PersonService) Search(ctx context.Context, tenantID, query string, li
 			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s < $%d", filter.Field, paramIdx), filter.Values...))
 		case "LTE":
 			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s <= $%d", filter.Field, paramIdx), filter.Values...))
+		case "EQANY":
+			queryParts = append(queryParts, qm.And(fmt.Sprintf("$%d = ANY (%s)", paramIdx, filter.Field), filter.Values...))
 		default:
 			queryParts = append(queryParts, qm.And(fmt.Sprintf("%s = $%d", filter.Field, paramIdx), filter.Values...))
 		}
@@ -255,6 +257,33 @@ func (svc *PersonService) GetPeopleByGroupId(ctx context.Context, tenantID, grou
 		return nil, err
 	}
 	return people, nil
+}
+
+func (svc *PersonService) GetPeopleByRoleId(ctx context.Context, tenantID, roleID string, limit, offset int) ([]*models.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetPeopleByRoleId")
+	defer span.End()
+	people, err := models.People(
+		qm.Where("tenant_id = $1 AND $2 = ANY (role_ids)", tenantID, roleID),
+		qm.Limit(limit),
+		qm.Offset(offset),
+		qm.OrderBy("last_name, first_name DESC"),
+	).All(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return nil, err
+	}
+	return people, nil
+}
+
+func (svc *PersonService) CountPeopleByRoleId(ctx context.Context, tenantID, roleID string) (int64, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetPeopleByRoleId")
+	defer span.End()
+	numPeople, err := models.People(
+		qm.Where("tenant_id = $1 AND $2 = ANY (role_ids)", tenantID, roleID),
+	).Count(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return 0, err
+	}
+	return numPeople, nil
 }
 
 func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string) ([]*models.Person, error) {

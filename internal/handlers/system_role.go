@@ -10,6 +10,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	bouncerPb "github.com/loupe-co/protos/src/services/bouncer"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"google.golang.org/grpc/codes"
 )
 
 func (h *Handlers) CreateSystemRole(ctx context.Context, in *servicePb.CreateSystemRoleRequest) (*servicePb.CreateSystemRoleResponse, error) {
@@ -126,7 +127,11 @@ func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSyste
 	}
 
 	sr := svc.FromProto(in.NewSystemRole)
+
+	// add data from base role
 	sr.Permissions = br.Permissions
+	sr.Type = br.Type
+	sr.Status = br.Status
 
 	if err := svc.Insert(spanCtx, sr); err != nil {
 		err := errors.Wrap(err, "error inserting system role into sql")
@@ -292,6 +297,20 @@ func (h *Handlers) DeleteSystemRoleById(ctx context.Context, in *servicePb.IdReq
 		in.UserId = db.DefaultTenantID
 	}
 
+	personSvc := h.db.NewPersonService()
+	numPeople, err := personSvc.CountPeopleByRoleId(spanCtx, in.TenantId, in.Id)
+	if err != nil {
+		err := errors.Wrap(err, "error checking if role has users attached")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if numPeople > 0 {
+		err := errors.New("cannot delete role, users are currently attached").WithCode(codes.FailedPrecondition)
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
 	tx, err := h.db.NewTransaction(spanCtx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating delete system role transaction")
@@ -302,7 +321,7 @@ func (h *Handlers) DeleteSystemRoleById(ctx context.Context, in *servicePb.IdReq
 	svc := h.db.NewSystemRoleService()
 	svc.SetTransaction(tx)
 
-	if err := svc.SoftDeleteByID(spanCtx, in.Id, in.UserId); err != nil {
+	if err := svc.SoftDeleteByID(spanCtx, in.Id, in.TenantId, in.UserId); err != nil {
 		err := errors.Wrap(err, "error deleting systemRole by id")
 		logger.Error(err)
 		return nil, err.AsGRPC()
