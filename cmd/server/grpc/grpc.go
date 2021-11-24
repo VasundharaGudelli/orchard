@@ -88,6 +88,10 @@ func (server *OrchardGRPCServer) GetSystemRoleById(ctx context.Context, in *serv
 	return server.handlers.GetSystemRoleById(ctx, in)
 }
 
+func (server *OrchardGRPCServer) GetSystemRoleWithBaseRole(ctx context.Context, in *servicePb.IdRequest) (*servicePb.GetSystemRoleWithBaseRoleResponse, error) {
+	return server.handlers.GetSystemRoleWithBaseRole(ctx, in)
+}
+
 func (server *OrchardGRPCServer) GetSystemRoles(ctx context.Context, in *servicePb.GetSystemRolesRequest) (*servicePb.GetSystemRolesResponse, error) {
 	return server.handlers.GetSystemRoles(ctx, in)
 }
