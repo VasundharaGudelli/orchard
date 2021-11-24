@@ -203,6 +203,19 @@ func (h *Handlers) GetSystemRoleWithBaseRole(ctx context.Context, in *servicePb.
 
 	res := &servicePb.GetSystemRoleWithBaseRoleResponse{}
 
+	// only one role, return as system role
+	if len(srs) == 1 {
+		role, err := svc.ToProto(srs[0])
+		if err != nil {
+			err := errors.Wrap(err, "error converting systemRole db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		res.SystemRole = role
+		return res, nil
+	}
+
+	// sort out system/base roles
 	for _, sr := range srs {
 		role, err := svc.ToProto(sr)
 		if err != nil {
@@ -212,11 +225,11 @@ func (h *Handlers) GetSystemRoleWithBaseRole(ctx context.Context, in *servicePb.
 		}
 
 		if len(role.BaseRoleId) == 0 {
-			res.SystemRole = role
+			res.BaseRole = role
 			continue
 		}
 
-		res.BaseRole = role
+		res.SystemRole = role
 	}
 
 	return res, nil
