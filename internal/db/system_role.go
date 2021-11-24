@@ -104,7 +104,7 @@ func (svc *SystemRoleService) ToProto(sr *models.SystemRole) (*orchardPb.SystemR
 var (
 	systemRoleInsertWhitelist = []string{
 		"id", "tenant_id", "name", "description",
-		"type", "permissions", "priority", "status",
+		"type", "permissions", "priority", "status", "base_role_id",
 		"created_at", "created_by", "updated_at", "updated_by",
 	}
 )
