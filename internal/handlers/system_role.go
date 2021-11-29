@@ -108,6 +108,21 @@ func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSyste
 		return nil, err.AsGRPC()
 	}
 
+	basePermissions := br.Permissions
+	roleType := br.Type
+	roleStatus := br.Status
+
+	// if base role not empty move up a level
+	if br.BaseRoleID.Valid && !br.BaseRoleID.IsZero() {
+		br, err = svc.GetByID(spanCtx, br.BaseRoleID.String)
+		if err != nil {
+			err := errors.Wrap(err, "error getting base system role")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		in.BaseRoleId = br.ID
+	}
+
 	if br.TenantID != db.DefaultTenantID {
 		err := ErrBadRequest.New("base role can only belong to default tenant")
 		logger.Warn(err.Error())
@@ -129,9 +144,9 @@ func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSyste
 	sr := svc.FromProto(in.NewSystemRole)
 
 	// add data from base role
-	sr.Permissions = br.Permissions
-	sr.Type = br.Type
-	sr.Status = br.Status
+	sr.Permissions = basePermissions
+	sr.Type = roleType
+	sr.Status = roleStatus
 
 	if err := svc.Insert(spanCtx, sr); err != nil {
 		err := errors.Wrap(err, "error inserting system role into sql")
