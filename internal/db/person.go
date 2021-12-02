@@ -253,7 +253,7 @@ func (svc *PersonService) GetPeopleByGroupId(ctx context.Context, tenantID, grou
 	spanCtx, span := log.StartSpan(ctx, "Person.GetPeopleByGroupId")
 	defer span.End()
 	people, err := models.People(qm.Where("tenant_id = $1 AND group_id = $2", tenantID, groupID)).All(spanCtx, svc.GetContextExecutor())
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	return people, nil
@@ -268,7 +268,7 @@ func (svc *PersonService) GetPeopleByRoleId(ctx context.Context, tenantID, roleI
 		qm.Offset(offset),
 		qm.OrderBy("last_name, first_name DESC"),
 	).All(spanCtx, svc.GetContextExecutor())
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	return people, nil
@@ -280,7 +280,7 @@ func (svc *PersonService) CountPeopleByRoleId(ctx context.Context, tenantID, rol
 	numPeople, err := models.People(
 		qm.Where("tenant_id = $1 AND $2 = ANY (role_ids)", tenantID, roleID),
 	).Count(spanCtx, svc.GetContextExecutor())
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return 0, err
 	}
 	return numPeople, nil
@@ -290,7 +290,7 @@ func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string) 
 	spanCtx, span := log.StartSpan(ctx, "Person.GetVirtualUsers")
 	defer span.End()
 	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2", tenantID, DefaultTenantID)).All(spanCtx, svc.GetContextExecutor())
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	return people, nil
