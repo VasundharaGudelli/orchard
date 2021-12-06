@@ -63,14 +63,14 @@ type Auth0License struct {
 	IsActive bool `json:"is_active"`
 }
 
-func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *models.Person) error {
+func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *models.Person, expandedRoleIDs []string) error {
 	spanCtx, span := log.StartSpan(ctx, "Provision")
 	defer span.End()
 
 	logger := log.WithTenantID(tenantID).WithCustom("userId", user.ID)
 
 	legacyRoles := commonSet.New()
-	for _, roleID := range user.RoleIds {
+	for _, roleID := range expandedRoleIDs {
 		if LegacyUserRoleMappings.Has(roleID) {
 			legacyRoles.Set(ac.cfg.Auth0RoleIDUser)
 		}

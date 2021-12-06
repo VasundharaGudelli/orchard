@@ -130,6 +130,21 @@ func (svc *SystemRoleService) GetByID(ctx context.Context, id string) (*models.S
 	return sr, nil
 }
 
+func (svc *SystemRoleService) GetByIDs(ctx context.Context, ids ...string) ([]*models.SystemRole, error) {
+	spanCtx, span := log.StartSpan(ctx, "SystemRole.GetByIDs")
+	defer span.End()
+
+	idsParam := make([]interface{}, len(ids))
+	for i, id := range ids {
+		idsParam[i] = id
+	}
+	srs, err := models.SystemRoles(qm.WhereIn("id IN ?", idsParam...)).All(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return nil, err
+	}
+	return srs, nil
+}
+
 const (
 	systemRoleWithBaseQuery = `
 	WITH RECURSIVE system_role_and_base AS (

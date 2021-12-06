@@ -97,8 +97,29 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 		return nil, err.AsGRPC()
 	}
 
+	// get roles, to add base roles to list for auth0 provisioning
+	roles, err := srSVC.GetByIDs(spanCtx, in.Person.RoleIds...)
+	if err != nil {
+		err := errors.Wrap(err, "error getting roles for provisioning")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	expandedRoleIDs := make([]string, 0, len(roles)*2)
+	for _, role := range roles {
+		if _, ok := srM[role.ID]; !ok {
+			expandedRoleIDs = append(expandedRoleIDs, role.ID)
+		}
+		if _, ok := srM[role.BaseRoleID.String]; !ok && role.BaseRoleID.Valid {
+			expandedRoleIDs = append(expandedRoleIDs, role.BaseRoleID.String)
+		}
+	}
+
 	// Provision user in Auth0
-	if err := h.auth0Client.Provision(spanCtx, in.TenantId, insertablePerson); err != nil {
+	if err := h.auth0Client.Provision(spanCtx, in.TenantId, insertablePerson, expandedRoleIDs); err != nil {
 		err := errors.Wrap(err, "error provisioning user in auth0")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -551,8 +572,29 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 
 	// If we changed the provisioning of the person, update in Auth0
 	if changeProvisioning {
+		// get roles, to add base roles to list for auth0 provisioning
+		roles, err := srSVC.GetByIDs(spanCtx, in.Person.RoleIds...)
+		if err != nil {
+			err := errors.Wrap(err, "error getting roles for provisioning")
+			logger.Error(err)
+			if err := svc.Rollback(); err != nil {
+				logger.Error(errors.Wrap(err, "error rolling back transaction"))
+			}
+			return nil, err.AsGRPC()
+		}
+
+		expandedRoleIDs := make([]string, 0, len(roles)*2)
+		for _, role := range roles {
+			if _, ok := srM[role.ID]; !ok {
+				expandedRoleIDs = append(expandedRoleIDs, role.ID)
+			}
+			if _, ok := srM[role.BaseRoleID.String]; !ok && role.BaseRoleID.Valid {
+				expandedRoleIDs = append(expandedRoleIDs, role.BaseRoleID.String)
+			}
+		}
+
 		if updatePerson.IsProvisioned {
-			if err := h.auth0Client.Provision(spanCtx, in.TenantId, updatePerson); err != nil {
+			if err := h.auth0Client.Provision(spanCtx, in.TenantId, updatePerson, expandedRoleIDs); err != nil {
 				err := errors.Wrap(err, "error provisioning user in auth0")
 				logger.Error(err)
 				if err := svc.Rollback(); err != nil {
