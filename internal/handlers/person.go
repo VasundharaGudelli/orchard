@@ -97,10 +97,9 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 		return nil, err.AsGRPC()
 	}
 
-	// get roles, to add base roles to list for auth0 provisioning
-	roles, err := srSVC.GetByIDs(spanCtx, in.Person.RoleIds...)
+	personRecords, err := svc.GetAllActiveByEmail(spanCtx, in.Person.Email)
 	if err != nil {
-		err := errors.Wrap(err, "error getting roles for provisioning")
+		err := errors.Wrap(err, "error getting person records for provisioning")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
@@ -108,18 +107,8 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 		return nil, err.AsGRPC()
 	}
 
-	expandedRoleIDs := make([]string, 0, len(roles)*2)
-	for _, role := range roles {
-		if _, ok := srM[role.ID]; !ok {
-			expandedRoleIDs = append(expandedRoleIDs, role.ID)
-		}
-		if _, ok := srM[role.BaseRoleID.String]; !ok && role.BaseRoleID.Valid {
-			expandedRoleIDs = append(expandedRoleIDs, role.BaseRoleID.String)
-		}
-	}
-
 	// Provision user in Auth0
-	if err := h.auth0Client.Provision(spanCtx, in.TenantId, insertablePerson, expandedRoleIDs); err != nil {
+	if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
 		err := errors.Wrap(err, "error provisioning user in auth0")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -572,10 +561,9 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 
 	// If we changed the provisioning of the person, update in Auth0
 	if changeProvisioning {
-		// get roles, to add base roles to list for auth0 provisioning
-		roles, err := srSVC.GetByIDs(spanCtx, in.Person.RoleIds...)
+		personRecords, err := svc.GetAllActiveByEmail(spanCtx, in.Person.Email)
 		if err != nil {
-			err := errors.Wrap(err, "error getting roles for provisioning")
+			err := errors.Wrap(err, "error getting person records for provisioning")
 			logger.Error(err)
 			if err := svc.Rollback(); err != nil {
 				logger.Error(errors.Wrap(err, "error rolling back transaction"))
@@ -583,18 +571,16 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 			return nil, err.AsGRPC()
 		}
 
-		expandedRoleIDs := make([]string, 0, len(roles)*2)
-		for _, role := range roles {
-			if _, ok := srM[role.ID]; !ok {
-				expandedRoleIDs = append(expandedRoleIDs, role.ID)
-			}
-			if _, ok := srM[role.BaseRoleID.String]; !ok && role.BaseRoleID.Valid {
-				expandedRoleIDs = append(expandedRoleIDs, role.BaseRoleID.String)
+		var isProvisioned bool
+		for _, person := range personRecords {
+			if person.IsProvisioned {
+				isProvisioned = true
+				break
 			}
 		}
 
-		if updatePerson.IsProvisioned {
-			if err := h.auth0Client.Provision(spanCtx, in.TenantId, updatePerson, expandedRoleIDs); err != nil {
+		if isProvisioned {
+			if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
 				err := errors.Wrap(err, "error provisioning user in auth0")
 				logger.Error(err)
 				if err := svc.Rollback(); err != nil {
@@ -603,7 +589,27 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 				return nil, err.AsGRPC()
 			}
 		} else {
-			if err := h.auth0Client.Unprovision(spanCtx, in.TenantId, updatePerson.ID); err != nil {
+			var (
+				unprovisionUserID   string
+				unprovisionTenantID string
+				user                *models.Person
+			)
+
+			for _, person := range personRecords {
+				if user == nil || person.CreatedAt.Before(user.CreatedAt) {
+					user = person
+				}
+			}
+
+			if user != nil && len(user.ID) > 0 && len(user.TenantID) > 0 {
+				unprovisionTenantID = user.TenantID
+				unprovisionUserID = user.ID
+			} else {
+				unprovisionUserID = updatePerson.ID
+				unprovisionTenantID = updatePerson.TenantID
+			}
+
+			if err := h.auth0Client.Unprovision(spanCtx, unprovisionTenantID, unprovisionUserID); err != nil {
 				err := errors.Wrap(err, "error unprovisioning user in auth0")
 				logger.Error(err)
 				if err := svc.Rollback(); err != nil {

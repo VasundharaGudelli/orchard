@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	commonSet "github.com/loupe-co/go-common/data-structures/set/string"
 	strUtil "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -63,36 +62,53 @@ type Auth0License struct {
 	IsActive bool `json:"is_active"`
 }
 
-func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *models.Person, expandedRoleIDs []string) error {
+type TenantContext struct {
+	TenantID  string `json:"tenant_id"`
+	UserID    string `json:"user_id"`
+	IsPrimary bool   `json:"is_primary"`
+}
+
+func (ac Auth0Client) Provision(ctx context.Context, personRecords []*models.Person) error {
 	spanCtx, span := log.StartSpan(ctx, "Provision")
 	defer span.End()
 
-	logger := log.WithTenantID(tenantID).WithCustom("userId", user.ID)
+	if len(personRecords) == 0 {
+		err := errors.New("personRecords cannot be empty for provisioning").WithCode(codes.InvalidArgument)
+		return err
+	}
 
-	legacyRoles := commonSet.New()
-	for _, roleID := range expandedRoleIDs {
-		if LegacyUserRoleMappings.Has(roleID) {
-			legacyRoles.Set(ac.cfg.Auth0RoleIDUser)
+	var (
+		user           *models.Person
+		isPrimaryIndex int
+	)
+	tenantContexts := make([]*TenantContext, len(personRecords))
+	for i, person := range personRecords {
+		if user == nil || person.CreatedAt.Before(user.CreatedAt) {
+			user = person
+			isPrimaryIndex = i
 		}
-		if LegacyManagerRoleMappings.Has(roleID) {
-			legacyRoles.Set(ac.cfg.Auth0RoleIDManager)
-		}
-		if LegacyAdminRoleMappings.Has(roleID) {
-			legacyRoles.Set(ac.cfg.Auth0RoleIDAdmin)
-		}
-		if LegacySuperAdminRoleMappings.Has(roleID) {
-			legacyRoles.Set(ac.cfg.Auth0RoleIDSuperAdmin)
+
+		tenantContexts[i] = &TenantContext{
+			TenantID:  person.TenantID,
+			UserID:    person.ID,
+			IsPrimary: false,
 		}
 	}
+
+	// set primary
+	tenantContexts[isPrimaryIndex].IsPrimary = true
+
+	logger := log.WithTenantID(user.TenantID).WithCustom("userId", user.ID)
 
 	provisionedUser := &management.User{
 		Email:         auth0.String(user.Email.String),
 		EmailVerified: auth0.Bool(true),
 		Connection:    auth0.String("email"),
 		AppMetadata: map[string]interface{}{
-			"license":   &Auth0License{IsActive: true},
-			"person_id": user.ID,
-			"tenant_id": tenantID,
+			"license":         &Auth0License{IsActive: true},
+			"person_id":       user.ID,
+			"tenant_id":       user.TenantID,
+			"tenant_contexts": tenantContexts,
 		},
 	}
 
@@ -103,7 +119,7 @@ func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *mode
 		return err
 	}
 
-	existingUsers, err := ac.searchUserByEmail(spanCtx, client, tenantID, user.Email.String)
+	existingUsers, err := ac.searchUserByEmail(spanCtx, client, user.TenantID, user.Email.String)
 	if err != nil {
 		err := errors.Wrap(err, "error checking for existing user in auth0 by email")
 		logger.Error(err)
@@ -124,18 +140,6 @@ func (ac Auth0Client) Provision(ctx context.Context, tenantID string, user *mode
 			logger.Error(err)
 			return err
 		}
-	}
-
-	userRoles := make([]*management.Role, len(legacyRoles))
-	for i, rID := range legacyRoles.Members() {
-		userRoles[i] = &management.Role{
-			ID: &rID,
-		}
-	}
-	if err := client.User.AssignRoles(*provisionedUser.ID, userRoles...); err != nil {
-		err := errors.Wrap(err, "error assigning user roles in auth0")
-		logger.Error(err)
-		return err
 	}
 
 	return nil
