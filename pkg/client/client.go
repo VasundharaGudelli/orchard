@@ -214,3 +214,7 @@ func (client *OrchardClient) UpdateGroupTypes(ctx context.Context, in *servicePb
 func (client *OrchardClient) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
 	return client.client.DeleteGroupById(ctx, in)
 }
+
+func (client *OrchardClient) ClonePerson(ctx context.Context, in *servicePb.ClonePersonRequest) (*servicePb.ClonePersonResponse, error) {
+	return client.client.ClonePerson(ctx, in)
+}
