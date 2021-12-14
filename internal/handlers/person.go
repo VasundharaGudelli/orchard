@@ -770,3 +770,102 @@ func (h *Handlers) DeletePersonById(ctx context.Context, in *servicePb.IdRequest
 
 	return &servicePb.Empty{}, nil
 }
+
+func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonRequest) (*servicePb.ClonePersonResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "ClonePerson")
+	defer span.End()
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.GetCurrentTenantId()).WithCustom("personId", in.GetPersonId())
+
+	if in.GetCurrentTenantId() == "" || in.GetPersonId() == "" || in.GetNewTenantId() == "" {
+		err := ErrBadRequest.New("currentTenantId, personId, newTenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := h.db.NewPersonService()
+
+	p, err := svc.GetByID(spanCtx, in.GetPersonId(), in.GetCurrentTenantId())
+	if err != nil {
+		err := errors.Wrap(err, "error getting person by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	p.TenantID = in.GetNewTenantId()
+	p.IsProvisioned = true
+	p.CreatedAt = time.Now().UTC()
+	p.UpdatedAt = time.Now().UTC()
+
+	// Check if email already exists
+	existingPerson, err := svc.GetByEmail(spanCtx, in.GetNewTenantId(), p.Email.String)
+	if err != nil {
+		err := errors.Wrap(err, "error checking for existing person by email")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+	if existingPerson != nil {
+		err := errors.New("can't insert person with given email").WithCode(codes.AlreadyExists)
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	// Get transaction, so we can rollback if user provisioning fails
+	tx, err := h.db.NewTransaction(spanCtx)
+	if err != nil {
+		err := errors.Wrap(err, "error creating transaction for cloning person")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+	svc.SetTransaction(tx)
+
+	// Perform insert in db
+	if err := svc.Insert(spanCtx, p); err != nil {
+		err := errors.Wrap(err, "error inserting person in sql")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	personRecords, err := svc.GetAllActiveByEmail(spanCtx, p.Email.String)
+	if err != nil {
+		err := errors.Wrap(err, "error getting person records for provisioning")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// Provision user in Auth0
+	if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
+		err := errors.Wrap(err, "error provisioning user in auth0")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// Commit clone person transaction
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting clone person transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// Convert updated person model back to proto for response
+	createdRes, err := svc.ToProto(p)
+	if err != nil {
+		err := errors.Wrap(err, "error converting cloned person to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.ClonePersonResponse{Person: createdRes}, nil
+}

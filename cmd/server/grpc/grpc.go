@@ -218,3 +218,7 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 func (server *OrchardGRPCServer) GetTenantGroupsLastModifiedTS(ctx context.Context, in *servicePb.GetTenantGroupsLastModifiedTSRequest) (*servicePb.GetTenantGroupsLastModifiedTSResponse, error) {
 	return server.handlers.GetTenantGroupsLastModifiedTS(ctx, in)
 }
+
+func (server *OrchardGRPCServer) ClonePerson(ctx context.Context, in *servicePb.ClonePersonRequest) (*servicePb.ClonePersonResponse, error) {
+	return server.handlers.ClonePerson(ctx, in)
+}
