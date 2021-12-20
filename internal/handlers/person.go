@@ -788,6 +788,10 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 	p, err := svc.GetByID(spanCtx, in.GetPersonId(), in.GetCurrentTenantId())
 	if err != nil {
 		err := errors.Wrap(err, "error getting person by id")
+		if err == sql.ErrNoRows {
+			err = err.WithCode(codes.NotFound)
+		}
+
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
