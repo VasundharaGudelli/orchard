@@ -571,15 +571,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 			return nil, err.AsGRPC()
 		}
 
-		var isProvisioned bool
-		for _, person := range personRecords {
-			if person.IsProvisioned {
-				isProvisioned = true
-				break
-			}
-		}
-
-		if isProvisioned {
+		if len(personRecords) > 0 {
 			if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
 				err := errors.Wrap(err, "error provisioning user in auth0")
 				logger.Error(err)
@@ -589,27 +581,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 				return nil, err.AsGRPC()
 			}
 		} else {
-			var (
-				unprovisionUserID   string
-				unprovisionTenantID string
-				user                *models.Person
-			)
-
-			for _, person := range personRecords {
-				if user == nil || person.CreatedAt.Before(user.CreatedAt) {
-					user = person
-				}
-			}
-
-			if user != nil && len(user.ID) > 0 && len(user.TenantID) > 0 {
-				unprovisionTenantID = user.TenantID
-				unprovisionUserID = user.ID
-			} else {
-				unprovisionUserID = updatePerson.ID
-				unprovisionTenantID = updatePerson.TenantID
-			}
-
-			if err := h.auth0Client.Unprovision(spanCtx, unprovisionTenantID, unprovisionUserID); err != nil {
+			if err := h.auth0Client.Unprovision(spanCtx, updatePerson.TenantID, updatePerson.ID); err != nil {
 				err := errors.Wrap(err, "error unprovisioning user in auth0")
 				logger.Error(err)
 				if err := svc.Rollback(); err != nil {

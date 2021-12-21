@@ -191,7 +191,7 @@ func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string
 func (svc *PersonService) GetAllActiveByEmail(ctx context.Context, email string) ([]*models.Person, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetAllActiveByEmail")
 	defer span.End()
-	people, err := models.People(qm.Where("email = $1 AND status = 'active'", email), qm.OrderBy("created_at ASC")).All(spanCtx, svc.GetContextExecutor())
+	people, err := models.People(qm.Where("email = $1 AND status = 'active' AND is_provisioned", email), qm.OrderBy("created_at ASC")).All(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}

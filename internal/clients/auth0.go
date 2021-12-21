@@ -252,7 +252,7 @@ func (ac Auth0Client) getRoleUsers(ctx context.Context, client *management.Manag
 }
 
 func (ac Auth0Client) getByUserID(ctx context.Context, client *management.Management, tenantID, userID string) (*management.User, error) {
-	q := fmt.Sprintf(`app_metadata.tenant_id:"%s" AND app_metadata.person_id:"%s"`, tenantID, userID)
+	q := fmt.Sprintf(`(app_metadata.tenant_id:"%s" AND app_metadata.person_id:"%s") OR (app_metadata.tenant_contexts.tenant_id:"%s" AND app_metadata.tenant_contexts.user_id:"%s")`, tenantID, userID, tenantID, userID)
 	mQ := management.Query(q)
 	users, err := client.User.List(mQ, management.PerPage(1), management.Parameter("search_engine", "v3"))
 	if err != nil {
@@ -265,7 +265,7 @@ func (ac Auth0Client) getByUserID(ctx context.Context, client *management.Manage
 }
 
 func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.Management, tenantID, email string) ([]*management.User, error) {
-	q := fmt.Sprintf(`app_metadata.tenant_id:"%s" AND email:"%s"`, tenantID, email)
+	q := fmt.Sprintf(`(app_metadata.tenant_id:"%s" OR app_metadata.tenant_contexts.tenant_id:"%s") AND email:"%s"`, tenantID, tenantID, email)
 	mQ := management.Query(q)
 	users, err := client.User.List(mQ, management.PerPage(50), management.Parameter("search_engine", "v3"))
 	if err != nil {
@@ -278,7 +278,7 @@ func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.
 }
 
 func (ac Auth0Client) getUsersByTenantID(ctx context.Context, client *management.Management, tenantID string, page, take int) ([]*management.User, int, error) {
-	q := fmt.Sprintf(`app_metadata.tenant_id:"%s" AND app_metadata.license.is_active:true`, tenantID)
+	q := fmt.Sprintf(`(app_metadata.tenant_id:"%s" OR app_metadata.tenant_contexts.tenant_id:"%s") AND app_metadata.license.is_active:true`, tenantID, tenantID)
 	mQ := management.Query(q)
 	users, err := client.User.List(mQ, management.IncludeTotals(true), management.Page(page), management.PerPage(take), management.Parameter("search_engine", "v3"))
 	if err != nil {
