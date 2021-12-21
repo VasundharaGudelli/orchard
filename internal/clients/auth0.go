@@ -263,7 +263,13 @@ func (ac Auth0Client) getByUserID(ctx context.Context, client *management.Manage
 		return nil, nil
 	}
 
-	// sort to try and get the most used account if we get back mulitple accounts
+	ac.sortUsersByUsage(users)
+
+	return users.Users[0], nil
+}
+
+// sort users by login count/last login
+func (ac Auth0Client) sortUsersByUsage(users *management.UserList) {
 	if len(users.Users) > 1 {
 		now := time.Now().Unix()
 		sort.SliceStable(users.Users, func(i, j int) bool {
@@ -287,8 +293,6 @@ func (ac Auth0Client) getByUserID(ctx context.Context, client *management.Manage
 			return iSort > jSort
 		})
 	}
-
-	return users.Users[0], nil
 }
 
 func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.Management, tenantID, email string) ([]*management.User, error) {
@@ -301,6 +305,9 @@ func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.
 	if users == nil || len(users.Users) == 0 {
 		return nil, nil
 	}
+
+	ac.sortUsersByUsage(users)
+
 	return users.Users, nil
 }
 
