@@ -307,8 +307,8 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 		return nil, err.AsGRPC()
 	}
 
-	crmRoleMap := map[string]int{}
-	systemRoleMap := map[string]int{}
+	crmRoleMap := map[string][]int{}
+	systemRoleMap := map[string][]int{}
 	people := make([]*orchardPb.Person, len(peeps))
 	for i, peep := range peeps {
 		p, err := svc.ToProto(peep)
@@ -319,10 +319,16 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 		}
 		people[i] = p
 		for _, crmRoleID := range p.CrmRoleIds {
-			crmRoleMap[crmRoleID] = i
+			if _, ok := crmRoleMap[crmRoleID]; !ok {
+				crmRoleMap[crmRoleID] = []int{}
+			}
+			crmRoleMap[crmRoleID] = append(crmRoleMap[crmRoleID], i)
 		}
 		for _, roleID := range p.RoleIds {
-			systemRoleMap[roleID] = i
+			if _, ok := systemRoleMap[roleID]; !ok {
+				systemRoleMap[roleID] = []int{}
+			}
+			systemRoleMap[roleID] = append(systemRoleMap[roleID], i)
 		}
 	}
 
@@ -347,13 +353,41 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 				logger.Error(err)
 				return nil, err.AsGRPC()
 			}
-			personIdx := crmRoleMap[crmRole.ID]
-			people[personIdx].CrmRoles = append(people[personIdx].CrmRoles, crmRoleProto)
+			if personIdxs, ok := crmRoleMap[crmRole.ID]; ok {
+				for _, personIdx := range personIdxs {
+					people[personIdx].CrmRoles = append(people[personIdx].CrmRoles, crmRoleProto)
+				}
+			}
 		}
 	}
 
 	if in.HydrateRoles {
-		// TODO: Hydrate crm_roles
+		sysRoleSvc := h.db.NewSystemRoleService()
+		ids := make([]string, len(systemRoleMap))
+		i := 0
+		for id := range systemRoleMap {
+			ids[i] = id
+			i++
+		}
+		systemRoles, err := sysRoleSvc.GetByIDs(spanCtx, ids...)
+		if err != nil {
+			err := errors.Wrap(err, "error getting person system roles")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		for _, sysRole := range systemRoles {
+			sysRoleProto, err := sysRoleSvc.ToProto(sysRole)
+			if err != nil {
+				err := errors.Wrap(err, "error converting person system role to proto")
+				logger.Error(err)
+				return nil, err.AsGRPC()
+			}
+			if personIdxs, ok := crmRoleMap[sysRole.ID]; ok {
+				for _, personIdx := range personIdxs {
+					people[personIdx].Roles = append(people[personIdx].Roles, sysRoleProto)
+				}
+			}
+		}
 	}
 
 	return &servicePb.SearchPeopleResponse{
