@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -261,6 +262,32 @@ func (ac Auth0Client) getByUserID(ctx context.Context, client *management.Manage
 	if users == nil || len(users.Users) == 0 {
 		return nil, nil
 	}
+
+	// sort to try and get the most used account if we get back mulitple accounts
+	if len(users.Users) > 1 {
+		now := time.Now().Unix()
+		sort.SliceStable(users.Users, func(i, j int) bool {
+			var (
+				iSort int64
+				jSort int64
+			)
+
+			if users.Users[i].LoginsCount != nil {
+				iSort = now + *users.Users[i].LoginsCount
+			} else if users.Users[i].LastLogin != nil {
+				iSort = users.Users[i].LastLogin.Unix()
+			}
+
+			if users.Users[j].LoginsCount != nil {
+				jSort = now + *users.Users[j].LoginsCount
+			} else if users.Users[j].LastLogin != nil {
+				iSort = users.Users[j].LastLogin.Unix()
+			}
+
+			return iSort > jSort
+		})
+	}
+
 	return users.Users[0], nil
 }
 
