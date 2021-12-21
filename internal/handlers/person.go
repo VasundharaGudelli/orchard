@@ -382,7 +382,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 				logger.Error(err)
 				return nil, err.AsGRPC()
 			}
-			if personIdxs, ok := crmRoleMap[sysRole.ID]; ok {
+			if personIdxs, ok := systemRoleMap[sysRole.ID]; ok {
 				for _, personIdx := range personIdxs {
 					people[personIdx].Roles = append(people[personIdx].Roles, sysRoleProto)
 				}
