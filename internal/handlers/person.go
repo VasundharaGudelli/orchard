@@ -959,12 +959,19 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 			}
 		} else {
 			if err := h.auth0Client.Unprovision(spanCtx, in.TenantId, in.PersonId); err != nil {
-				err := errors.Wrap(err, "error unprovisioning user in auth0")
-				logger.Error(err)
-				if err := svc.Rollback(); err != nil {
-					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				var ignoreError bool
+				if cErr, ok := err.(errors.CommonError); ok && cErr.Code == 404 {
+					ignoreError = true
 				}
-				return nil, err.AsGRPC()
+
+				if !ignoreError {
+					err := errors.Wrap(err, "error unprovisioning user in auth0")
+					logger.Error(err)
+					if err := svc.Rollback(); err != nil {
+						logger.Error(errors.Wrap(err, "error rolling back transaction"))
+					}
+					return nil, err.AsGRPC()
+				}
 			}
 		}
 	}
