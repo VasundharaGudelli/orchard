@@ -187,6 +187,10 @@ func (client *OrchardClient) DeletePersonById(ctx context.Context, in *servicePb
 	return client.client.DeletePersonById(ctx, in)
 }
 
+func (client *OrchardClient) HardDeletePersonById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
+	return client.client.HardDeletePersonById(ctx, in)
+}
+
 func (client *OrchardClient) CreateGroup(ctx context.Context, in *servicePb.CreateGroupRequest) (*servicePb.CreateGroupResponse, error) {
 	return client.client.CreateGroup(ctx, in)
 }
