@@ -186,6 +186,14 @@ func (server *OrchardGRPCServer) DeletePersonById(ctx context.Context, in *servi
 	return server.handlers.DeletePersonById(ctx, in)
 }
 
+func (server *OrchardGRPCServer) ClonePerson(ctx context.Context, in *servicePb.ClonePersonRequest) (*servicePb.ClonePersonResponse, error) {
+	return server.handlers.ClonePerson(ctx, in)
+}
+
+func (server *OrchardGRPCServer) HardDeletePersonById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
+	return server.handlers.HardDeletePersonById(ctx, in)
+}
+
 // Groups
 func (server *OrchardGRPCServer) CreateGroup(ctx context.Context, in *servicePb.CreateGroupRequest) (*servicePb.CreateGroupResponse, error) {
 	return server.handlers.CreateGroup(ctx, in)
@@ -217,8 +225,4 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 
 func (server *OrchardGRPCServer) GetTenantGroupsLastModifiedTS(ctx context.Context, in *servicePb.GetTenantGroupsLastModifiedTSRequest) (*servicePb.GetTenantGroupsLastModifiedTSResponse, error) {
 	return server.handlers.GetTenantGroupsLastModifiedTS(ctx, in)
-}
-
-func (server *OrchardGRPCServer) ClonePerson(ctx context.Context, in *servicePb.ClonePersonRequest) (*servicePb.ClonePersonResponse, error) {
-	return server.handlers.ClonePerson(ctx, in)
 }

@@ -879,3 +879,105 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 
 	return &servicePb.ClonePersonResponse{Person: createdRes}, nil
 }
+
+func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
+	spanCtx, span := log.StartSpan(ctx, "HardDeletePersonById")
+	defer span.End()
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+
+	if in.TenantId == "" || in.PersonId == "" {
+		err := ErrBadRequest.New("tenantId and personId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	if in.UserId == "" {
+		in.UserId = db.DefaultTenantID
+	}
+
+	tx, err := h.db.NewTransaction(spanCtx)
+	if err != nil {
+		err := errors.Wrap(err, "error creating delete person transaction")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	svc := h.db.NewPersonService()
+	svc.SetTransaction(tx)
+
+	var personEmail string
+	if person, err := svc.GetByID(spanCtx, in.PersonId, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error getting person")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	} else {
+		personEmail = person.Email.String
+	}
+
+	if err := svc.DeleteByID(spanCtx, in.PersonId, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error deleting person by id")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+		err := errors.Wrap(err, "error busting auth data cache for user")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// Commit the update person transaction in sql
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting delete person transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// update auth0 (remove user if no additional records, otherwise update existing user)
+	if len(personEmail) > 0 {
+		personRecords, err := svc.GetAllActiveByEmail(spanCtx, personEmail)
+		if err != nil {
+			err := errors.Wrap(err, "error getting person records for provisioning")
+			logger.Error(err)
+			if err := svc.Rollback(); err != nil {
+				logger.Error(errors.Wrap(err, "error rolling back transaction"))
+			}
+			return nil, err.AsGRPC()
+		}
+
+		if len(personRecords) > 0 {
+			if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
+				err := errors.Wrap(err, "error provisioning user in auth0")
+				logger.Error(err)
+				if err := svc.Rollback(); err != nil {
+					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				}
+				return nil, err.AsGRPC()
+			}
+		} else {
+			if err := h.auth0Client.Unprovision(spanCtx, in.TenantId, in.PersonId); err != nil {
+				err := errors.Wrap(err, "error unprovisioning user in auth0")
+				logger.Error(err)
+				if err := svc.Rollback(); err != nil {
+					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				}
+				return nil, err.AsGRPC()
+			}
+		}
+	}
+
+	return &servicePb.Empty{}, nil
+}
