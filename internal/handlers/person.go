@@ -936,16 +936,6 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 		return nil, err.AsGRPC()
 	}
 
-	// Commit the update person transaction in sql
-	if err := svc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting delete person transaction")
-		logger.Error(err)
-		if err := svc.Rollback(); err != nil {
-			logger.Error(errors.Wrap(err, "error rolling back transaction"))
-		}
-		return nil, err.AsGRPC()
-	}
-
 	// update auth0 (remove user if no additional records, otherwise update existing user)
 	if len(personEmail) > 0 {
 		personRecords, err := svc.GetAllActiveByEmail(spanCtx, personEmail)
@@ -977,6 +967,16 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 				return nil, err.AsGRPC()
 			}
 		}
+	}
+
+	// Commit the update person transaction in sql
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting delete person transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.Empty{}, nil

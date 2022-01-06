@@ -195,7 +195,7 @@ func (svc *PersonService) GetAllActiveByEmail(ctx context.Context, email string)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
-	if people == nil || err == sql.ErrNoRows {
+	if people == nil || (err != nil && err == sql.ErrNoRows) {
 		return nil, nil
 	}
 	return people, nil
