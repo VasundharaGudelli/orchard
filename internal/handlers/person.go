@@ -960,7 +960,7 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 		} else {
 			if err := h.auth0Client.Unprovision(spanCtx, in.TenantId, in.PersonId); err != nil {
 				var ignoreError bool
-				if cErr, ok := err.(errors.CommonError); ok && cErr.Code == 404 {
+				if cErr, ok := err.(errors.CommonError); ok && cErr.Code == codes.NotFound {
 					ignoreError = true
 				}
 
