@@ -1048,6 +1048,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	}
 	svc.SetTransaction(tx)
 
+	updatedPeeps := []*orchardPb.Person{}
 	for _, oldPerson := range peeps {
 		for _, newPerson := range nonVirtualPeeps {
 			if strings.EqualFold(oldPerson.Email.String, newPerson.Email.String) {
@@ -1097,6 +1098,10 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 					return nil, err.AsGRPC()
 				}
 
+				newP, err := svc.ToProto(newPerson)
+				if err == nil {
+					updatedPeeps = append(updatedPeeps, newP)
+				}
 				break
 			}
 		}
@@ -1111,5 +1116,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 		return nil, err.AsGRPC()
 	}
 
-	return nil, nil
+	return &servicePb.ConvertVirtualUsersResponse{
+		People: updatedPeeps,
+	}, nil
 }

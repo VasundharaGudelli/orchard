@@ -222,3 +222,7 @@ func (client *OrchardClient) DeleteGroupById(ctx context.Context, in *servicePb.
 func (client *OrchardClient) ClonePerson(ctx context.Context, in *servicePb.ClonePersonRequest) (*servicePb.ClonePersonResponse, error) {
 	return client.client.ClonePerson(ctx, in)
 }
+
+func (client *OrchardClient) ConvertVirtualUsers(ctx context.Context, in *servicePb.ConvertVirtualUsersRequest) (*servicePb.ConvertVirtualUsersResponse, error) {
+	return client.client.ConvertVirtualUsers(ctx, in)
+}
