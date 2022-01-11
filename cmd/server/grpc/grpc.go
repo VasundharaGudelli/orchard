@@ -194,6 +194,10 @@ func (server *OrchardGRPCServer) HardDeletePersonById(ctx context.Context, in *s
 	return server.handlers.HardDeletePersonById(ctx, in)
 }
 
+func (server *OrchardGRPCServer) ConvertVirtualUsers(ctx context.Context, in *servicePb.ConvertVirtualUsersRequest) (*servicePb.ConvertVirtualUsersResponse, error) {
+	return server.handlers.ConvertVirtualUsers(ctx, in)
+}
+
 // Groups
 func (server *OrchardGRPCServer) CreateGroup(ctx context.Context, in *servicePb.CreateGroupRequest) (*servicePb.CreateGroupResponse, error) {
 	return server.handlers.CreateGroup(ctx, in)

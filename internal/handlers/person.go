@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"math"
+	"strings"
 	"time"
 
 	strUtil "github.com/loupe-co/go-common/data-structures/slice/string"
@@ -15,6 +16,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	bouncerPb "github.com/loupe-co/protos/src/services/bouncer"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"google.golang.org/grpc/codes"
 )
 
@@ -987,4 +989,127 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 	}
 
 	return &servicePb.Empty{}, nil
+}
+
+func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.ConvertVirtualUsersRequest) (*servicePb.ConvertVirtualUsersResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "ConvertVirtualUsers")
+	defer span.End()
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.GetTenantId())
+
+	if in.GetTenantId() == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := h.db.NewPersonService()
+
+	// get virtual users for tenant
+	peeps, err := svc.GetVirtualUsers(spanCtx, in.GetTenantId())
+	if err != nil {
+		err := errors.Wrap(err, "error getting virtual user records")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	// grab the email addresses
+	emails := make([]interface{}, len(peeps))
+	for i, person := range peeps {
+		if person.Email.Valid && !person.Email.IsZero() && person.Status == "active" {
+			emails[i] = person.Email.String
+		}
+	}
+
+	// no emails, so return
+	if len(emails) == 0 {
+		return &servicePb.ConvertVirtualUsersResponse{}, nil
+	}
+
+	// get non-virtual users using above emails to see if there are any matches
+	nonVirtualPeeps, err := svc.GetAllActiveNonVirtualByEmails(spanCtx, in.GetTenantId(), emails)
+	if err != nil {
+		err := errors.Wrap(err, "error getting non virtual user records")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	// no matches get out
+	if len(nonVirtualPeeps) == 0 {
+		return &servicePb.ConvertVirtualUsersResponse{}, nil
+	}
+
+	// start a transaction
+	tx, err := h.db.NewTransaction(spanCtx)
+	if err != nil {
+		err := errors.Wrap(err, "error creating convert person transaction")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+	svc.SetTransaction(tx)
+
+	for _, oldPerson := range peeps {
+		for _, newPerson := range nonVirtualPeeps {
+			if strings.EqualFold(oldPerson.Email.String, newPerson.Email.String) {
+				// update the new person with roles & groupids
+				newPerson.RoleIds = oldPerson.RoleIds
+				newPerson.GroupID = oldPerson.GroupID
+				_, err := newPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("role_ids", "group_id"))
+				if err != nil {
+					err := errors.Wrap(err, "error updating new person")
+					logger.Error(err)
+					if err := svc.Rollback(); err != nil {
+						logger.Error(errors.Wrap(err, "error rolling back transaction"))
+					}
+					return nil, err.AsGRPC()
+				}
+
+				// deactivate old person
+				oldPerson.Status = "inactive"
+				_, err = oldPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("status"))
+				if err != nil {
+					err := errors.Wrap(err, "error updating old person")
+					logger.Error(err)
+					if err := svc.Rollback(); err != nil {
+						logger.Error(errors.Wrap(err, "error rolling back transaction"))
+					}
+					return nil, err.AsGRPC()
+				}
+
+				// get all person records, to provision
+				personRecords, err := svc.GetAllActiveByEmail(spanCtx, newPerson.Email.String)
+				if err != nil {
+					err := errors.Wrap(err, "error getting person records for provisioning")
+					logger.Error(err)
+					if err := svc.Rollback(); err != nil {
+						logger.Error(errors.Wrap(err, "error rolling back transaction"))
+					}
+					return nil, err.AsGRPC()
+				}
+
+				// Provision user in Auth0
+				if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
+					err := errors.Wrap(err, "error provisioning user in auth0")
+					logger.Error(err)
+					if err := svc.Rollback(); err != nil {
+						logger.Error(errors.Wrap(err, "error rolling back transaction"))
+					}
+					return nil, err.AsGRPC()
+				}
+
+				break
+			}
+		}
+	}
+
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting convert person transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	return nil, nil
 }

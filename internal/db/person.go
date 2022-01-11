@@ -175,6 +175,23 @@ func (svc *PersonService) GetByIDs(ctx context.Context, tenantID string, ids ...
 	return people, nil
 }
 
+func (svc *PersonService) GetAllActiveNonVirtualByEmails(ctx context.Context, tenantID string, emails ...interface{}) ([]*models.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetAllActiveNonVirtualByEmails")
+	defer span.End()
+	people, err := models.People(
+		qm.WhereIn("email IN ?", emails...),
+		qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(emails)+1), tenantID),
+		qm.And(fmt.Sprintf("created_by = $%d", len(emails)+2), DefaultTenantID),
+		qm.And("status = 'active'"),
+	).All(spanCtx, svc.GetContextExecutor())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return people, nil
+}
+
 func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string) (*models.Person, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetByEmail")
 	defer span.End()
