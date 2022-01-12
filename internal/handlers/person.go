@@ -1027,7 +1027,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	}
 
 	// get non-virtual users using above emails to see if there are any matches
-	nonVirtualPeeps, err := svc.GetAllActiveNonVirtualByEmails(spanCtx, in.GetTenantId(), emails)
+	nonVirtualPeeps, err := svc.GetAllActiveNonVirtualByEmails(spanCtx, in.GetTenantId(), emails...)
 	if err != nil {
 		err := errors.Wrap(err, "error getting non virtual user records")
 		logger.Error(err)
