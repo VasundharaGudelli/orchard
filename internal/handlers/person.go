@@ -1098,6 +1098,15 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 					return nil, err.AsGRPC()
 				}
 
+				if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: oldPerson.ID}); err != nil {
+					err := errors.Wrap(err, "error busting auth data cache for user")
+					logger.Error(err)
+					if err := svc.Rollback(); err != nil {
+						logger.Error(errors.Wrap(err, "error rolling back transaction"))
+					}
+					return nil, err.AsGRPC()
+				}
+
 				newP, err := svc.ToProto(newPerson)
 				if err == nil {
 					updatedPeeps = append(updatedPeeps, newP)
