@@ -1055,6 +1055,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 				// update the new person with roles & groupids
 				newPerson.RoleIds = oldPerson.RoleIds
 				newPerson.GroupID = oldPerson.GroupID
+				newPerson.IsProvisioned = true
 				_, err := newPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("role_ids", "group_id"))
 				if err != nil {
 					err := errors.Wrap(err, "error updating new person")
