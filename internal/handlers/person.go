@@ -1014,10 +1014,10 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	}
 
 	// grab the email addresses
-	emails := make([]interface{}, len(peeps))
-	for i, person := range peeps {
+	emails := make([]interface{}, 0, len(peeps))
+	for _, person := range peeps {
 		if person.Email.Valid && !person.Email.IsZero() && person.Status == "active" {
-			emails[i] = person.Email.String
+			emails = append(emails, person.Email.String)
 		}
 	}
 
@@ -1051,69 +1051,71 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	updatedPeeps := []*orchardPb.Person{}
 	for _, oldPerson := range peeps {
 		for _, newPerson := range nonVirtualPeeps {
-			if strings.EqualFold(oldPerson.Email.String, newPerson.Email.String) {
-				// update the new person with roles & groupids
-				newPerson.RoleIds = oldPerson.RoleIds
-				newPerson.GroupID = oldPerson.GroupID
-				newPerson.IsProvisioned = true
-				_, err := newPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("role_ids", "group_id"))
-				if err != nil {
-					err := errors.Wrap(err, "error updating new person")
-					logger.Error(err)
-					if err := svc.Rollback(); err != nil {
-						logger.Error(errors.Wrap(err, "error rolling back transaction"))
-					}
-					return nil, err.AsGRPC()
-				}
-
-				// deactivate old person
-				oldPerson.Status = "inactive"
-				_, err = oldPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("status"))
-				if err != nil {
-					err := errors.Wrap(err, "error updating old person")
-					logger.Error(err)
-					if err := svc.Rollback(); err != nil {
-						logger.Error(errors.Wrap(err, "error rolling back transaction"))
-					}
-					return nil, err.AsGRPC()
-				}
-
-				// get all person records, to provision
-				personRecords, err := svc.GetAllActiveByEmail(spanCtx, newPerson.Email.String)
-				if err != nil {
-					err := errors.Wrap(err, "error getting person records for provisioning")
-					logger.Error(err)
-					if err := svc.Rollback(); err != nil {
-						logger.Error(errors.Wrap(err, "error rolling back transaction"))
-					}
-					return nil, err.AsGRPC()
-				}
-
-				// Provision user in Auth0
-				if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
-					err := errors.Wrap(err, "error provisioning user in auth0")
-					logger.Error(err)
-					if err := svc.Rollback(); err != nil {
-						logger.Error(errors.Wrap(err, "error rolling back transaction"))
-					}
-					return nil, err.AsGRPC()
-				}
-
-				if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: oldPerson.ID}); err != nil {
-					err := errors.Wrap(err, "error busting auth data cache for user")
-					logger.Error(err)
-					if err := svc.Rollback(); err != nil {
-						logger.Error(errors.Wrap(err, "error rolling back transaction"))
-					}
-					return nil, err.AsGRPC()
-				}
-
-				newP, err := svc.ToProto(newPerson)
-				if err == nil {
-					updatedPeeps = append(updatedPeeps, newP)
-				}
-				break
+			if !strings.EqualFold(oldPerson.Email.String, newPerson.Email.String) {
+				continue
 			}
+
+			// update the new person with roles & groupids
+			newPerson.RoleIds = oldPerson.RoleIds
+			newPerson.GroupID = oldPerson.GroupID
+			newPerson.IsProvisioned = true
+			_, err := newPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("role_ids", "group_id"))
+			if err != nil {
+				err := errors.Wrap(err, "error updating new person")
+				logger.Error(err)
+				if err := svc.Rollback(); err != nil {
+					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				}
+				return nil, err.AsGRPC()
+			}
+
+			// deactivate old person
+			oldPerson.Status = "inactive"
+			_, err = oldPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("status"))
+			if err != nil {
+				err := errors.Wrap(err, "error updating old person")
+				logger.Error(err)
+				if err := svc.Rollback(); err != nil {
+					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				}
+				return nil, err.AsGRPC()
+			}
+
+			// get all person records, to provision
+			personRecords, err := svc.GetAllActiveByEmail(spanCtx, newPerson.Email.String)
+			if err != nil {
+				err := errors.Wrap(err, "error getting person records for provisioning")
+				logger.Error(err)
+				if err := svc.Rollback(); err != nil {
+					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				}
+				return nil, err.AsGRPC()
+			}
+
+			// Provision user in Auth0
+			if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
+				err := errors.Wrap(err, "error provisioning user in auth0")
+				logger.Error(err)
+				if err := svc.Rollback(); err != nil {
+					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				}
+				return nil, err.AsGRPC()
+			}
+
+			if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: oldPerson.ID}); err != nil {
+				err := errors.Wrap(err, "error busting auth data cache for user")
+				logger.Error(err)
+				if err := svc.Rollback(); err != nil {
+					logger.Error(errors.Wrap(err, "error rolling back transaction"))
+				}
+				return nil, err.AsGRPC()
+			}
+
+			newP, err := svc.ToProto(newPerson)
+			if err == nil {
+				updatedPeeps = append(updatedPeeps, newP)
+			}
+			break
 		}
 	}
 
