@@ -230,3 +230,7 @@ func (server *OrchardGRPCServer) DeleteGroupById(ctx context.Context, in *servic
 func (server *OrchardGRPCServer) GetTenantGroupsLastModifiedTS(ctx context.Context, in *servicePb.GetTenantGroupsLastModifiedTSRequest) (*servicePb.GetTenantGroupsLastModifiedTSResponse, error) {
 	return server.handlers.GetTenantGroupsLastModifiedTS(ctx, in)
 }
+
+func (server *OrchardGRPCServer) ReprovisionPeople(ctx context.Context, in *servicePb.IdRequest) (*servicePb.ReprovisionPeopleResponse, error) {
+	return server.handlers.ReprovisionPeople(ctx, in)
+}

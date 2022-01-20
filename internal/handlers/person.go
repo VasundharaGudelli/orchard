@@ -11,6 +11,7 @@ import (
 	strUtil "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
+	"github.com/loupe-co/orchard/internal/clients"
 	"github.com/loupe-co/orchard/internal/db"
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
@@ -99,19 +100,8 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 		return nil, err.AsGRPC()
 	}
 
-	personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, in.Person.Email)
-	if err != nil {
-		err := errors.Wrap(err, "error getting person records for provisioning")
-		logger.Error(err)
-		if err := svc.Rollback(); err != nil {
-			logger.Error(errors.Wrap(err, "error rolling back transaction"))
-		}
-		return nil, err.AsGRPC()
-	}
-
-	// Provision user in Auth0
-	if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
-		err := errors.Wrap(err, "error provisioning user in auth0")
+	if _, err := updateUserProvisioning(spanCtx, in.GetTenantId(), "", in.GetPerson().GetEmail(), svc, h.auth0Client); err != nil {
+		err := errors.Wrap(err, "error provisioning")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
@@ -597,34 +587,13 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 
 	// If we changed the provisioning of the person, update in Auth0
 	if changeProvisioning {
-		personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, in.Person.Email)
-		if err != nil {
-			err := errors.Wrap(err, "error getting person records for provisioning")
+		if _, err := updateUserProvisioning(spanCtx, updatePerson.TenantID, updatePerson.ID, in.GetPerson().GetEmail(), svc, h.auth0Client); err != nil {
+			err := errors.Wrap(err, "error provisioning")
 			logger.Error(err)
 			if err := svc.Rollback(); err != nil {
 				logger.Error(errors.Wrap(err, "error rolling back transaction"))
 			}
 			return nil, err.AsGRPC()
-		}
-
-		if len(personRecords) > 0 {
-			if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
-				err := errors.Wrap(err, "error provisioning user in auth0")
-				logger.Error(err)
-				if err := svc.Rollback(); err != nil {
-					logger.Error(errors.Wrap(err, "error rolling back transaction"))
-				}
-				return nil, err.AsGRPC()
-			}
-		} else {
-			if err := h.auth0Client.Unprovision(spanCtx, updatePerson.TenantID, updatePerson.ID); err != nil {
-				err := errors.Wrap(err, "error unprovisioning user in auth0")
-				logger.Error(err)
-				if err := svc.Rollback(); err != nil {
-					logger.Error(errors.Wrap(err, "error rolling back transaction"))
-				}
-				return nil, err.AsGRPC()
-			}
 		}
 	}
 
@@ -841,19 +810,8 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 		return nil, err.AsGRPC()
 	}
 
-	personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, p.Email.String)
-	if err != nil {
-		err := errors.Wrap(err, "error getting person records for provisioning")
-		logger.Error(err)
-		if err := svc.Rollback(); err != nil {
-			logger.Error(errors.Wrap(err, "error rolling back transaction"))
-		}
-		return nil, err.AsGRPC()
-	}
-
-	// Provision user in Auth0
-	if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
-		err := errors.Wrap(err, "error provisioning user in auth0")
+	if _, err := updateUserProvisioning(spanCtx, in.GetNewTenantId(), p.ID, p.Email.String, svc, h.auth0Client); err != nil {
+		err := errors.Wrap(err, "error provisioning")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
@@ -939,43 +897,13 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 	}
 
 	// update auth0 (remove user if no additional records, otherwise update existing user)
-	if len(personEmail) > 0 {
-		personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, personEmail)
-		if err != nil {
-			err := errors.Wrap(err, "error getting person records for provisioning")
-			logger.Error(err)
-			if err := svc.Rollback(); err != nil {
-				logger.Error(errors.Wrap(err, "error rolling back transaction"))
-			}
-			return nil, err.AsGRPC()
+	if _, err := updateUserProvisioning(spanCtx, in.GetTenantId(), in.GetPersonId(), personEmail, svc, h.auth0Client); err != nil {
+		err := errors.Wrap(err, "error provisioning")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
 		}
-
-		if len(personRecords) > 0 {
-			if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
-				err := errors.Wrap(err, "error provisioning user in auth0")
-				logger.Error(err)
-				if err := svc.Rollback(); err != nil {
-					logger.Error(errors.Wrap(err, "error rolling back transaction"))
-				}
-				return nil, err.AsGRPC()
-			}
-		} else {
-			if err := h.auth0Client.Unprovision(spanCtx, in.TenantId, in.PersonId); err != nil {
-				var ignoreError bool
-				if cErr, ok := err.(errors.CommonError); ok && cErr.Code == codes.NotFound {
-					ignoreError = true
-				}
-
-				if !ignoreError {
-					err := errors.Wrap(err, "error unprovisioning user in auth0")
-					logger.Error(err)
-					if err := svc.Rollback(); err != nil {
-						logger.Error(errors.Wrap(err, "error rolling back transaction"))
-					}
-					return nil, err.AsGRPC()
-				}
-			}
-		}
+		return nil, err.AsGRPC()
 	}
 
 	// Commit the update person transaction in sql
@@ -1081,20 +1009,8 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 				return nil, err.AsGRPC()
 			}
 
-			// get all person records, to provision
-			personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, newPerson.Email.String)
-			if err != nil {
-				err := errors.Wrap(err, "error getting person records for provisioning")
-				logger.Error(err)
-				if err := svc.Rollback(); err != nil {
-					logger.Error(errors.Wrap(err, "error rolling back transaction"))
-				}
-				return nil, err.AsGRPC()
-			}
-
-			// Provision user in Auth0
-			if err := h.auth0Client.Provision(spanCtx, personRecords); err != nil {
-				err := errors.Wrap(err, "error provisioning user in auth0")
+			if _, err := updateUserProvisioning(spanCtx, newPerson.TenantID, newPerson.ID, newPerson.Email.String, svc, h.auth0Client); err != nil {
+				err := errors.Wrap(err, "error provisioning")
 				logger.Error(err)
 				if err := svc.Rollback(); err != nil {
 					logger.Error(errors.Wrap(err, "error rolling back transaction"))
@@ -1131,4 +1047,128 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	return &servicePb.ConvertVirtualUsersResponse{
 		People: updatedPeeps,
 	}, nil
+}
+
+func (h *Handlers) ReprovisionPeople(ctx context.Context, in *servicePb.IdRequest) (*servicePb.ReprovisionPeopleResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "ReprovisionPeople")
+	defer span.End()
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.GetTenantId())
+
+	if in.GetTenantId() == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := h.db.NewPersonService()
+
+	numProvisioned := int64(0)
+	numUnprovisioned := int64(0)
+
+	if in.GetPersonId() != "" {
+		provisioned, err := updateUserProvisioning(spanCtx, in.GetTenantId(), in.GetPersonId(), "", svc, h.auth0Client)
+		if err != nil {
+			err = errors.Wrap(err, "error reprovisioning person")
+			return nil, err
+		}
+
+		if provisioned {
+			numProvisioned++
+		} else {
+			numUnprovisioned++
+		}
+
+		return &servicePb.ReprovisionPeopleResponse{
+			ProvisionedCount:   numProvisioned,
+			UnprovisionedCount: numUnprovisioned,
+		}, nil
+	}
+
+	people, _, err := svc.Search(spanCtx, in.GetTenantId(), "", 10000, 0,
+		db.PersonFilter{Field: "is_provisioned", Op: "EQ", Values: []interface{}{true}},
+		db.PersonFilter{Field: "status", Op: "EQ", Values: []interface{}{"active"}},
+	)
+	if err != nil {
+		err = errors.Wrap(err, "error getting people to reprovision")
+		return nil, err
+	}
+
+	for _, person := range people {
+		provisioned, err := updateUserProvisioning(spanCtx, in.GetTenantId(), person.ID, person.Email.String, svc, h.auth0Client)
+		if err != nil {
+			err := errors.Wrap(err, "error provisioning person")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+
+		if provisioned {
+			numProvisioned++
+		} else {
+			numUnprovisioned++
+		}
+	}
+
+	return &servicePb.ReprovisionPeopleResponse{
+		ProvisionedCount:   numProvisioned,
+		UnprovisionedCount: numUnprovisioned,
+	}, nil
+}
+
+func updateUserProvisioning(ctx context.Context, tenantID string, personID string, personEmail string, personSvc *db.PersonService, auth0Client *clients.Auth0Client) (bool, error) {
+	if len(tenantID) == 0 {
+		return false, errors.New("tenantId is required to provision")
+	}
+
+	if len(personEmail) == 0 || len(personID) == 0 {
+		return false, errors.New("id or email is required to provision")
+	}
+
+	if len(personEmail) == 0 && len(personID) > 0 {
+		person, err := personSvc.GetByID(ctx, personID, tenantID)
+		if err != nil {
+			err := errors.Wrap(err, "error getting person record for provisioning")
+			return false, err
+		}
+
+		// if no email we cant provision
+		if person.Email.IsZero() {
+			return false, nil
+		}
+
+		personEmail = person.Email.String
+	}
+
+	personRecords, err := personSvc.GetAllByEmailForProvisioning(ctx, personEmail)
+	if err != nil {
+		err := errors.Wrap(err, "error getting person records for provisioning")
+		return false, err
+	}
+
+	// found person records to provision, make it happen
+	if len(personRecords) > 0 {
+		if err := auth0Client.Provision(ctx, personRecords); err != nil {
+			err := errors.Wrap(err, "error provisioning user in auth0")
+			return false, err
+		}
+		return true, nil
+	}
+
+	// no person records, unprovision
+	if len(personID) > 0 {
+		if err := auth0Client.Unprovision(ctx, tenantID, personID); err != nil {
+			var ignoreError bool
+			// if not found in auth0, dont return an error
+			if cErr, ok := err.(errors.CommonError); ok && cErr.Code == codes.NotFound {
+				ignoreError = true
+			}
+
+			if !ignoreError {
+				err := errors.Wrap(err, "error unprovisioning user in auth0")
+				return false, err
+			}
+		}
+	}
+
+	return false, nil
 }
