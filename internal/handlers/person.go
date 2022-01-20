@@ -619,15 +619,6 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		return nil, err.AsGRPC()
 	}
 
-	// If we updated the user's system roles, then bust their auth cache in bouncer
-	if changeRoles {
-		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
-			err := errors.Wrap(err, "error busting auth data cache for user")
-			logger.Error(err)
-			return nil, err.AsGRPC()
-		}
-	}
-
 	// Convert the updated person db model to proto for response
 	person, err := svc.ToProto(updatePerson)
 	if err != nil {
@@ -1120,7 +1111,7 @@ func updateUserProvisioning(ctx context.Context, tenantID string, personID strin
 		return false, errors.New("tenantId is required to provision")
 	}
 
-	if len(personEmail) == 0 || len(personID) == 0 {
+	if len(personEmail) == 0 && len(personID) == 0 {
 		return false, errors.New("id or email is required to provision")
 	}
 
