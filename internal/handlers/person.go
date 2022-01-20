@@ -99,7 +99,7 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 		return nil, err.AsGRPC()
 	}
 
-	personRecords, err := svc.GetAllActiveByEmail(spanCtx, in.Person.Email)
+	personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, in.Person.Email)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person records for provisioning")
 		logger.Error(err)
@@ -597,7 +597,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 
 	// If we changed the provisioning of the person, update in Auth0
 	if changeProvisioning {
-		personRecords, err := svc.GetAllActiveByEmail(spanCtx, in.Person.Email)
+		personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, in.Person.Email)
 		if err != nil {
 			err := errors.Wrap(err, "error getting person records for provisioning")
 			logger.Error(err)
@@ -841,7 +841,7 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 		return nil, err.AsGRPC()
 	}
 
-	personRecords, err := svc.GetAllActiveByEmail(spanCtx, p.Email.String)
+	personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, p.Email.String)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person records for provisioning")
 		logger.Error(err)
@@ -940,7 +940,7 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 
 	// update auth0 (remove user if no additional records, otherwise update existing user)
 	if len(personEmail) > 0 {
-		personRecords, err := svc.GetAllActiveByEmail(spanCtx, personEmail)
+		personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, personEmail)
 		if err != nil {
 			err := errors.Wrap(err, "error getting person records for provisioning")
 			logger.Error(err)
@@ -1082,7 +1082,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 			}
 
 			// get all person records, to provision
-			personRecords, err := svc.GetAllActiveByEmail(spanCtx, newPerson.Email.String)
+			personRecords, err := svc.GetAllByEmailForProvisioning(spanCtx, newPerson.Email.String)
 			if err != nil {
 				err := errors.Wrap(err, "error getting person records for provisioning")
 				logger.Error(err)

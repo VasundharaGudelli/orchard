@@ -205,16 +205,29 @@ func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string
 	return person, nil
 }
 
-func (svc *PersonService) GetAllActiveByEmail(ctx context.Context, email string) ([]*models.Person, error) {
-	spanCtx, span := log.StartSpan(ctx, "Person.GetAllActiveByEmail")
+func (svc *PersonService) GetAllByEmailForProvisioning(ctx context.Context, email string) ([]*models.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetAllByEmailForProvisioning")
 	defer span.End()
-	people, err := models.People(qm.Where("email = $1 AND status = 'active' AND is_provisioned", email), qm.OrderBy("created_at ASC")).All(spanCtx, svc.GetContextExecutor())
+
+	// clean email so that we capture all person records
+	email = svc.CleanEmail(email)
+	emailQuery := fmt.Sprintf("%%%s%%", email)
+
+	people, err := models.People(qm.Where("email LIKE $1 AND status = 'active' AND is_provisioned", emailQuery), qm.OrderBy("created_at ASC")).All(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	if people == nil || (err != nil && err == sql.ErrNoRows) {
 		return nil, nil
 	}
+
+	// clean the email so that we always send the right one to auth0
+	for _, person := range people {
+		if person.Email.Valid && !person.Email.IsZero() {
+			person.Email.String = svc.CleanEmail(person.Email.String)
+		}
+	}
+
 	return people, nil
 }
 
@@ -451,4 +464,11 @@ func (svc *PersonService) GetPersonGroupIDs(ctx context.Context, tenantID string
 		}
 	}
 	return res, nil
+}
+
+func (svc *PersonService) CleanEmail(email string) string {
+	// remove sf sandbox suffix
+	email = strings.ReplaceAll(email, ".invalid", "")
+
+	return email
 }
