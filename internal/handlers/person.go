@@ -858,16 +858,17 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 	svc.SetTransaction(tx)
 
 	var personEmail string
-	if person, err := svc.GetByID(spanCtx, in.PersonId, in.TenantId); err != nil {
+	person, err := svc.GetByID(spanCtx, in.PersonId, in.TenantId)
+	if err != nil {
 		err := errors.Wrap(err, "error getting person")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
 		}
 		return nil, err.AsGRPC()
-	} else {
-		personEmail = person.Email.String
 	}
+
+	personEmail = person.Email.String
 
 	if err := svc.DeleteByID(spanCtx, in.PersonId, in.TenantId); err != nil {
 		err := errors.Wrap(err, "error deleting person by id")
@@ -888,13 +889,15 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 	}
 
 	// update auth0 (remove user if no additional records, otherwise update existing user)
-	if _, err := updateUserProvisioning(spanCtx, in.GetTenantId(), in.GetPersonId(), personEmail, svc, h.auth0Client); err != nil {
-		err := errors.Wrap(err, "error provisioning")
-		logger.Error(err)
-		if err := svc.Rollback(); err != nil {
-			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+	if person.IsProvisioned {
+		if _, err := updateUserProvisioning(spanCtx, in.GetTenantId(), in.GetPersonId(), personEmail, svc, h.auth0Client); err != nil {
+			err := errors.Wrap(err, "error provisioning")
+			logger.Error(err)
+			if err := svc.Rollback(); err != nil {
+				logger.Error(errors.Wrap(err, "error rolling back transaction"))
+			}
+			return nil, err.AsGRPC()
 		}
-		return nil, err.AsGRPC()
 	}
 
 	// Commit the update person transaction in sql
