@@ -993,7 +993,8 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 
 			// deactivate old person
 			oldPerson.Status = "inactive"
-			_, err = oldPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("status"))
+			oldPerson.IsProvisioned = false
+			_, err = oldPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("status", "is_provisioned"))
 			if err != nil {
 				err := errors.Wrap(err, "error updating old person")
 				logger.Error(err)
