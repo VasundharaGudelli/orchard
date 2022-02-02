@@ -586,8 +586,9 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	}
 
 	// If we changed the provisioning of the person, update in Auth0
-	if changeProvisioning {
-		if _, err := updateUserProvisioning(spanCtx, updatePerson.TenantID, updatePerson.ID, in.GetPerson().GetEmail(), svc, h.auth0Client); err != nil {
+	// Due to now being able to update inactive users, need to make sure empty email don't get through here and cause issues
+	if changeProvisioning && in.Person.Email != "" {
+		if _, err := updateUserProvisioning(spanCtx, updatePerson.TenantID, updatePerson.ID, in.Person.Email, svc, h.auth0Client); err != nil {
 			err := errors.Wrap(err, "error provisioning")
 			logger.Error(err)
 			if err := svc.Rollback(); err != nil {
