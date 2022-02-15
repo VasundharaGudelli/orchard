@@ -137,6 +137,10 @@ func (server *OrchardGRPCServer) GetPersonViewableGroups(ctx context.Context, in
 	return server.handlers.GetPersonViewableGroups(ctx, in)
 }
 
+func (server *OrchardGRPCServer) SetPersonViewableGroups(ctx context.Context, in *servicePb.SetPersonViewableGroupsRequest) (*servicePb.SetPersonViewableGroupsResponse, error) {
+	return server.handlers.SetPersonViewableGroups(ctx, in)
+}
+
 func (server *OrchardGRPCServer) UpdateGroupViewer(ctx context.Context, in *servicePb.UpdateGroupViewerRequest) (*servicePb.UpdateGroupViewerResponse, error) {
 	return server.handlers.UpdateGroupViewer(ctx, in)
 }
@@ -233,4 +237,8 @@ func (server *OrchardGRPCServer) GetTenantGroupsLastModifiedTS(ctx context.Conte
 
 func (server *OrchardGRPCServer) ReprovisionPeople(ctx context.Context, in *servicePb.IdRequest) (*servicePb.ReprovisionPeopleResponse, error) {
 	return server.handlers.ReprovisionPeople(ctx, in)
+}
+
+func (server *OrchardGRPCServer) GetTenantPersonCount(ctx context.Context, in *servicePb.GetTenantPersonCountRequest) (*servicePb.GetTenantPersonCountResponse, error) {
+	return nil, nil
 }
