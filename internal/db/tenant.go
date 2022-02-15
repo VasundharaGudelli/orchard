@@ -192,3 +192,32 @@ func (svc *TenantService) GetActiveTenants(ctx context.Context) ([]*models.Tenan
 	}
 	return tenants, nil
 }
+
+const (
+	getTenantPersonCountQuery = `
+SELECT COUNT(*) FILTER (WHERE status = 'active' AND group_id IS NOT NULL) AS active_in_group,
+       COUNT(*) FILTER (WHERE status = 'inactive') AS inactive,
+       COUNT(*) FILTER (WHERE status = 'active' AND is_provisioned = TRUE) as provisioned,
+       COUNT(*) AS total
+  FROM person
+ WHERE tenant_id = $1`
+)
+
+type TenantPersonCountResponse struct {
+	ActiveInGroup int64 `boil:"active_in_group" json:"activeInGroup"`
+	Inactive      int64 `boil:"inactive" json:"inactive"`
+	Provisioned   int64 `boil:"provisioned" json:"provisioned"`
+	Total         int64 `boil:"total" json:"total"`
+}
+
+func (svc *TenantService) GetTenantPersonCounts(ctx context.Context, tenantID string) (*TenantPersonCountResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "Tenant.GetTenantPersonCounts")
+	defer span.End()
+	res := &TenantPersonCountResponse{}
+	if err := queries.Raw(getTenantPersonCountQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), res); err != nil && err != sql.ErrNoRows {
+		err := errors.Wrap(err, "error getting person counts for tenant")
+		log.Debug(err.Error())
+		return nil, err
+	}
+	return res, nil
+}
