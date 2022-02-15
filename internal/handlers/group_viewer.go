@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"sort"
 
 	perm "github.com/loupe-co/bouncer/pkg/permissions"
 	"github.com/loupe-co/go-common/errors"
@@ -164,11 +163,10 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 		return nil, err.AsGRPC()
 	}
 
-	groupIds := make([]string, 0)
+	var groupIds = make(map[string]struct{}, len(viewableGroups))
 	for _, vg := range viewableGroups {
-		groupIds = append(groupIds, vg.ID)
+		groupIds[vg.ID] = struct{}{}
 	}
-	sort.Strings(groupIds)
 
 	tx, err := h.db.NewTransaction(spanCtx)
 	if err != nil {
@@ -179,9 +177,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 	svc.SetTransaction(tx)
 
 	for _, gvId := range in.GroupViewerIds {
-		i := sort.SearchStrings(groupIds, gvId)
-		hasViewer := i < len(groupIds) && groupIds[i] == gvId
-		if !hasViewer {
+		if _, ok := groupIds[gvId]; !ok {
 			gvProto := &orchardPb.GroupViewer{
 				GroupId:     gvId,
 				TenantId:    in.TenantId,
@@ -199,10 +195,15 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 		}
 	}
 
-	for _, gId := range groupIds {
-		i := sort.SearchStrings(in.GroupViewerIds, gId)
-		hasViewer := i < len(in.GroupViewerIds) && in.GroupViewerIds[i] == gId
-		if !hasViewer {
+	var groupViewerIds = make(map[string]struct{}, len(in.GroupViewerIds))
+	for _, vg := range in.GroupViewerIds {
+		groupViewerIds[vg] = struct{}{}
+	}
+
+	for gId := range groupIds {
+		// i := sort.SearchStrings(in.GroupViewerIds, gId)
+		// hasViewer := i < len(in.GroupViewerIds) && in.GroupViewerIds[i] == gId
+		if _, ok := groupViewerIds[gId]; !ok {
 			if err := svc.DeleteByID(spanCtx, in.TenantId, gId, in.PersonId); err != nil {
 				err := errors.Wrap(err, "error deleting group viewer in sql")
 				logger.Error(err)
