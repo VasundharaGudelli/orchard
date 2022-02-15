@@ -195,12 +195,15 @@ func (svc *TenantService) GetActiveTenants(ctx context.Context) ([]*models.Tenan
 
 const (
 	getTenantPersonCountQuery = `
-SELECT COUNT(*) FILTER (WHERE status = 'active' AND group_id IS NOT NULL) AS active_in_group,
-       COUNT(*) FILTER (WHERE status = 'inactive') AS inactive,
-       COUNT(*) FILTER (WHERE status = 'active' AND is_provisioned = TRUE) as provisioned,
-       COUNT(*) AS total
-  FROM person
- WHERE tenant_id = $1`
+SELECT count(*) FILTER (WHERE p.status = 'active' AND p.group_id IS NOT NULL AND g.status = 'active') AS active_in_group,
+       count(*) FILTER (WHERE p.status = 'active' AND p.group_id IS NULL) AS active_no_group,
+       count(*) FILTER (WHERE p.status = 'inactive') AS inactive,
+       count(*) FILTER (WHERE p.status = 'active' AND p.is_provisioned = TRUE) as provisioned,
+       count(*) AS total
+  FROM person p
+  LEFT JOIN "group" g
+    ON p.group_id = g.id
+ WHERE p.tenant_id = $1`
 )
 
 type TenantPersonCountResponse struct {
