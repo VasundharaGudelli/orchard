@@ -94,7 +94,7 @@ func (svc *GroupViewerService) GetGroupViewers(ctx context.Context, tenantID, gr
 
 const (
 	getPersonViewableGroupsQuery = `SELECT g.*
-	FROM group_viewer gv INNER JOIN group g ON g.id = gv.group_id AND g.tenant_id = gv.tenant_id
+	FROM group_viewer gv INNER JOIN "group" g ON g.id = gv.group_id AND g.tenant_id = gv.tenant_id
 	WHERE gv.person_id = $1 AND gv.tenant_id = $2;`
 )
 
