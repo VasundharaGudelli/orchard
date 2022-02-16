@@ -84,7 +84,7 @@ func (svc *GroupViewerService) GetGroupViewers(ctx context.Context, tenantID, gr
 	spanCtx, span := log.StartSpan(ctx, "GroupViewer.GetGroupViewers")
 	defer span.End()
 	results := []*models.Person{}
-	err := queries.Raw(getGroupViewersQuery, groupID, tenantID).Bind(spanCtx, svc.GetContextExecutor(), results)
+	err := queries.Raw(getGroupViewersQuery, groupID, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &results)
 	if err != nil {
 		log.WithTenantID(tenantID).WithCustom("groupId", groupID).WithCustom("query", getGroupViewersQuery)
 		return nil, err
@@ -102,7 +102,7 @@ func (svc *GroupViewerService) GetPersonViewableGroups(ctx context.Context, tena
 	spanCtx, span := log.StartSpan(ctx, "GroupViewer.GetPersonViewableGroups")
 	defer span.End()
 	results := []*models.Group{}
-	err := queries.Raw(getPersonViewableGroupsQuery, personID, tenantID).Bind(spanCtx, svc.GetContextExecutor(), results)
+	err := queries.Raw(getPersonViewableGroupsQuery, personID, tenantID).Bind(spanCtx, svc.GetContextExecutor(), &results)
 	if err != nil {
 		log.WithTenantID(tenantID).WithCustom("personId", personID).WithCustom("query", getPersonViewableGroupsQuery)
 		return nil, err
