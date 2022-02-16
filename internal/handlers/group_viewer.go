@@ -211,17 +211,17 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 		}
 	}
 
-	if err := svc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting transaction, rolling back")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
-	}
-
 	groups, err := svc.GetPersonViewableGroups(spanCtx, in.TenantId, in.PersonId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person viewable groups from sql")
 		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting transaction, rolling back")
+		logger.Error(err)
+		svc.Rollback()
 		return nil, err.AsGRPC()
 	}
 
