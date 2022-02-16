@@ -182,6 +182,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 				GroupId:     gvId,
 				TenantId:    in.TenantId,
 				PersonId:    in.PersonId,
+				CreatedBy:   in.CreatedBy,
 				Permissions: permissions,
 			}
 			gv := svc.FromProto(gvProto)
