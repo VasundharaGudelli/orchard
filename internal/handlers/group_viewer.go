@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strings"
 
 	perm "github.com/loupe-co/bouncer/pkg/permissions"
 	"github.com/loupe-co/go-common/errors"
@@ -136,6 +137,9 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 	defer span.End()
 
 	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+
+	logger.Info("Setpersonviewablegroups:ids")
+	logger.Info(strings.Join(in.GroupViewerIds, ", "))
 
 	if in.TenantId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId and personId can't be empty")
