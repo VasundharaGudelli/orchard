@@ -201,15 +201,21 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 	}
 
 	for gId := range groupIds {
-		// i := sort.SearchStrings(in.GroupViewerIds, gId)
-		// hasViewer := i < len(in.GroupViewerIds) && in.GroupViewerIds[i] == gId
 		if _, ok := groupViewerIds[gId]; !ok {
 			if err := svc.DeleteByID(spanCtx, in.TenantId, gId, in.PersonId); err != nil {
 				err := errors.Wrap(err, "error deleting group viewer in sql")
 				logger.Error(err)
+				svc.Rollback()
 				return nil, err.AsGRPC()
 			}
 		}
+	}
+
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting transaction, rolling back")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
 	}
 
 	groups, err := svc.GetPersonViewableGroups(spanCtx, in.TenantId, in.PersonId)
