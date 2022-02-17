@@ -116,7 +116,7 @@ const (
 	WHERE gv.person_id IN ($2) AND gv.tenant_id = $1;`
 )
 
-func (svc *GroupViewerService) GetPersonsViewableGroups(ctx context.Context, tenantID string, peepIds ...interface{}) ([]*models.GroupViewer, error) {
+func (svc *GroupViewerService) GetPersonsViewableGroups(ctx context.Context, tenantID string, peepIds []string) ([]*models.GroupViewer, error) {
 	spanCtx, span := log.StartSpan(ctx, "GroupViewer.GetPersonViewableGroups")
 	defer span.End()
 	results := []*models.GroupViewer{}
