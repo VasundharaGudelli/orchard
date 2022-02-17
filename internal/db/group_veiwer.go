@@ -110,6 +110,24 @@ func (svc *GroupViewerService) GetPersonViewableGroups(ctx context.Context, tena
 	return results, nil
 }
 
+const (
+	getPersonsViewableGroupsQuery = `SELECT g.*
+	FROM group_viewer gv INNER JOIN "group" g ON g.id = gv.group_id AND g.tenant_id = gv.tenant_id
+	WHERE gv.person_id IN ($2) AND gv.tenant_id = $1;`
+)
+
+func (svc *GroupViewerService) GetPersonsViewableGroups(ctx context.Context, tenantID string, peepIds ...interface{}) ([]*models.GroupViewer, error) {
+	spanCtx, span := log.StartSpan(ctx, "GroupViewer.GetPersonViewableGroups")
+	defer span.End()
+	results := []*models.GroupViewer{}
+	err := queries.Raw(getPersonsViewableGroupsQuery, tenantID, peepIds).Bind(spanCtx, svc.GetContextExecutor(), &results)
+	if err != nil {
+		log.WithTenantID(tenantID).WithCustom("peepIds", "peepIds").WithCustom("query", getPersonsViewableGroupsQuery)
+		return nil, err
+	}
+	return results, nil
+}
+
 var (
 	defaultGroupViewerUpdateWhitelist = []string{
 		"permissions", "updated_at", "updated_by",
