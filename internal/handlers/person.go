@@ -299,23 +299,23 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 		return nil, err.AsGRPC()
 	}
 
-	// gvSvc := h.db.NewGroupViewerService()
+	gvSvc := h.db.NewGroupViewerService()
 
-	// peepIds := make([]string, len(peeps))
-	// peepsViewableGroups, err := gvSvc.GetPersonsViewableGroups(spanCtx, in.TenantId, peepIds)
-	// if err != nil {
-	// 	err := errors.Wrap(err, "error querrying group viewer db in people search")
-	// 	logger.Error(err)
-	// 	return nil, err.AsGRPC()
-	// }
+	peepIds := make([]string, len(peeps))
+	peepsViewableGroups, err := gvSvc.GetPersonsViewableGroups(spanCtx, in.TenantId, peepIds...)
+	if err != nil {
+		err := errors.Wrap(err, "error querrying group viewer db in people search")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
 
-	// peepGroupIds := map[string][]string{}
-	// for _, peepViewableGroup := range peepsViewableGroups {
-	// 	if _, ok := peepGroupIds[peepViewableGroup.PersonID]; !ok {
-	// 		peepGroupIds[peepViewableGroup.PersonID] = []string{}
-	// 	}
-	// 	peepGroupIds[peepViewableGroup.PersonID] = append(peepGroupIds[peepViewableGroup.PersonID], peepViewableGroup.GroupID)
-	// }
+	peepGroupIds := map[string][]string{}
+	for _, peepViewableGroup := range peepsViewableGroups {
+		if _, ok := peepGroupIds[peepViewableGroup.PersonID]; !ok {
+			peepGroupIds[peepViewableGroup.PersonID] = []string{}
+		}
+		peepGroupIds[peepViewableGroup.PersonID] = append(peepGroupIds[peepViewableGroup.PersonID], peepViewableGroup.GroupID)
+	}
 
 	crmRoleMap := map[string][]int{}
 	systemRoleMap := map[string][]int{}
@@ -327,11 +327,11 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 			logger.Error(err)
 			return nil, err.AsGRPC()
 		}
-		// peepIds[i] = peep.ID
+		peepIds[i] = peep.ID
 		p.GroupViewerIds = []string{}
-		// if groupIds, ok := peepGroupIds[peep.ID]; ok {
-		// 	p.GroupViewerIds = groupIds
-		// }
+		if groupIds, ok := peepGroupIds[peep.ID]; ok {
+			p.GroupViewerIds = groupIds
+		}
 		people[i] = p
 		for _, crmRoleID := range p.CrmRoleIds {
 			if _, ok := crmRoleMap[crmRoleID]; !ok {
