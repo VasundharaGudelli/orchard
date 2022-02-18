@@ -115,7 +115,14 @@ func (svc *GroupViewerService) GetPersonsViewableGroups(ctx context.Context, ten
 	spanCtx, span := log.StartSpan(ctx, "GroupViewer.GetPersonViewableGroups")
 	defer span.End()
 	idsParam := make([]interface{}, len(peepIds))
-	groupViewers, err := models.GroupViewers(qm.WhereIn("person_id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(peepIds)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
+	for i, peepId := range peepIds {
+		idsParam[i] = peepId
+	}
+	groupViewers, err := models.GroupViewers(
+		qm.WhereIn("person_id IN ?", idsParam...),
+		qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(peepIds)+1), tenantID),
+	).All(spanCtx, svc.GetContextExecutor())
+
 	if err != nil {
 		log.WithTenantID(tenantID).Errorf("Error getting groupview by tenantid and person_id")
 		return nil, err
