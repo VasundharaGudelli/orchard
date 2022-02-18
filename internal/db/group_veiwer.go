@@ -10,6 +10,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type GroupViewerService struct {
@@ -110,22 +111,15 @@ func (svc *GroupViewerService) GetPersonViewableGroups(ctx context.Context, tena
 	return results, nil
 }
 
-const (
-	getPersonsViewableGroupsQuery = `SELECT g.*
-	FROM group_viewer gv INNER JOIN "group" g ON g.id = gv.group_id AND g.tenant_id = gv.tenant_id
-	WHERE gv.person_id IN ($2) AND gv.tenant_id = $1;`
-)
-
-func (svc *GroupViewerService) GetPersonsViewableGroups(ctx context.Context, tenantID string, peepIds []string) ([]*models.GroupViewer, error) {
+func (svc *GroupViewerService) GetPersonsViewableGroups(ctx context.Context, tenantID string, peepIds ...interface{}) ([]*models.GroupViewer, error) {
 	spanCtx, span := log.StartSpan(ctx, "GroupViewer.GetPersonViewableGroups")
 	defer span.End()
-	results := []*models.GroupViewer{}
-	err := queries.Raw(getPersonsViewableGroupsQuery, tenantID, peepIds).Bind(spanCtx, svc.GetContextExecutor(), &results)
+	groupViewers, err := models.GroupViewers(qm.WhereIn("person.id IN ?", peepIds...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(peepIds)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
-		log.WithTenantID(tenantID).WithCustom("peepIds", "peepIds").WithCustom("query", getPersonsViewableGroupsQuery)
+		log.WithTenantID(tenantID).Errorf("Error getting groupview by tenantid and person_id")
 		return nil, err
 	}
-	return results, nil
+	return groupViewers, nil
 }
 
 var (
