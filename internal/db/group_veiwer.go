@@ -111,10 +111,11 @@ func (svc *GroupViewerService) GetPersonViewableGroups(ctx context.Context, tena
 	return results, nil
 }
 
-func (svc *GroupViewerService) GetPersonsViewableGroups(ctx context.Context, tenantID string, peepIds ...interface{}) ([]*models.GroupViewer, error) {
+func (svc *GroupViewerService) GetPersonsViewableGroups(ctx context.Context, tenantID string, peepIds ...string) ([]*models.GroupViewer, error) {
 	spanCtx, span := log.StartSpan(ctx, "GroupViewer.GetPersonViewableGroups")
 	defer span.End()
-	groupViewers, err := models.GroupViewers(qm.WhereIn("person.id IN ?", peepIds...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(peepIds)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
+	idsParam := make([]interface{}, len(peepIds))
+	groupViewers, err := models.GroupViewers(qm.WhereIn("person.id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(peepIds)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		log.WithTenantID(tenantID).Errorf("Error getting groupview by tenantid and person_id")
 		return nil, err

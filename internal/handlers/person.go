@@ -302,7 +302,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 	gvSvc := h.db.NewGroupViewerService()
 
 	peepIds := make([]string, len(peeps))
-	peepsViewableGroups, err := gvSvc.GetPersonsViewableGroups(spanCtx, in.TenantId, peepIds)
+	peepsViewableGroups, err := gvSvc.GetPersonsViewableGroups(spanCtx, in.TenantId, peepIds...)
 	if err != nil {
 		err := errors.Wrap(err, "error querrying group viewer db in people search")
 		logger.Error(err)
