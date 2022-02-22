@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	perm "github.com/loupe-co/bouncer/pkg/permissions"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -176,6 +178,8 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 	}
 	svc.SetTransaction(tx)
 
+	now, err := ptypes.TimestampProto(time.Now().UTC())
+
 	for _, gvId := range in.GroupViewerIds {
 		if _, ok := groupIds[gvId]; !ok {
 			gvProto := &orchardPb.GroupViewer{
@@ -183,6 +187,9 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 				TenantId:    in.TenantId,
 				PersonId:    in.PersonId,
 				CreatedBy:   in.CreatedBy,
+				UpdatedBy:   in.UpdatedBy,
+				UpdatedAt:   now,
+				CreatedAt:   now,
 				Permissions: permissions,
 			}
 			gv := svc.FromProto(gvProto)
