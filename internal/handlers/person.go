@@ -334,7 +334,6 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 			return nil, err.AsGRPC()
 		}
 		peepIds[i] = peep.ID
-		p.GroupViewerIds = []string{}
 		if groupIds, ok := peepGroupIds[peep.ID]; ok {
 			p.GroupViewerIds = groupIds
 		}
