@@ -299,6 +299,30 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 		return nil, err.AsGRPC()
 	}
 
+	gvSvc := h.db.NewGroupViewerService()
+
+	peepIds := make([]string, len(peeps))
+	for i, peep := range peeps {
+		peepIds[i] = peep.ID
+	}
+
+	logger.WithCustom("peepIds", peepIds).Debug("search people peep ids")
+
+	peepsViewableGroups, err := gvSvc.GetPersonsViewableGroups(spanCtx, in.TenantId, peepIds...)
+	if err != nil {
+		err := errors.Wrap(err, "error querrying group viewer db in people search")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	peepGroupIds := map[string][]string{}
+	for _, peepViewableGroup := range peepsViewableGroups {
+		if _, ok := peepGroupIds[peepViewableGroup.PersonID]; !ok {
+			peepGroupIds[peepViewableGroup.PersonID] = []string{}
+		}
+		peepGroupIds[peepViewableGroup.PersonID] = append(peepGroupIds[peepViewableGroup.PersonID], peepViewableGroup.GroupID)
+	}
+
 	crmRoleMap := map[string][]int{}
 	systemRoleMap := map[string][]int{}
 	people := make([]*orchardPb.Person, len(peeps))
@@ -308,6 +332,11 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 			err := errors.Wrap(err, "error converting person db model to proto")
 			logger.Error(err)
 			return nil, err.AsGRPC()
+		}
+		peepIds[i] = peep.ID
+		p.GroupViewerIds = []string{}
+		if groupIds, ok := peepGroupIds[peep.ID]; ok {
+			p.GroupViewerIds = groupIds
 		}
 		people[i] = p
 		for _, crmRoleID := range p.CrmRoleIds {

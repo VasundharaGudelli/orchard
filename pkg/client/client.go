@@ -143,6 +143,10 @@ func (client *OrchardClient) GetPersonViewableGroups(ctx context.Context, in *se
 	return client.client.GetPersonViewableGroups(ctx, in)
 }
 
+func (client *OrchardClient) SetPersonViewableGroups(ctx context.Context, in *servicePb.SetPersonViewableGroupsRequest) (*servicePb.SetPersonViewableGroupsResponse, error) {
+	return client.client.SetPersonViewableGroups(ctx, in)
+}
+
 func (client *OrchardClient) UpdateGroupViewer(ctx context.Context, in *servicePb.UpdateGroupViewerRequest) (*servicePb.UpdateGroupViewerResponse, error) {
 	return client.client.UpdateGroupViewer(ctx, in)
 }
