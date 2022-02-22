@@ -972,15 +972,17 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	svc.SetTransaction(tx)
 
 	updatedPeeps := []*orchardPb.Person{}
+	oldPeepsIDMap := make(map[string]string)
 	for _, oldPerson := range peeps {
 		for _, newPerson := range nonVirtualPeeps {
 			if !strings.EqualFold(oldPerson.Email.String, newPerson.Email.String) {
 				continue
 			}
+			// store old id for cache changes later
+			oldPeepsIDMap[oldPerson.Email.String] = oldPerson.ID
 
 			// update the new person with roles & groupids
 			newPerson.RoleIds = oldPerson.RoleIds
-			newPerson.GroupID = oldPerson.GroupID
 			newPerson.IsProvisioned = true
 			_, err := newPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("role_ids", "group_id", "is_provisioned"))
 			if err != nil {
@@ -1005,24 +1007,6 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 				return nil, err.AsGRPC()
 			}
 
-			if _, err := updateUserProvisioning(spanCtx, newPerson.TenantID, newPerson.ID, newPerson.Email.String, svc, h.auth0Client); err != nil {
-				err := errors.Wrap(err, "error provisioning")
-				logger.Error(err)
-				if err := svc.Rollback(); err != nil {
-					logger.Error(errors.Wrap(err, "error rolling back transaction"))
-				}
-				return nil, err.AsGRPC()
-			}
-
-			if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: oldPerson.ID}); err != nil {
-				err := errors.Wrap(err, "error busting auth data cache for user")
-				logger.Error(err)
-				if err := svc.Rollback(); err != nil {
-					logger.Error(errors.Wrap(err, "error rolling back transaction"))
-				}
-				return nil, err.AsGRPC()
-			}
-
 			newP, err := svc.ToProto(newPerson)
 			if err == nil {
 				updatedPeeps = append(updatedPeeps, newP)
@@ -1031,6 +1015,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 		}
 	}
 
+	// commit the transaction
 	if err := svc.Commit(); err != nil {
 		err := errors.Wrap(err, "error commiting convert person transaction")
 		logger.Error(err)
@@ -1038,6 +1023,27 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
 		}
 		return nil, err.AsGRPC()
+	}
+
+	for _, newPerson := range updatedPeeps {
+		// provision new user
+		if _, err := updateUserProvisioning(spanCtx, newPerson.TenantId, newPerson.Id, newPerson.Email, svc, h.auth0Client); err != nil {
+			err := errors.Wrap(err, "error provisioning")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+
+		// go to next if old id not found
+		if _, ok := oldPeepsIDMap[newPerson.Email]; !ok {
+			continue
+		}
+
+		// bust auth cache for old id
+		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: oldPeepsIDMap[newPerson.Email]}); err != nil {
+			err := errors.Wrap(err, "error busting auth data cache for user")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
 	}
 
 	return &servicePb.ConvertVirtualUsersResponse{

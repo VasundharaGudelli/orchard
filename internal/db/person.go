@@ -185,7 +185,7 @@ func (svc *PersonService) GetAllActiveNonVirtualByEmails(ctx context.Context, te
 		qm.And("status = 'active'"),
 	).All(spanCtx, svc.GetContextExecutor())
 
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 
