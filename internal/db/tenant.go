@@ -218,7 +218,7 @@ func (svc *TenantService) GetTenantPersonCounts(ctx context.Context, tenantID st
 	defer span.End()
 	res := &TenantPersonCountResponse{}
 	if err := queries.Raw(getTenantPersonCountQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), res); err != nil {
-		if err != sql.ErrNoRows {
+		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 
