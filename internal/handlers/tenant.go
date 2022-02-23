@@ -6,6 +6,7 @@ import (
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"google.golang.org/grpc/codes"
 )
 
 func (h *Handlers) GetGroupSyncSettings(ctx context.Context, in *servicePb.GetGroupSyncSettingsRequest) (*servicePb.GetGroupSyncSettingsResponse, error) {
@@ -85,6 +86,10 @@ func (h *Handlers) GetTenantPersonCount(ctx context.Context, in *servicePb.GetTe
 		err := errors.Wrap(err, "error getting tenant person counts from db")
 		logger.Error(err)
 		return nil, err.AsGRPC()
+	}
+
+	if counts == nil {
+		return nil, errors.New("counts not found").WithCode(codes.NotFound).AsGRPC()
 	}
 
 	res := &servicePb.GetTenantPersonCountResponse{

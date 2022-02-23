@@ -217,7 +217,11 @@ func (svc *TenantService) GetTenantPersonCounts(ctx context.Context, tenantID st
 	spanCtx, span := log.StartSpan(ctx, "Tenant.GetTenantPersonCounts")
 	defer span.End()
 	res := &TenantPersonCountResponse{}
-	if err := queries.Raw(getTenantPersonCountQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), res); err != nil && err != sql.ErrNoRows {
+	if err := queries.Raw(getTenantPersonCountQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), res); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		err := errors.Wrap(err, "error getting person counts for tenant")
 		log.Debug(err.Error())
 		return nil, err
