@@ -1053,6 +1053,9 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 		return nil, err.AsGRPC()
 	}
 
+	// clear transaction
+	svc.SetTransaction(nil)
+
 	for _, newPerson := range updatedPeeps {
 		// provision new user
 		if _, err := updateUserProvisioning(spanCtx, newPerson.TenantId, newPerson.Id, newPerson.Email, svc, h.auth0Client); err != nil {
