@@ -234,3 +234,11 @@ func (server *OrchardGRPCServer) GetTenantGroupsLastModifiedTS(ctx context.Conte
 func (server *OrchardGRPCServer) ReprovisionPeople(ctx context.Context, in *servicePb.IdRequest) (*servicePb.ReprovisionPeopleResponse, error) {
 	return server.handlers.ReprovisionPeople(ctx, in)
 }
+
+func (server *OrchardGRPCServer) GetTenantPersonCount(ctx context.Context, in *servicePb.GetTenantPersonCountRequest) (*servicePb.GetTenantPersonCountResponse, error) {
+	return server.handlers.GetTenantPersonCount(ctx, in)
+}
+
+func (server *OrchardGRPCServer) SetPersonViewableGroups(ctx context.Context, in *servicePb.SetPersonViewableGroupsRequest) (*servicePb.SetPersonViewableGroupsResponse, error) {
+	return nil, nil
+}

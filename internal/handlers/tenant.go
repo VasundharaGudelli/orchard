@@ -71,3 +71,28 @@ func (h *Handlers) UpdateGroupSyncMetadata(ctx context.Context, in *servicePb.Up
 
 	return &servicePb.UpdateGroupSyncMetadataResponse{}, nil
 }
+
+func (h *Handlers) GetTenantPersonCount(ctx context.Context, in *servicePb.GetTenantPersonCountRequest) (*servicePb.GetTenantPersonCountResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "GetTenantPersonCount")
+	defer span.End()
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+
+	svc := h.db.NewTenantService()
+
+	counts, err := svc.GetTenantPersonCounts(spanCtx, in.TenantId)
+	if err != nil {
+		err := errors.Wrap(err, "error getting tenant person counts from db")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	res := &servicePb.GetTenantPersonCountResponse{
+		ActiveInGroup: counts.ActiveInGroup,
+		Inactive:      counts.Inactive,
+		Provisioned:   counts.Provisioned,
+		Total:         counts.Total,
+	}
+
+	return res, nil
+}

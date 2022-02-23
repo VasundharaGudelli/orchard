@@ -192,3 +192,35 @@ func (svc *TenantService) GetActiveTenants(ctx context.Context) ([]*models.Tenan
 	}
 	return tenants, nil
 }
+
+const (
+	getTenantPersonCountQuery = `
+SELECT count(*) FILTER (WHERE p.status = 'active' AND p.group_id IS NOT NULL AND g.status = 'active') AS active_in_group,
+       count(*) FILTER (WHERE p.status = 'active' AND p.group_id IS NULL) AS active_no_group,
+       count(*) FILTER (WHERE p.status = 'inactive') AS inactive,
+       count(*) FILTER (WHERE p.status = 'active' AND p.is_provisioned = TRUE) as provisioned,
+       count(*) AS total
+  FROM person p
+  LEFT JOIN "group" g
+    ON p.group_id = g.id
+ WHERE p.tenant_id = $1`
+)
+
+type TenantPersonCountResponse struct {
+	ActiveInGroup int64 `boil:"active_in_group" json:"activeInGroup"`
+	Inactive      int64 `boil:"inactive" json:"inactive"`
+	Provisioned   int64 `boil:"provisioned" json:"provisioned"`
+	Total         int64 `boil:"total" json:"total"`
+}
+
+func (svc *TenantService) GetTenantPersonCounts(ctx context.Context, tenantID string) (*TenantPersonCountResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "Tenant.GetTenantPersonCounts")
+	defer span.End()
+	res := &TenantPersonCountResponse{}
+	if err := queries.Raw(getTenantPersonCountQuery, tenantID).Bind(spanCtx, svc.GetContextExecutor(), res); err != nil && err != sql.ErrNoRows {
+		err := errors.Wrap(err, "error getting person counts for tenant")
+		log.Debug(err.Error())
+		return nil, err
+	}
+	return res, nil
+}
