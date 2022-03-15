@@ -222,11 +222,14 @@ func (svc *PersonService) GetAllByEmailForProvisioning(ctx context.Context, emai
 	}
 
 	// clean the email so that we always send the right one to auth0
-	for _, person := range people {
+	logger := log.WithCustom("num_people", len(people))
+	for i, person := range people {
 		if person.Email.Valid && !person.Email.IsZero() {
-			person.Email.String = svc.CleanEmail(person.Email.String)
+			people[i].Email.String = svc.CleanEmail(person.Email.String)
 		}
+		logger.WithCustom(fmt.Sprintf("person_%d", i), person.ID).WithCustom(fmt.Sprintf("tenant_%d", i), person.TenantID)
 	}
+	logger.Debugf("got people for provisioning")
 
 	return people, nil
 }
