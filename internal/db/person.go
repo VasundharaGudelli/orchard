@@ -213,7 +213,7 @@ func (svc *PersonService) GetAllByEmailForProvisioning(ctx context.Context, emai
 	email = svc.CleanEmail(email)
 	emailQuery := fmt.Sprintf("%%%s%%", email)
 
-	people, err := models.People(qm.Where("email LIKE $1 AND status = 'active' AND is_provisioned", emailQuery), qm.OrderBy("created_at ASC")).All(spanCtx, svc.GetContextExecutor())
+	people, err := models.People(qm.Where("email ILIKE $1 AND status = 'active' AND is_provisioned", emailQuery), qm.OrderBy("created_at ASC")).All(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}

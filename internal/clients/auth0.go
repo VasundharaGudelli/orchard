@@ -79,17 +79,24 @@ func (ac Auth0Client) Provision(ctx context.Context, personRecords []*models.Per
 	}
 
 	var (
-		user           *models.Person
-		isPrimaryIndex int
+		isPrimaryIndex      int
+		primaryUserID       string
+		primaryUserEmail    string
+		primaryUserTenantID string
+		previousCreatedAt   time.Time
 	)
-	tenantContexts := make([]*TenantContext, len(personRecords))
+	tenantContexts := make([]TenantContext, len(personRecords))
+
 	for i, person := range personRecords {
-		if user == nil || person.CreatedAt.Before(user.CreatedAt) {
-			user = person
+		if i == 0 || person.CreatedAt.Before(previousCreatedAt) {
+			primaryUserID = person.ID
+			primaryUserEmail = person.Email.String
+			primaryUserTenantID = person.TenantID
+			previousCreatedAt = person.CreatedAt
 			isPrimaryIndex = i
 		}
 
-		tenantContexts[i] = &TenantContext{
+		tenantContexts[i] = TenantContext{
 			TenantID:  person.TenantID,
 			UserID:    person.ID,
 			IsPrimary: false,
@@ -99,16 +106,16 @@ func (ac Auth0Client) Provision(ctx context.Context, personRecords []*models.Per
 	// set primary
 	tenantContexts[isPrimaryIndex].IsPrimary = true
 
-	logger := log.WithTenantID(user.TenantID).WithCustom("userId", user.ID)
+	logger := log.WithTenantID(primaryUserTenantID).WithCustom("userId", primaryUserID)
 
 	provisionedUser := &management.User{
-		Email:         auth0.String(user.Email.String),
+		Email:         auth0.String(primaryUserEmail),
 		EmailVerified: auth0.Bool(true),
 		Connection:    auth0.String("email"),
 		AppMetadata: map[string]interface{}{
 			"license":         &Auth0License{IsActive: true},
-			"person_id":       user.ID,
-			"tenant_id":       user.TenantID,
+			"person_id":       primaryUserID,
+			"tenant_id":       primaryUserTenantID,
 			"tenant_contexts": tenantContexts,
 		},
 	}
@@ -120,7 +127,7 @@ func (ac Auth0Client) Provision(ctx context.Context, personRecords []*models.Per
 		return err
 	}
 
-	existingUsers, err := ac.searchUserByEmail(spanCtx, client, user.TenantID, user.Email.String)
+	existingUsers, err := ac.searchUserByEmail(spanCtx, client, primaryUserTenantID, primaryUserEmail)
 	if err != nil {
 		err := errors.Wrap(err, "error checking for existing user in auth0 by email")
 		logger.Error(err)
