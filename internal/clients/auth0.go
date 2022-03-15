@@ -120,6 +120,8 @@ func (ac Auth0Client) Provision(ctx context.Context, personRecords []*models.Per
 		},
 	}
 
+	logger.WithCustom("tenant_contexts", tenantContexts).Debug("provisoning user")
+
 	client, err := ac.getClient(spanCtx)
 	if err != nil {
 		err := errors.Wrap(err, "error getting auth0 management client")
@@ -137,12 +139,14 @@ func (ac Auth0Client) Provision(ctx context.Context, personRecords []*models.Per
 	if len(existingUsers) > 0 {
 		existingUser := existingUsers[0]
 		provisionedUser.ID = existingUser.ID
+		logger.Debug("updating user provisioning")
 		if err := client.User.Update(*existingUser.ID, &management.User{AppMetadata: provisionedUser.AppMetadata}); err != nil {
 			err := errors.Wrap(err, "error re-provisioning existing user in auth0")
 			logger.Error(err)
 			return err
 		}
 	} else {
+		logger.Debug("creating user provisioning")
 		if err := client.User.Create(provisionedUser); err != nil {
 			err := errors.Wrap(err, "error creating provisioned user in auth0")
 			logger.Error(err)
