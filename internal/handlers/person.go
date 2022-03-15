@@ -100,8 +100,9 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 		return nil, err.AsGRPC()
 	}
 
-	if _, err := updateUserProvisioning(spanCtx, in.GetTenantId(), "", in.GetPerson().GetEmail(), svc, h.auth0Client); err != nil {
-		err := errors.Wrap(err, "error provisioning")
+	// Commit create person transaction
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting create person transaction")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
@@ -109,9 +110,11 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 		return nil, err.AsGRPC()
 	}
 
-	// Commit create person transaction
-	if err := svc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting create person transaction")
+	// clear transaction
+	svc.SetTransaction(nil)
+
+	if _, err := updateUserProvisioning(spanCtx, in.GetTenantId(), "", in.GetPerson().GetEmail(), svc, h.auth0Client); err != nil {
+		err := errors.Wrap(err, "error provisioning")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
@@ -613,6 +616,19 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		return nil, err.AsGRPC()
 	}
 
+	// Commit the update person transaction in sql
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting update person transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// clear transaction
+	svc.SetTransaction(nil)
+
 	// If we changed the provisioning of the person, update in Auth0
 	// Due to now being able to update inactive users, need to make sure empty email don't get through here and cause issues
 	logger.WithCustom("changeProvisioning", changeProvisioning).WithCustom("email", in.Person.Email).Debug("update should provision")
@@ -637,16 +653,6 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 			}
 			return nil, err.AsGRPC()
 		}
-	}
-
-	// Commit the update person transaction in sql
-	if err := svc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting update person transaction")
-		logger.Error(err)
-		if err := svc.Rollback(); err != nil {
-			logger.Error(errors.Wrap(err, "error rolling back transaction"))
-		}
-		return nil, err.AsGRPC()
 	}
 
 	// Convert the updated person db model to proto for response
@@ -831,8 +837,9 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 		return nil, err.AsGRPC()
 	}
 
-	if _, err := updateUserProvisioning(spanCtx, in.GetNewTenantId(), p.ID, p.Email.String, svc, h.auth0Client); err != nil {
-		err := errors.Wrap(err, "error provisioning")
+	// Commit clone person transaction
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting clone person transaction")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
@@ -840,9 +847,11 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 		return nil, err.AsGRPC()
 	}
 
-	// Commit clone person transaction
-	if err := svc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting clone person transaction")
+	// clear transaction
+	svc.SetTransaction(nil)
+
+	if _, err := updateUserProvisioning(spanCtx, in.GetNewTenantId(), p.ID, p.Email.String, svc, h.auth0Client); err != nil {
+		err := errors.Wrap(err, "error provisioning")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
 			logger.Error(errors.Wrap(err, "error rolling back transaction"))
@@ -918,6 +927,19 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 		return nil, err.AsGRPC()
 	}
 
+	// Commit the update person transaction in sql
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting delete person transaction")
+		logger.Error(err)
+		if err := svc.Rollback(); err != nil {
+			logger.Error(errors.Wrap(err, "error rolling back transaction"))
+		}
+		return nil, err.AsGRPC()
+	}
+
+	// clear transaction
+	svc.SetTransaction(nil)
+
 	// update auth0 (remove user if no additional records, otherwise update existing user)
 	if person.IsProvisioned {
 		if _, err := updateUserProvisioning(spanCtx, in.GetTenantId(), in.GetPersonId(), personEmail, svc, h.auth0Client); err != nil {
@@ -928,16 +950,6 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 			}
 			return nil, err.AsGRPC()
 		}
-	}
-
-	// Commit the update person transaction in sql
-	if err := svc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting delete person transaction")
-		logger.Error(err)
-		if err := svc.Rollback(); err != nil {
-			logger.Error(errors.Wrap(err, "error rolling back transaction"))
-		}
-		return nil, err.AsGRPC()
 	}
 
 	return &servicePb.Empty{}, nil
