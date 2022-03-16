@@ -16,7 +16,7 @@ import (
 	"github.com/loupe-co/orchard/internal/config"
 	"github.com/loupe-co/orchard/internal/db"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"google.golang.org/grpc"
 )
 
