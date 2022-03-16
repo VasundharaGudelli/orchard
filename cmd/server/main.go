@@ -16,6 +16,7 @@ import (
 	"github.com/loupe-co/orchard/internal/config"
 	"github.com/loupe-co/orchard/internal/db"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"github.com/volatiletech/sqlboiler/boil"
 	"google.golang.org/grpc"
 )
 
@@ -36,6 +37,8 @@ func main() {
 	if err != nil {
 		panic("Error parsing config from environment")
 	}
+
+	boil.DebugMode = true
 
 	// Initialize/Get logger
 	l := log.InitLogger()

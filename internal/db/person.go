@@ -215,7 +215,7 @@ const (
 )
 
 func (svc *PersonService) GetAllByEmailForProvisioning(ctx context.Context, email string) ([]*models.Person, error) {
-	spanCtx, span := log.StartSpan(ctx, "Person.GetAllByEmailForProvisioning")
+	_, span := log.StartSpan(ctx, "Person.GetAllByEmailForProvisioning")
 	defer span.End()
 
 	// clean email so that we capture all person records
@@ -223,7 +223,7 @@ func (svc *PersonService) GetAllByEmailForProvisioning(ctx context.Context, emai
 	emailForQuery := fmt.Sprintf("%%%s%%", email)
 
 	people := []*models.Person{}
-	err := queries.Raw(getAllByEmailForProvisioningQuery, emailForQuery).Bind(spanCtx, svc.GetContextExecutor(), &people)
+	err := queries.Raw(getAllByEmailForProvisioningQuery, emailForQuery).Bind(context.Background(), svc.GetContextExecutor(), &people)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
