@@ -594,6 +594,14 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		}
 	}
 
+	// If virtual user and provisioning, set to active
+	if in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID {
+		in.Person.Status = orchardPb.BasicStatus_Active
+		if len(in.OnlyFields) > 0 {
+			in.OnlyFields = append(in.OnlyFields, "status")
+		}
+	}
+
 	tx, err := h.db.NewTransaction(spanCtx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating update person transaction")

@@ -209,7 +209,7 @@ const (
 	getAllByEmailForProvisioningQuery = `
 	SELECT *
 	  FROM person
-	 WHERE email ILIKE $1
+	 WHERE (email ILIKE $1 OR email ILIKE $2)
 	   AND status = 'active'
 		 AND is_provisioned`
 )
@@ -219,11 +219,12 @@ func (svc *PersonService) GetAllByEmailForProvisioning(ctx context.Context, emai
 	defer span.End()
 
 	// clean email so that we capture all person records
-	email = svc.CleanEmail(email)
-	emailForQuery := fmt.Sprintf("%%%s%%", email)
+	cleanEmail := svc.CleanEmail(email)
+	// alternate email for sandbox
+	alternateEmail := svc.GetSFSandboxEmail(email)
 
 	people := []*models.Person{}
-	err := queries.Raw(getAllByEmailForProvisioningQuery, emailForQuery).Bind(context.Background(), svc.GetContextExecutor(), &people)
+	err := queries.Raw(getAllByEmailForProvisioningQuery, cleanEmail, alternateEmail).Bind(context.Background(), svc.GetContextExecutor(), &people)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -481,4 +482,12 @@ func (svc *PersonService) CleanEmail(email string) string {
 	email = strings.ReplaceAll(email, ".invalid", "")
 
 	return email
+}
+
+func (svc *PersonService) GetSFSandboxEmail(email string) string {
+	if strings.Contains(email, ".invalid") {
+		return email
+	}
+
+	return fmt.Sprintf("%s.invalid", email)
 }
