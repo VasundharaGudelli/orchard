@@ -307,7 +307,7 @@ func (ac Auth0Client) sortUsersByUsage(users *management.UserList) {
 }
 
 func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.Management, tenantID, email string) ([]*management.User, error) {
-	q := fmt.Sprintf(`(app_metadata.tenant_id:"%s" OR app_metadata.tenant_contexts.tenant_id:"%s") AND email:"%s"`, tenantID, tenantID, email)
+	q := fmt.Sprintf(`email:"%s"`, email)
 	mQ := management.Query(q)
 	users, err := client.User.List(mQ, management.PerPage(50), management.Parameter("search_engine", "v3"))
 	if err != nil {
