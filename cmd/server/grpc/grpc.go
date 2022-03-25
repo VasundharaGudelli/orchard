@@ -242,3 +242,7 @@ func (server *OrchardGRPCServer) GetTenantPersonCount(ctx context.Context, in *s
 func (server *OrchardGRPCServer) SetPersonViewableGroups(ctx context.Context, in *servicePb.SetPersonViewableGroupsRequest) (*servicePb.SetPersonViewableGroupsResponse, error) {
 	return nil, nil
 }
+
+func (server *OrchardGRPCServer) GetPeopleByEmail(ctx context.Context, in *servicePb.GetPeopleByEmailRequest) (*servicePb.GetPeopleByEmailResponse, error) {
+	return server.handlers.GetPeopleByEmail(ctx, in)
+}
