@@ -1168,6 +1168,40 @@ func (h *Handlers) ReprovisionPeople(ctx context.Context, in *servicePb.IdReques
 	}, nil
 }
 
+func (h *Handlers) GetPeopleByEmail(ctx context.Context, in *servicePb.GetPeopleByEmailRequest) (*servicePb.GetPeopleByEmailResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "GetPeopleByEmail")
+	defer span.End()
+
+	logger := log.WithContext(spanCtx).WithCustom("email", in.EmailAddress)
+
+	svc := h.db.NewPersonService()
+
+	people, err := svc.GetAllByEmail(spanCtx, in.EmailAddress)
+	if err != nil {
+		err := errors.Wrap(err, "error getting person by id")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if people == nil {
+		return &servicePb.GetPeopleByEmailResponse{}, nil
+	}
+
+	finalRes := make([]*orchardPb.Person, len(people))
+	for i, person := range people {
+		pp, err := svc.ToProto(person)
+		if err != nil {
+			err := errors.Wrap(err, "error converting person db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+
+		finalRes[i] = pp
+	}
+
+	return &servicePb.GetPeopleByEmailResponse{People: finalRes}, nil
+}
+
 func updateUserProvisioning(ctx context.Context, tenantID string, personID string, personEmail string, personSvc *db.PersonService, auth0Client *clients.Auth0Client) (bool, error) {
 	if len(tenantID) == 0 {
 		return false, errors.New("tenantId is required to provision")

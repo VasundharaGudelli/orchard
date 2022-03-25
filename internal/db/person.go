@@ -205,6 +205,19 @@ func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string
 	return person, nil
 }
 
+func (svc *PersonService) GetAllByEmail(ctx context.Context, email string) ([]*models.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetByEmail")
+	defer span.End()
+	people, err := models.People(qm.Where("email = $1", email)).All(spanCtx, svc.GetContextExecutor())
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	if people == nil || err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return people, nil
+}
+
 const (
 	getAllByEmailForProvisioningQuery = `
 	SELECT *

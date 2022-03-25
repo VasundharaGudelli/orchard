@@ -242,3 +242,7 @@ func (server *OrchardGRPCServer) ReprovisionPeople(ctx context.Context, in *serv
 func (server *OrchardGRPCServer) GetTenantPersonCount(ctx context.Context, in *servicePb.GetTenantPersonCountRequest) (*servicePb.GetTenantPersonCountResponse, error) {
 	return server.handlers.GetTenantPersonCount(ctx, in)
 }
+
+func (server *OrchardGRPCServer) GetPeopleByEmail(ctx context.Context, in *servicePb.GetPeopleByEmailRequest) (*servicePb.GetPeopleByEmailResponse, error) {
+	return server.handlers.GetPeopleByEmail(ctx, in)
+}
