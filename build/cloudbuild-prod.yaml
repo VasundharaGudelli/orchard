@@ -1,14 +1,15 @@
 steps:
-- name: 'gcr.io/cloud-builders/gcloud'
-  id: 'Prepare'
+- name: 'gcr.io/cloud-builders/git'
+  secretEnv: ['SSH_KEY']
+  entrypoint: 'bash'
   args:
-  - kms
-  - decrypt
-  - --ciphertext-file=./build/builds_rsa_prod.enc
-  - --plaintext-file=/root/.ssh/id_rsa
-  - --location=global
-  - --keyring=builds-keyring
-  - --key=github-key
+  - -c
+  - |
+    echo "$$SSH_KEY" >> /root/.ssh/id_rsa
+    chmod 400 /root/.ssh/id_rsa
+    ssh-keyscan -t rsa github.com > /root/.ssh/known_hosts
+    chmod 0600 /root/.ssh/id_rsa
+    git config --global --add url."git@github.com:".insteadOf "https://github.com/"
   volumes:
   - name: 'ssh'
     path: /root/.ssh
@@ -48,6 +49,7 @@ options:
     path: /go
 tags: ['gcp-cloud-build-deploy', '$_K8S_APP_NAME']
 
-
-
-
+availableSecrets:
+  secretManager:
+  - versionName: projects/loupe-prod/secrets/github_cloudbuild_ssh_key/versions/latest
+    env: 'SSH_KEY'

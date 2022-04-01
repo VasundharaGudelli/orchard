@@ -16,9 +16,6 @@ spec:
         app: orchard
     spec:
       volumes:
-        - name: google-cloud-key
-          secret:
-            secretName: pubsub-key
         - name: app-secrets
           csi:
             driver: secrets-store.csi.k8s.io
@@ -35,8 +32,6 @@ spec:
             - configMapRef:
                 name: orchard
           env:
-            - name: GOOGLE_APPLICATION_CREDENTIALS
-              value: /var/secrets/google/key.json
             - name: BQ_TIER_REALTIME
               valueFrom:
                 configMapKeyRef:
@@ -63,8 +58,6 @@ spec:
                   name: bigquery-client
                   key: bq.tier.background
           volumeMounts:
-            - name: google-cloud-key
-              mountPath: /var/secrets/google
             - name: app-secrets
               mountPath: "/var/app-secrets"
           resources:
