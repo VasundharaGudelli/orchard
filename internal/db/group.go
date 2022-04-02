@@ -278,6 +278,8 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	spanCtx, span := log.StartSpan(ctx, "Group.GetGroupSubTree")
 	defer span.End()
 
+	log.WithTenantID(tenantID).WithCustom("Viewable Groups", fmt.Sprintf("%v+", viewableGroups)).Debug("VIEWABLE_GROUPS")
+
 	if maxDepth < 0 {
 		maxDepth = 1000000
 	}
