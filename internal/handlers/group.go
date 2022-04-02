@@ -264,7 +264,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 
 	svc := h.db.NewGroupService()
 
-	flatGroups, err := svc.GetGroupSubTree(spanCtx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers, in.Simplify, in.ActiveUsers, in.UseManagerNames, in.ExcludeManagerUsers)
+	flatGroups, err := svc.GetGroupSubTree(spanCtx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers, in.Simplify, in.ActiveUsers, in.UseManagerNames, in.ExcludeManagerUsers, in.ViewableGroups...)
 	if err != nil {
 		err := errors.Wrap(err, "error getting group and all subtrees from sql")
 		logger.Error(err)

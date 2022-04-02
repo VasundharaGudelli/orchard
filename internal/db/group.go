@@ -222,6 +222,13 @@ ORDER BY "group.name"`
 		)
 	)`
 
+	rootGroupSelectorClauseTemplate = `(
+		"group".id = ${IDX} OR (
+			"group".group_path <@ (SELECT group_path FROM "group" WHERE id = ${IDX} AND tenant_id = $2)
+			AND (nlevel(group_path) - (SELECT nlevel(group_path) FROM "group" WHERE id = ${IDX} AND tenant_id = $2)) <= $3
+		)
+	)`
+
 	allTenantGroupsSelectorClause = `(
 		"group".parent_id = '' OR (
 			"group".group_path <@ $1::ltree AND (nlevel(group_path)) - (nlevel($1::ltree)) <= ($3 + 1)
@@ -252,7 +259,22 @@ FROM (
 ) x`
 )
 
-func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool, useManagerNames bool, excludeManagerUsers bool) ([]*GroupTreeNode, error) {
+func buildRootGroupSelectorClause(g string, vg []string) string {
+	qArr := []string{}
+	if g != "" {
+		qArr = append(qArr, rootGroupSelectorClause)
+	}
+	for idx := range vg {
+		qArr = append(qArr, strings.ReplaceAll(rootGroupSelectorClauseTemplate, "{IDX}", fmt.Sprintf("%d", idx+4)))
+	}
+	return fmt.Sprintf(`
+	 (
+		 %s
+	 )
+	`, strings.Join(qArr, "\nOR\n"))
+}
+
+func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool, useManagerNames bool, excludeManagerUsers bool, viewableGroups ...string) ([]*GroupTreeNode, error) {
 	spanCtx, span := log.StartSpan(ctx, "Group.GetGroupSubTree")
 	defer span.End()
 
@@ -275,9 +297,15 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		)`
 	}
 	groupSelect := rootGroupSelectorClause
-	if groupID == "" {
+	if groupID == "" && len(viewableGroups) == 0 {
 		groupSelect = allTenantGroupsSelectorClause
 		params[0] = strings.ReplaceAll(tenantID, "-", "_")
+	}
+	if len(viewableGroups) > 0 {
+		groupSelect = buildRootGroupSelectorClause(groupID, viewableGroups)
+		for _, item := range viewableGroups {
+			params = append(params, item)
+		}
 	}
 
 	statusPart := ""
