@@ -200,8 +200,7 @@ const (
 		NULL
 	) as "members_raw"
 FROM "group"
-LEFT OUTER JOIN group_viewer ON "group".id = group_viewer.group_id
-LEFT OUTER JOIN person p ON (p.group_id = "group".id AND p.tenant_id = "group".tenant_id {STATUS_PART} {MANAGER_EXCLUSION_PART}) OR (p.group_id = group_viewer.group_id AND p.tenant_id = group_viewer.tenant_id {STATUS_PART} {MANAGER_EXCLUSION_PART})
+LEFT OUTER JOIN person p ON (p.group_id = "group".id AND p.tenant_id = "group".tenant_id {STATUS_PART} {MANAGER_EXCLUSION_PART})
 WHERE {GROUP_SELECT} AND "group".tenant_id = $2 AND "group".status = 'active'
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
@@ -329,6 +328,8 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	if useManagerNames {
 		query = strings.ReplaceAll(simplieHierarchyWrapperQuery, "{INNER_QUERY}", query)
 	}
+
+	log.WithCustom("query", query).Debug("TEST_QUERY")
 
 	results := []*GroupTreeNode{}
 	if err := queries.Raw(query, params...).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
