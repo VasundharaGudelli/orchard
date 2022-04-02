@@ -250,7 +250,6 @@ func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest
 }
 
 func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSubTreeRequest) (*servicePb.GetGroupSubTreeResponse, error) {
-
 	spanCtx, span := log.StartSpan(ctx, "GetGroupSubTree")
 	defer span.End()
 
@@ -290,9 +289,16 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	// Form tree structure
 	roots := []*servicePb.GroupWithMembers{}
 	for _, g := range flatProtos {
+		if g == nil {
+			logger.Warn("flatProtos.g is nil")
+		} else {
+			if g.Group == nil {
+				logger.Warn("flatProtos.g.group is nil")
+			}
+		}
 		if (in.GroupId != "" && g.Group.Id == in.GroupId) ||
 			(in.GroupId == "" && g.Group.ParentId == "") ||
-			vgMap[g.Group.Id] {
+			(g != nil && g.Group != nil && vgMap[g.Group.Id]) {
 			roots = append(roots, g)
 		}
 	}
