@@ -282,10 +282,17 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		return nil, err
 	}
 
+	vgMap := map[string]bool{}
+	for _, item := range in.ViewableGroups {
+		vgMap[item] = true
+	}
+
 	// Form tree structure
 	roots := []*servicePb.GroupWithMembers{}
 	for _, g := range flatProtos {
-		if (in.GroupId != "" && g.Group.Id == in.GroupId) || (in.GroupId == "" && g.Group.ParentId == "") {
+		if (in.GroupId != "" && g.Group.Id == in.GroupId) ||
+			(in.GroupId == "" && g.Group.ParentId == "") ||
+			vgMap[g.Group.Id] {
 			roots = append(roots, g)
 		}
 	}
