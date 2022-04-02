@@ -10,6 +10,7 @@ import (
 	"github.com/loupe-co/go-loupe-logger/log"
 	authPb "github.com/loupe-co/protos/src/common/auth"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
+	bouncerPb "github.com/loupe-co/protos/src/services/bouncer"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 )
 
@@ -246,6 +247,12 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 		}
 	}
 
+	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+		err := errors.Wrap(err, "error busting auth data cache for user")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
 	return &servicePb.SetPersonViewableGroupsResponse{
 		Groups: updatedViewableGroups,
 	}, nil
@@ -286,6 +293,12 @@ func (h *Handlers) UpdateGroupViewer(ctx context.Context, in *servicePb.UpdateGr
 		return nil, err.AsGRPC()
 	}
 
+	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+		err := errors.Wrap(err, "error busting auth data cache for user")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
 	return &servicePb.UpdateGroupViewerResponse{GroupViewer: groupViewer}, nil
 }
 
@@ -305,6 +318,12 @@ func (h *Handlers) DeleteGroupViewerById(ctx context.Context, in *servicePb.IdRe
 
 	if err := svc.DeleteByID(spanCtx, in.TenantId, in.GroupId, in.PersonId); err != nil {
 		err := errors.Wrap(err, "error deleting group viewer in sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+		err := errors.Wrap(err, "error busting auth data cache for user")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
