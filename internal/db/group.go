@@ -278,8 +278,6 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	spanCtx, span := log.StartSpan(ctx, "Group.GetGroupSubTree")
 	defer span.End()
 
-	log.WithTenantID(tenantID).WithCustom("Viewable Groups", fmt.Sprintf("%v+", viewableGroups)).Debug("VIEWABLE_GROUPS")
-
 	if maxDepth < 0 {
 		maxDepth = 1000000
 	}
@@ -328,8 +326,6 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	if useManagerNames {
 		query = strings.ReplaceAll(simplieHierarchyWrapperQuery, "{INNER_QUERY}", query)
 	}
-
-	log.WithCustom("query", query).Debug("TEST_QUERY")
 
 	results := []*GroupTreeNode{}
 	if err := queries.Raw(query, params...).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
