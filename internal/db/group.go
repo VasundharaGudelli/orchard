@@ -327,6 +327,8 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		query = strings.ReplaceAll(simplieHierarchyWrapperQuery, "{INNER_QUERY}", query)
 	}
 
+	fmt.Println(query)
+
 	results := []*GroupTreeNode{}
 	if err := queries.Raw(query, params...).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
 		log.WithTenantID(tenantID).WithCustom("groupId", groupID).WithCustom("maxDepth", maxDepth).WithCustom("hydrateUsers", hydrateUsers).WithCustom("query", query).Error(err)
