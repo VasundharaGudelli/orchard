@@ -60,6 +60,10 @@ spec:
           volumeMounts:
             - name: app-secrets
               mountPath: "/var/app-secrets"
+          securityContext:
+            runAsUser: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
           resources:
             requests:
               memory: "128Mi"
