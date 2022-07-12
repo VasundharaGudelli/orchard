@@ -18,7 +18,7 @@ type CRMClient struct {
 }
 
 func NewCRMClient(cfg config.Config) (*CRMClient, error) {
-	conn, err := grpc.Dial(cfg.CRMServiceAddr, grpc.WithInsecure(), grpc.MaxCallRecvMsgSize(math.MaxInt32))
+	conn, err := grpc.Dial(cfg.CRMServiceAddr, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (x *CRMClient) Close() {
 }
 
 func (client *CRMClient) GetLatestChangedPeople(ctx context.Context, tenantID string, changeSince *timestamp.Timestamp) ([]*orchardPb.Person, error) {
-	res, err := client.client.GetLatestPeople(ctx, &servicePb.GetLatestPeopleRequest{TenantId: tenantID, ChangeSince: changeSince})
+	res, err := client.client.GetLatestPeople(ctx, &servicePb.GetLatestPeopleRequest{TenantId: tenantID, ChangeSince: changeSince}, grpc.MaxCallRecvMsgSize(math.MaxInt32))
 	if err != nil {
 		return nil, err
 	}
