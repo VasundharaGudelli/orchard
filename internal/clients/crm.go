@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"math"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -17,7 +18,7 @@ type CRMClient struct {
 }
 
 func NewCRMClient(cfg config.Config) (*CRMClient, error) {
-	conn, err := grpc.Dial(cfg.CRMServiceAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(cfg.CRMServiceAddr, grpc.WithInsecure(), grpc.MaxCallRecvMsgSize(math.MaxInt32))
 	if err != nil {
 		return nil, err
 	}
