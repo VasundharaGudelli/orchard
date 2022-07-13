@@ -90,7 +90,7 @@ func (ac Auth0Client) Provision(ctx context.Context, personRecords []*models.Per
 	for i, person := range personRecords {
 		if i == 0 || person.CreatedAt.Before(previousCreatedAt) {
 			primaryUserID = person.ID
-			primaryUserEmail = person.Email.String
+			primaryUserEmail = strings.TrimSpace(person.Email.String)
 			primaryUserTenantID = person.TenantID
 			previousCreatedAt = person.CreatedAt
 			isPrimaryIndex = i
@@ -303,7 +303,7 @@ func (ac Auth0Client) sortUsersByUsage(users *management.UserList) {
 }
 
 func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.Management, tenantID, email string) ([]*management.User, error) {
-	q := fmt.Sprintf(`email:"%s"`, email)
+	q := fmt.Sprintf(`email:"%s"`, strings.TrimSpace(email))
 	mQ := management.Query(q)
 	users, err := client.User.List(mQ, management.PerPage(50), management.Parameter("search_engine", "v3"))
 	if err != nil {

@@ -33,13 +33,15 @@ func (svc *PersonService) FromProto(p *orchardPb.Person) *models.Person {
 	createdAt := p.CreatedAt.AsTime()
 	updatedAt := p.UpdatedAt.AsTime()
 
+	email := strings.TrimSpace(p.Email)
+
 	return &models.Person{
 		ID:            p.Id,
 		TenantID:      p.TenantId,
 		Name:          null.NewString(p.Name, p.Name != ""),
 		FirstName:     null.NewString(p.FirstName, p.FirstName != ""),
 		LastName:      null.NewString(p.LastName, p.LastName != ""),
-		Email:         null.NewString(p.Email, p.Email != ""),
+		Email:         null.NewString(email, email != ""),
 		PhotoURL:      null.NewString(p.PhotoUrl, p.PhotoUrl != ""),
 		ManagerID:     null.NewString(p.ManagerId, p.ManagerId != ""),
 		GroupID:       null.NewString(p.GroupId, p.GroupId != ""),
@@ -79,7 +81,7 @@ func (svc *PersonService) ToProto(p *models.Person) (*orchardPb.Person, error) {
 		Name:          p.Name.String,
 		FirstName:     p.FirstName.String,
 		LastName:      p.LastName.String,
-		Email:         p.Email.String,
+		Email:         strings.TrimSpace(p.Email.String),
 		PhotoUrl:      p.PhotoURL.String,
 		ManagerId:     p.ManagerID.String,
 		GroupId:       p.GroupID.String,
@@ -195,7 +197,7 @@ func (svc *PersonService) GetAllActiveNonVirtualByEmails(ctx context.Context, te
 func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string) (*models.Person, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetByEmail")
 	defer span.End()
-	person, err := models.People(qm.Where("tenant_id = $1 AND email = $2", tenantID, email)).One(spanCtx, svc.GetContextExecutor())
+	person, err := models.People(qm.Where("tenant_id = $1 AND email = $2", tenantID, strings.TrimSpace(email))).One(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -208,7 +210,7 @@ func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string
 func (svc *PersonService) GetAllByEmail(ctx context.Context, email string) ([]*models.Person, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetByEmail")
 	defer span.End()
-	people, err := models.People(qm.Where("email = $1", email)).All(spanCtx, svc.GetContextExecutor())
+	people, err := models.People(qm.Where("email = $1", strings.TrimSpace(email))).All(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -492,15 +494,15 @@ func (svc *PersonService) GetPersonGroupIDs(ctx context.Context, tenantID string
 
 func (svc *PersonService) CleanEmail(email string) string {
 	// remove sf sandbox suffix
-	email = strings.ReplaceAll(email, ".invalid", "")
+	email = strings.TrimSpace(strings.ReplaceAll(email, ".invalid", ""))
 
 	return email
 }
 
 func (svc *PersonService) GetSFSandboxEmail(email string) string {
 	if strings.Contains(email, ".invalid") {
-		return email
+		return strings.TrimSpace(email)
 	}
 
-	return fmt.Sprintf("%s.invalid", email)
+	return fmt.Sprintf("%s.invalid", strings.TrimSpace(email))
 }

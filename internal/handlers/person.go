@@ -1207,6 +1207,8 @@ func updateUserProvisioning(ctx context.Context, tenantID string, personID strin
 		return false, errors.New("tenantId is required to provision")
 	}
 
+	personEmail = strings.TrimSpace(personEmail)
+
 	if len(personEmail) == 0 && len(personID) == 0 {
 		return false, errors.New("id or email is required to provision")
 	}
