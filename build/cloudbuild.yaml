@@ -32,6 +32,22 @@ steps:
   id: 'Docker Build'
   args: ['build', '-f', 'build/Dockerfile', '--tag=gcr.io/loupe-dev/orchard', '/go']
 
+# - id: "Static Filesystem Analysis"
+#   name: "aquasec/trivy:latest"
+#   args: ["fs", "--severity", "${_SEVERITY}", "--exit-code", "1", "/workspace"]
+
+- id: "Static Config Analysis"
+  name: "aquasec/trivy:latest"
+  args: ["config", "--severity", "${_SEVERITY}", "--exit-code", "1","/workspace"]
+
+- id: "Docker Image scanning"
+  name: "aquasec/trivy:latest"
+  entrypoint: /bin/sh
+  args:
+    - '-c'
+    - |
+      trivy image --exit-code 1 --no-progress --severity ${_SEVERITY} --security-checks vuln ${_IMAGE_NAME}:${_IMAGE_VERSION}
+
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Push'
   args: ["push", "gcr.io/loupe-dev/orchard"]
@@ -64,6 +80,7 @@ substitutions:
   _K8S_APP_NAME: 'orchard'
   _K8S_NAMESPACE: 'default'
   _OUTPUT_BUCKET: 'loupe-dev_cloudbuild'
+  _SEVERITY: 'CRITICAL'
 options:
   substitution_option: 'ALLOW_LOOSE'
   env:
