@@ -5,10 +5,9 @@ steps:
   args:
   - -c
   - |
-    echo "$$SSH_KEY" >> /root/.ssh/id_rsa
-    chmod 400 /root/.ssh/id_rsa
-    ssh-keyscan -t rsa github.com > /root/.ssh/known_hosts
+    echo "$$SSH_KEY" > /root/.ssh/id_rsa
     chmod 0600 /root/.ssh/id_rsa
+    ssh-keyscan -t rsa github.com > /root/.ssh/known_hosts
     git config --global --add url."git@github.com:".insteadOf "https://github.com/"
   volumes:
   - name: 'ssh'
@@ -31,10 +30,6 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Docker Build'
   args: ['build', '-f', 'build/Dockerfile', '--tag=gcr.io/loupe-prod/orchard:$TAG_NAME', '/go']
-
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Push'
-  args: ["push", "gcr.io/loupe-prod/orchard"]
 
 images:
 - '$_IMAGE_NAME:$TAG_NAME'
