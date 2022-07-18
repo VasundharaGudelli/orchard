@@ -32,10 +32,6 @@ steps:
   id: 'Docker Build'
   args: ['build', '-f', 'build/Dockerfile', '--tag=gcr.io/loupe-prod/orchard:$TAG_NAME', '/go']
 
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Push'
-  args: ["push", "gcr.io/loupe-prod/orchard"]
-
 images:
 - '$_IMAGE_NAME:$TAG_NAME'
 substitutions:
