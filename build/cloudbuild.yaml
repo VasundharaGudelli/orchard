@@ -5,10 +5,9 @@ steps:
   args:
   - -c
   - |
-    echo "$$SSH_KEY" >> /root/.ssh/id_rsa
-    chmod 400 /root/.ssh/id_rsa
-    ssh-keyscan -t rsa github.com > /root/.ssh/known_hosts
+    echo "$$SSH_KEY" > /root/.ssh/id_rsa
     chmod 0600 /root/.ssh/id_rsa
+    ssh-keyscan -t rsa github.com > /root/.ssh/known_hosts
     git config --global --add url."git@github.com:".insteadOf "https://github.com/"
   volumes:
   - name: 'ssh'
@@ -20,9 +19,6 @@ steps:
   args:
     - "-c"
     - |
-      ssh-keyscan github.com > /root/.ssh/known_hosts
-      git config --global --add url."git@github.com:".insteadOf "https://github.com/"
-      chmod 0600 /root/.ssh/id_rsa
       GOOS=linux CGO_ENABLED=0 go mod tidy && GOOS=linux CGO_ENABLED=0 go build -a -installsuffix cgo -o /go/bin/orchard ./cmd/server
   volumes:
   - name: 'ssh'
