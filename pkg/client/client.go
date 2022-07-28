@@ -234,3 +234,7 @@ func (client *OrchardClient) ConvertVirtualUsers(ctx context.Context, in *servic
 func (client *OrchardClient) GetPeopleByEmail(ctx context.Context, in *servicePb.GetPeopleByEmailRequest) (*servicePb.GetPeopleByEmailResponse, error) {
 	return client.client.GetPeopleByEmail(ctx, in)
 }
+
+func (client *OrchardClient) ReprovisionPeople(ctx context.Context, in *servicePb.IdRequest) (*servicePb.ReprovisionPeopleResponse, error) {
+	return client.client.ReprovisionPeople(ctx, in)
+}
