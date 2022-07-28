@@ -65,6 +65,7 @@ func setup() (*Handlers, error) {
 		return nil, err
 	}
 	bouncerClient, err := bouncer.NewBouncerClient(
+		context.Background(),
 		bouncer.SetBouncerAddr(cfg.BouncerAddr),
 		bouncer.SetRedisHost(cfg.RedisHost),
 		bouncer.SetRedisPass(cfg.RedisPassword),
