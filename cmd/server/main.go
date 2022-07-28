@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"math"
 	"os"
 	"syscall"
@@ -62,6 +63,7 @@ func main() {
 	}
 
 	bouncerClient, err := bouncer.NewBouncerClient(
+		context.Background(),
 		bouncer.SetBouncerAddr(cfg.BouncerAddr),
 		bouncer.SetRedisHost(cfg.RedisHost),
 		bouncer.SetRedisPass(cfg.RedisPassword),
