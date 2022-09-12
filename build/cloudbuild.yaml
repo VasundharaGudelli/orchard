@@ -13,7 +13,7 @@ steps:
   - name: 'ssh'
     path: /root/.ssh
 
-- name: "golang:1.16"
+- name: "golang:1.19"
   id: 'Build'
   entrypoint: "bash"
   args:
@@ -28,9 +28,9 @@ steps:
   id: 'Docker Build'
   args: ['build', '-f', 'build/Dockerfile', '--tag=gcr.io/loupe-dev/orchard', '/go']
 
-# - id: "Static Filesystem Analysis"
-#   name: "aquasec/trivy:latest"
-#   args: ["fs", "--severity", "${_SEVERITY}", "--exit-code", "1", "/workspace"]
+- id: "Static Filesystem Analysis"
+  name: "aquasec/trivy:latest"
+  args: ["fs", "--severity", "${_SEVERITY}", "--exit-code", "1", "/workspace"]
 
 - id: "Static Config Analysis"
   name: "aquasec/trivy:latest"
