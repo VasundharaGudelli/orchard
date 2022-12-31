@@ -291,14 +291,12 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	for _, g := range flatProtos {
 		if g == nil {
 			logger.Warn("flatProtos.g is nil")
-		} else {
-			if g.Group == nil {
-				logger.Warn("flatProtos.g.group is nil")
-			}
+			continue
+		} else if g.Group == nil {
+			logger.Warn("flatProtos.g.group is nil")
+			continue
 		}
-		if (in.GroupId != "" && g.Group.Id == in.GroupId) ||
-			(in.GroupId == "" && g.Group.ParentId == "") ||
-			(g != nil && g.Group != nil && vgMap[g.Group.Id]) {
+		if (in.GroupId != "" && g.Group.Id == in.GroupId) || (in.GroupId == "" && g.Group.ParentId == "") || vgMap[g.Group.Id] {
 			roots = append(roots, g)
 		}
 	}

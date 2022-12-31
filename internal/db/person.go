@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
@@ -17,6 +16,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type PersonService struct {
@@ -59,15 +59,9 @@ func (svc *PersonService) FromProto(p *orchardPb.Person) *models.Person {
 }
 
 func (svc *PersonService) ToProto(p *models.Person) (*orchardPb.Person, error) {
-	createdAt, err := ptypes.TimestampProto(p.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
+	createdAt := timestamppb.New(p.CreatedAt)
 
-	updatedAt, err := ptypes.TimestampProto(p.UpdatedAt)
-	if err != nil {
-		return nil, err
-	}
+	updatedAt := timestamppb.New(p.UpdatedAt)
 
 	status := orchardPb.BasicStatus_Inactive
 	switch p.Status {

@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type GroupViewerService struct {
@@ -40,15 +40,9 @@ func (svc *GroupViewerService) FromProto(gv *orchardPb.GroupViewer) *models.Grou
 }
 
 func (svc *GroupViewerService) ToProto(gv *models.GroupViewer) (*orchardPb.GroupViewer, error) {
-	createdAt, err := ptypes.TimestampProto(gv.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
+	createdAt := timestamppb.New(gv.CreatedAt)
 
-	updatedAt, err := ptypes.TimestampProto(gv.UpdatedAt)
-	if err != nil {
-		return nil, err
-	}
+	updatedAt := timestamppb.New(gv.UpdatedAt)
 
 	return &orchardPb.GroupViewer{
 		TenantId:    gv.TenantID,

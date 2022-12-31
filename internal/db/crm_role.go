@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
@@ -14,6 +13,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type CRMRoleService struct {
@@ -40,10 +40,7 @@ func (svc *CRMRoleService) FromProto(cr *orchardPb.CRMRole) *models.CRMRole {
 }
 
 func (svc *CRMRoleService) ToProto(cr *models.CRMRole) (*orchardPb.CRMRole, error) {
-	updatedAt, err := ptypes.TimestampProto(cr.UpdatedAt)
-	if err != nil {
-		return nil, err
-	}
+	updatedAt := timestamppb.New(cr.UpdatedAt)
 
 	return &orchardPb.CRMRole{
 		Id:          cr.ID,

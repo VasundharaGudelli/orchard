@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	perm "github.com/loupe-co/bouncer/pkg/permissions"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -12,6 +11,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	bouncerPb "github.com/loupe-co/protos/src/services/bouncer"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (h *Handlers) InsertGroupViewer(ctx context.Context, in *servicePb.InsertGroupViewerRequest) (*servicePb.InsertGroupViewerResponse, error) {
@@ -179,7 +179,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 	}
 	svc.SetTransaction(tx)
 
-	now, err := ptypes.TimestampProto(time.Now().UTC())
+	now := timestamppb.New(time.Now().UTC())
 
 	for _, gvId := range in.GroupViewerIds {
 		if _, ok := groupIds[gvId]; !ok {
