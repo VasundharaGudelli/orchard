@@ -24,6 +24,15 @@ steps:
   - name: 'ssh'
     path: /root/.ssh
 
+- name: "golang:1.19"
+  id: 'Static Check'
+  entrypoint: "bash"
+  args:
+    - "-c"
+    - |
+      go install honnef.co/go/tools/cmd/staticcheck@latest
+      staticcheck ./...
+
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Docker Build'
   args: ['build', '-f', 'build/Dockerfile', '--tag=gcr.io/loupe-dev/orchard', '/go']

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
@@ -15,6 +14,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type SystemRoleService struct {
@@ -54,15 +54,9 @@ func (svc *SystemRoleService) FromProto(sr *orchardPb.SystemRole) *models.System
 }
 
 func (svc *SystemRoleService) ToProto(sr *models.SystemRole) (*orchardPb.SystemRole, error) {
-	createdAt, err := ptypes.TimestampProto(sr.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
+	createdAt := timestamppb.New(sr.CreatedAt)
 
-	updatedAt, err := ptypes.TimestampProto(sr.UpdatedAt)
-	if err != nil {
-		return nil, err
-	}
+	updatedAt := timestamppb.New(sr.UpdatedAt)
 
 	typ := orchardPb.SystemRoleType_Unknown
 	switch sr.Type {

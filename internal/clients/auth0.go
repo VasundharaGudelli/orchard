@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	strUtil "github.com/loupe-co/go-common/data-structures/slice/string"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -15,6 +14,7 @@ import (
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/auth0.v4"
 	"gopkg.in/auth0.v4/management"
 )
@@ -372,14 +372,14 @@ func convertUser(user *management.User) *orchardPb.Person {
 		person.LastName = *user.FamilyName
 	}
 
-	person.CreatedAt = ptypes.TimestampNow()
+	person.CreatedAt = timestamppb.Now()
 	if user.CreatedAt != nil {
-		person.CreatedAt, _ = ptypes.TimestampProto(*user.CreatedAt)
+		person.CreatedAt = timestamppb.New(*user.CreatedAt)
 	}
 
-	person.UpdatedAt = ptypes.TimestampNow()
+	person.UpdatedAt = timestamppb.Now()
 	if user.UpdatedAt != nil {
-		person.UpdatedAt, _ = ptypes.TimestampProto(*user.UpdatedAt)
+		person.UpdatedAt = timestamppb.New(*user.UpdatedAt)
 	}
 
 	return person
