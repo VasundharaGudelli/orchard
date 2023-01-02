@@ -8,6 +8,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/tenant"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type TenantClient struct {
@@ -16,7 +17,7 @@ type TenantClient struct {
 }
 
 func NewTenantClient(cfg config.Config) (*TenantClient, error) {
-	conn, err := grpc.Dial(cfg.TenantServiceAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(cfg.TenantServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -27,8 +28,8 @@ func NewTenantClient(cfg config.Config) (*TenantClient, error) {
 	return c, nil
 }
 
-func (x *TenantClient) Close() {
-	if err := x.conn.Close(); err != nil {
+func (client *TenantClient) Close() {
+	if err := client.conn.Close(); err != nil {
 		log.Error(err)
 	}
 }

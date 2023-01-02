@@ -10,6 +10,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/crm-data-access"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type CRMClient struct {
@@ -18,7 +19,7 @@ type CRMClient struct {
 }
 
 func NewCRMClient(cfg config.Config) (*CRMClient, error) {
-	conn, err := grpc.Dial(cfg.CRMServiceAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(cfg.CRMServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -29,8 +30,8 @@ func NewCRMClient(cfg config.Config) (*CRMClient, error) {
 	return c, nil
 }
 
-func (x *CRMClient) Close() {
-	if err := x.conn.Close(); err != nil {
+func (client *CRMClient) Close() {
+	if err := client.conn.Close(); err != nil {
 		log.Error(err)
 	}
 }

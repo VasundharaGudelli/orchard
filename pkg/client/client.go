@@ -8,6 +8,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type OrchardClientConfig struct {
@@ -32,7 +33,7 @@ func New(addr string) (*OrchardClient, error) {
 	}
 
 	// Establish grpc connection with bouncer service, used for refreshing auth data in cache
-	conn, err := grpc.Dial(cfg.Addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(cfg.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting bouncer service connection")
 	}

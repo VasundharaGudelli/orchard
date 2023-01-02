@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/models"
@@ -15,6 +14,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type TenantService struct {
@@ -60,15 +60,9 @@ func (svc *TenantService) FromProto(t *tenantPb.Tenant) (*models.Tenant, error) 
 }
 
 func (svc *TenantService) ToProto(t *models.Tenant) (*tenantPb.Tenant, error) {
-	createdAt, err := ptypes.TimestampProto(t.CreatedAt)
-	if err != nil {
-		return nil, errors.Wrap(err, "error parsing createdAt")
-	}
+	createdAt := timestamppb.New(t.CreatedAt)
 
-	updatedAt, err := ptypes.TimestampProto(t.UpdatedAt)
-	if err != nil {
-		return nil, errors.Wrap(err, "error parsing updatedAt")
-	}
+	updatedAt := timestamppb.New(t.UpdatedAt)
 
 	groupSyncState := tenantPb.GroupSyncStatus_Inactive
 	switch t.GroupSyncState {
