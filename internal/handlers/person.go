@@ -22,10 +22,7 @@ import (
 )
 
 func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonRequest) (*servicePb.CreatePersonResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "CreatePerson")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -53,7 +50,7 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 	insertablePerson.UpdatedAt = time.Now().UTC()
 
 	srSVC := h.db.NewSystemRoleService()
-	srM, err := srSVC.GetInternalRoleIDs(spanCtx)
+	srM, err := srSVC.GetInternalRoleIDs(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error getting internal roles")
 		logger.Error(err)
@@ -69,7 +66,7 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 	in.Person.RoleIds = rIDs
 
 	// Check if email already exists
-	existingPerson, err := svc.GetByEmail(spanCtx, in.TenantId, in.Person.Email)
+	existingPerson, err := svc.GetByEmail(ctx, in.TenantId, in.Person.Email)
 	if err != nil {
 		err := errors.Wrap(err, "error checking for existing person by email")
 		logger.Error(err)
@@ -82,7 +79,7 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 	}
 
 	// Get transaction, so we can rollback if user provisioning fails
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating transaction for creating person")
 		logger.Error(err)
@@ -91,7 +88,7 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 	svc.SetTransaction(tx)
 
 	// Perform insert in db
-	if err := svc.Insert(spanCtx, insertablePerson); err != nil {
+	if err := svc.Insert(ctx, insertablePerson); err != nil {
 		err := errors.Wrap(err, "error inserting person in sql")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -113,7 +110,7 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 	// clear transaction
 	svc.SetTransaction(nil)
 
-	if _, err := updateUserProvisioning(spanCtx, in.GetTenantId(), "", in.GetPerson().GetEmail(), svc, h.auth0Client); err != nil {
+	if _, err := updateUserProvisioning(ctx, in.GetTenantId(), "", in.GetPerson().GetEmail(), svc, h.auth0Client); err != nil {
 		err := errors.Wrap(err, "error provisioning")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -134,10 +131,7 @@ func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonR
 }
 
 func (h *Handlers) UpsertPeople(ctx context.Context, in *servicePb.UpsertPeopleRequest) (*servicePb.UpsertPeopleResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "UpsertPeople")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -152,7 +146,7 @@ func (h *Handlers) UpsertPeople(ctx context.Context, in *servicePb.UpsertPeopleR
 	svc := h.db.NewPersonService()
 
 	srSVC := h.db.NewSystemRoleService()
-	srM, err := srSVC.GetInternalRoleIDs(spanCtx)
+	srM, err := srSVC.GetInternalRoleIDs(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error getting internal roles")
 		logger.Error(err)
@@ -174,7 +168,7 @@ func (h *Handlers) UpsertPeople(ctx context.Context, in *servicePb.UpsertPeopleR
 		upsertablePeople[i] = svc.FromProto(p)
 	}
 
-	if err := svc.UpsertAll(spanCtx, upsertablePeople); err != nil {
+	if err := svc.UpsertAll(ctx, upsertablePeople); err != nil {
 		err := errors.Wrap(err, "error upserting one or more person records")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -184,10 +178,7 @@ func (h *Handlers) UpsertPeople(ctx context.Context, in *servicePb.UpsertPeopleR
 }
 
 func (h *Handlers) GetPersonById(ctx context.Context, in *servicePb.IdRequest) (*orchardPb.Person, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetPersonById")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId and personId can't be empty")
@@ -197,7 +188,7 @@ func (h *Handlers) GetPersonById(ctx context.Context, in *servicePb.IdRequest) (
 
 	svc := h.db.NewPersonService()
 
-	p, err := svc.GetByID(spanCtx, in.PersonId, in.TenantId)
+	p, err := svc.GetByID(ctx, in.PersonId, in.TenantId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person by id")
 		logger.Error(err)
@@ -215,10 +206,7 @@ func (h *Handlers) GetPersonById(ctx context.Context, in *servicePb.IdRequest) (
 }
 
 func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleRequest) (*servicePb.SearchPeopleResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "SearchPeople")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("search", in.Search).WithCustom("page", in.Page).WithCustom("pageSize", in.PageSize)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("search", in.Search).WithCustom("page", in.Page).WithCustom("pageSize", in.PageSize)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -295,7 +283,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 
 	svc := h.db.NewPersonService()
 
-	peeps, total, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset, dbFilters...)
+	peeps, total, err := svc.Search(ctx, in.TenantId, in.Search, limit, offset, dbFilters...)
 	if err != nil {
 		err := errors.Wrap(err, "error searching people")
 		logger.Error(err)
@@ -311,7 +299,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 
 	logger.WithCustom("peepIds", peepIds).Debug("search people peep ids")
 
-	peepsViewableGroups, err := gvSvc.GetPersonsViewableGroups(spanCtx, in.TenantId, peepIds...)
+	peepsViewableGroups, err := gvSvc.GetPersonsViewableGroups(ctx, in.TenantId, peepIds...)
 	if err != nil {
 		err := errors.Wrap(err, "error querrying group viewer db in people search")
 		logger.Error(err)
@@ -363,7 +351,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 			ids[i] = id
 			i++
 		}
-		crmRoles, err := crmSvc.GetByIDs(spanCtx, in.TenantId, ids...)
+		crmRoles, err := crmSvc.GetByIDs(ctx, in.TenantId, ids...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting person crm roles")
 			logger.Error(err)
@@ -392,7 +380,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 			ids[i] = id
 			i++
 		}
-		systemRoles, err := sysRoleSvc.GetByIDs(spanCtx, ids...)
+		systemRoles, err := sysRoleSvc.GetByIDs(ctx, ids...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting person system roles")
 			logger.Error(err)
@@ -420,10 +408,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 }
 
 func (h *Handlers) GetGroupMembers(ctx context.Context, in *servicePb.GetGroupMembersRequest) (*servicePb.GetGroupMembersResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetGroupMembers")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
 		err := ErrBadRequest.New("tenantId and groupId can't be empty")
@@ -433,7 +418,7 @@ func (h *Handlers) GetGroupMembers(ctx context.Context, in *servicePb.GetGroupMe
 
 	svc := h.db.NewPersonService()
 
-	peeps, err := svc.GetPeopleByGroupId(spanCtx, in.TenantId, in.GroupId)
+	peeps, err := svc.GetPeopleByGroupId(ctx, in.TenantId, in.GroupId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person records by group id")
 		logger.Error(err)
@@ -458,10 +443,7 @@ func (h *Handlers) GetGroupMembers(ctx context.Context, in *servicePb.GetGroupMe
 }
 
 func (h *Handlers) GetUngroupedPeople(ctx context.Context, in *servicePb.GetUngroupedPeopleRequest) (*servicePb.GetUngroupedPeopleResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetGroupMembers")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -471,7 +453,7 @@ func (h *Handlers) GetUngroupedPeople(ctx context.Context, in *servicePb.GetUngr
 
 	svc := h.db.NewPersonService()
 
-	peeps, err := svc.GetPeopleByGroupId(spanCtx, in.TenantId, "")
+	peeps, err := svc.GetPeopleByGroupId(ctx, in.TenantId, "")
 	if err != nil {
 		err := errors.Wrap(err, "error getting ungrouped person records")
 		logger.Error(err)
@@ -495,10 +477,7 @@ func (h *Handlers) GetUngroupedPeople(ctx context.Context, in *servicePb.GetUngr
 }
 
 func (h *Handlers) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtualUsersRequest) (*servicePb.GetVirtualUsersResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetVirtualUsers")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -508,7 +487,7 @@ func (h *Handlers) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtual
 
 	svc := h.db.NewPersonService()
 
-	peeps, err := svc.GetVirtualUsers(spanCtx, in.TenantId)
+	peeps, err := svc.GetVirtualUsers(ctx, in.TenantId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting virtual user records")
 		logger.Error(err)
@@ -532,10 +511,7 @@ func (h *Handlers) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtual
 }
 
 func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonRequest) (*servicePb.UpdatePersonResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "UpdatePerson")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -560,7 +536,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	changeRoles := strUtil.Strings(in.OnlyFields).Has("role_ids") || len(in.OnlyFields) == 0
 
 	srSVC := h.db.NewSystemRoleService()
-	srM, err := srSVC.GetInternalRoleIDs(spanCtx)
+	srM, err := srSVC.GetInternalRoleIDs(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error getting internal roles")
 		logger.Error(err)
@@ -602,7 +578,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		}
 	}
 
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating update person transaction")
 		logger.Error(err)
@@ -615,7 +591,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	updatePerson := svc.FromProto(in.Person)
 
 	// Update person in sql
-	if err := svc.Update(spanCtx, updatePerson, in.OnlyFields); err != nil {
+	if err := svc.Update(ctx, updatePerson, in.OnlyFields); err != nil {
 		err := errors.Wrap(err, "error updating person record")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -640,7 +616,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	// If we changed the provisioning of the person, update in Auth0
 	// Due to now being able to update inactive users, need to make sure empty email don't get through here and cause issues
 	if changeProvisioning && in.Person.Email != "" {
-		if _, err := updateUserProvisioning(spanCtx, updatePerson.TenantID, updatePerson.ID, in.Person.Email, svc, h.auth0Client); err != nil {
+		if _, err := updateUserProvisioning(ctx, updatePerson.TenantID, updatePerson.ID, in.Person.Email, svc, h.auth0Client); err != nil {
 			err := errors.Wrap(err, "error provisioning")
 			logger.Error(err)
 			if err := svc.Rollback(); err != nil {
@@ -652,7 +628,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 
 	// If we updated the user's system roles or group, then bust their auth cache in bouncer
 	if changeRoles || changeGroup {
-		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: updatePerson.ID}); err != nil {
+		if _, err := h.bouncerClient.BustAuthCache(ctx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: updatePerson.ID}); err != nil {
 			err := errors.Wrap(err, "error busting auth data cache for user")
 			logger.Error(err)
 			if err := svc.Rollback(); err != nil {
@@ -676,12 +652,9 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 }
 
 func (h *Handlers) UpdatePersonGroups(ctx context.Context, in *servicePb.UpdatePersonGroupsRequest) (*servicePb.UpdatePersonGroupsResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "UpdatePersonGroups")
-	defer span.End()
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
-
-	if err := h.updatePersonGroups(spanCtx, in.TenantId, nil); err != nil {
+	if err := h.updatePersonGroups(ctx, in.TenantId, nil); err != nil {
 		err := errors.Wrap(err, "error updating person groups")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -730,10 +703,7 @@ func (h *Handlers) updatePersonGroups(ctx context.Context, tenantID string, tx *
 }
 
 func (h *Handlers) DeletePersonById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
-	spanCtx, span := log.StartSpan(ctx, "DeletePersonById")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId and personId can't be empty")
@@ -745,7 +715,7 @@ func (h *Handlers) DeletePersonById(ctx context.Context, in *servicePb.IdRequest
 		in.UserId = db.DefaultTenantID
 	}
 
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating delete person transaction")
 		logger.Error(err)
@@ -755,12 +725,12 @@ func (h *Handlers) DeletePersonById(ctx context.Context, in *servicePb.IdRequest
 	svc := h.db.NewPersonService()
 	svc.SetTransaction(tx)
 
-	if err := svc.SoftDeleteByID(spanCtx, in.PersonId, in.TenantId, in.UserId); err != nil {
+	if err := svc.SoftDeleteByID(ctx, in.PersonId, in.TenantId, in.UserId); err != nil {
 		logger.Errorf("error deleting person by id: %s", err.Error())
 		return nil, err
 	}
 
-	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+	if _, err := h.bouncerClient.BustAuthCache(ctx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
 		err := errors.Wrap(err, "error busting auth data cache for user")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -783,10 +753,7 @@ func (h *Handlers) DeletePersonById(ctx context.Context, in *servicePb.IdRequest
 }
 
 func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonRequest) (*servicePb.ClonePersonResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "ClonePerson")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.GetCurrentTenantId()).WithCustom("personId", in.GetPersonId())
+	logger := log.WithContext(ctx).WithTenantID(in.GetCurrentTenantId()).WithCustom("personId", in.GetPersonId())
 
 	if in.GetCurrentTenantId() == "" || in.GetPersonId() == "" || in.GetNewTenantId() == "" {
 		err := ErrBadRequest.New("currentTenantId, personId, newTenantId can't be empty")
@@ -796,7 +763,7 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 
 	svc := h.db.NewPersonService()
 
-	p, err := svc.GetByID(spanCtx, in.GetPersonId(), in.GetCurrentTenantId())
+	p, err := svc.GetByID(ctx, in.GetPersonId(), in.GetCurrentTenantId())
 	if err != nil {
 		err := errors.Wrap(err, "error getting person by id")
 		if err == sql.ErrNoRows {
@@ -813,7 +780,7 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 	p.UpdatedAt = time.Now().UTC()
 
 	// Check if email already exists
-	existingPerson, err := svc.GetByEmail(spanCtx, in.GetNewTenantId(), p.Email.String)
+	existingPerson, err := svc.GetByEmail(ctx, in.GetNewTenantId(), p.Email.String)
 	if err != nil {
 		err := errors.Wrap(err, "error checking for existing person by email")
 		logger.Error(err)
@@ -826,7 +793,7 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 	}
 
 	// Get transaction, so we can rollback if user provisioning fails
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating transaction for cloning person")
 		logger.Error(err)
@@ -835,7 +802,7 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 	svc.SetTransaction(tx)
 
 	// Perform insert in db
-	if err := svc.Insert(spanCtx, p); err != nil {
+	if err := svc.Insert(ctx, p); err != nil {
 		err := errors.Wrap(err, "error inserting person in sql")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -857,7 +824,7 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 	// clear transaction
 	svc.SetTransaction(nil)
 
-	if _, err := updateUserProvisioning(spanCtx, in.GetNewTenantId(), p.ID, p.Email.String, svc, h.auth0Client); err != nil {
+	if _, err := updateUserProvisioning(ctx, in.GetNewTenantId(), p.ID, p.Email.String, svc, h.auth0Client); err != nil {
 		err := errors.Wrap(err, "error provisioning")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -878,10 +845,7 @@ func (h *Handlers) ClonePerson(ctx context.Context, in *servicePb.ClonePersonReq
 }
 
 func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
-	spanCtx, span := log.StartSpan(ctx, "HardDeletePersonById")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId and personId can't be empty")
@@ -893,7 +857,7 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 		in.UserId = db.DefaultTenantID
 	}
 
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating delete person transaction")
 		logger.Error(err)
@@ -904,7 +868,7 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 	svc.SetTransaction(tx)
 
 	var personEmail string
-	person, err := svc.GetByID(spanCtx, in.PersonId, in.TenantId)
+	person, err := svc.GetByID(ctx, in.PersonId, in.TenantId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person")
 		logger.Error(err)
@@ -916,7 +880,7 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 
 	personEmail = person.Email.String
 
-	if err := svc.DeleteByID(spanCtx, in.PersonId, in.TenantId); err != nil {
+	if err := svc.DeleteByID(ctx, in.PersonId, in.TenantId); err != nil {
 		err := errors.Wrap(err, "error deleting person by id")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -925,7 +889,7 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 		return nil, err.AsGRPC()
 	}
 
-	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+	if _, err := h.bouncerClient.BustAuthCache(ctx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
 		err := errors.Wrap(err, "error busting auth data cache for user")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
@@ -949,7 +913,7 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 
 	// update auth0 (remove user if no additional records, otherwise update existing user)
 	if person.IsProvisioned {
-		if _, err := updateUserProvisioning(spanCtx, in.GetTenantId(), in.GetPersonId(), personEmail, svc, h.auth0Client); err != nil {
+		if _, err := updateUserProvisioning(ctx, in.GetTenantId(), in.GetPersonId(), personEmail, svc, h.auth0Client); err != nil {
 			err := errors.Wrap(err, "error provisioning")
 			logger.Error(err)
 			if err := svc.Rollback(); err != nil {
@@ -963,10 +927,7 @@ func (h *Handlers) HardDeletePersonById(ctx context.Context, in *servicePb.IdReq
 }
 
 func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.ConvertVirtualUsersRequest) (*servicePb.ConvertVirtualUsersResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "ConvertVirtualUsers")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.GetTenantId())
+	logger := log.WithContext(ctx).WithTenantID(in.GetTenantId())
 
 	if in.GetTenantId() == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -977,7 +938,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	svc := h.db.NewPersonService()
 
 	// get virtual users for tenant
-	peeps, err := svc.GetVirtualUsers(spanCtx, in.GetTenantId())
+	peeps, err := svc.GetVirtualUsers(ctx, in.GetTenantId())
 	if err != nil {
 		err := errors.Wrap(err, "error getting virtual user records")
 		logger.Error(err)
@@ -998,7 +959,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	}
 
 	// get non-virtual users using above emails to see if there are any matches
-	nonVirtualPeeps, err := svc.GetAllActiveNonVirtualByEmails(spanCtx, in.GetTenantId(), emails...)
+	nonVirtualPeeps, err := svc.GetAllActiveNonVirtualByEmails(ctx, in.GetTenantId(), emails...)
 	if err != nil {
 		err := errors.Wrap(err, "error getting non virtual user records")
 		logger.Error(err)
@@ -1011,7 +972,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	}
 
 	// start a transaction
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating convert person transaction")
 		logger.Error(err)
@@ -1032,7 +993,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 			// update the new person with roles & groupids
 			newPerson.RoleIds = oldPerson.RoleIds
 			newPerson.IsProvisioned = true
-			_, err := newPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("role_ids", "group_id", "is_provisioned"))
+			_, err := newPerson.Update(ctx, svc.GetContextExecutor(), boil.Whitelist("role_ids", "group_id", "is_provisioned"))
 			if err != nil {
 				err := errors.Wrap(err, "error updating new person")
 				logger.Error(err)
@@ -1045,7 +1006,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 			// deactivate old person
 			oldPerson.Status = "inactive"
 			oldPerson.IsProvisioned = false
-			_, err = oldPerson.Update(spanCtx, svc.GetContextExecutor(), boil.Whitelist("status", "is_provisioned"))
+			_, err = oldPerson.Update(ctx, svc.GetContextExecutor(), boil.Whitelist("status", "is_provisioned"))
 			if err != nil {
 				err := errors.Wrap(err, "error updating old person")
 				logger.Error(err)
@@ -1078,7 +1039,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 
 	for _, newPerson := range updatedPeeps {
 		// provision new user
-		if _, err := updateUserProvisioning(spanCtx, newPerson.TenantId, newPerson.Id, newPerson.Email, svc, h.auth0Client); err != nil {
+		if _, err := updateUserProvisioning(ctx, newPerson.TenantId, newPerson.Id, newPerson.Email, svc, h.auth0Client); err != nil {
 			err := errors.Wrap(err, "error provisioning")
 			logger.Error(err)
 			return nil, err.AsGRPC()
@@ -1090,7 +1051,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 		}
 
 		// bust auth cache for old id
-		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: oldPeepsIDMap[newPerson.Email]}); err != nil {
+		if _, err := h.bouncerClient.BustAuthCache(ctx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: oldPeepsIDMap[newPerson.Email]}); err != nil {
 			err := errors.Wrap(err, "error busting auth data cache for user")
 			logger.Error(err)
 			return nil, err.AsGRPC()
@@ -1103,10 +1064,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 }
 
 func (h *Handlers) ReprovisionPeople(ctx context.Context, in *servicePb.IdRequest) (*servicePb.ReprovisionPeopleResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "ReprovisionPeople")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.GetTenantId())
+	logger := log.WithContext(ctx).WithTenantID(in.GetTenantId())
 
 	if in.GetTenantId() == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -1120,7 +1078,7 @@ func (h *Handlers) ReprovisionPeople(ctx context.Context, in *servicePb.IdReques
 	numUnprovisioned := int64(0)
 
 	if in.GetPersonId() != "" {
-		provisioned, err := updateUserProvisioning(spanCtx, in.GetTenantId(), in.GetPersonId(), "", svc, h.auth0Client)
+		provisioned, err := updateUserProvisioning(ctx, in.GetTenantId(), in.GetPersonId(), "", svc, h.auth0Client)
 		if err != nil {
 			err = errors.Wrap(err, "error reprovisioning person")
 			return nil, err
@@ -1138,7 +1096,7 @@ func (h *Handlers) ReprovisionPeople(ctx context.Context, in *servicePb.IdReques
 		}, nil
 	}
 
-	people, _, err := svc.Search(spanCtx, in.GetTenantId(), "", 10000, 0,
+	people, _, err := svc.Search(ctx, in.GetTenantId(), "", 10000, 0,
 		db.PersonFilter{Field: "is_provisioned", Op: "EQ", Values: []interface{}{true}},
 		db.PersonFilter{Field: "status", Op: "EQ", Values: []interface{}{"active"}},
 	)
@@ -1148,7 +1106,7 @@ func (h *Handlers) ReprovisionPeople(ctx context.Context, in *servicePb.IdReques
 	}
 
 	for _, person := range people {
-		provisioned, err := updateUserProvisioning(spanCtx, in.GetTenantId(), person.ID, person.Email.String, svc, h.auth0Client)
+		provisioned, err := updateUserProvisioning(ctx, in.GetTenantId(), person.ID, person.Email.String, svc, h.auth0Client)
 		if err != nil {
 			err := errors.Wrap(err, "error provisioning person")
 			logger.Error(err)
@@ -1169,14 +1127,11 @@ func (h *Handlers) ReprovisionPeople(ctx context.Context, in *servicePb.IdReques
 }
 
 func (h *Handlers) GetPeopleByEmail(ctx context.Context, in *servicePb.GetPeopleByEmailRequest) (*servicePb.GetPeopleByEmailResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetPeopleByEmail")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithCustom("email", in.EmailAddress)
+	logger := log.WithContext(ctx).WithCustom("email", in.EmailAddress)
 
 	svc := h.db.NewPersonService()
 
-	people, err := svc.GetAllByEmail(spanCtx, in.EmailAddress)
+	people, err := svc.GetAllByEmail(ctx, in.EmailAddress)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person by id")
 		logger.Error(err)

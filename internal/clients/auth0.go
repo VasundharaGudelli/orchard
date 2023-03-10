@@ -49,6 +49,9 @@ func NewAuth0Client(cfg config.Config) *Auth0Client {
 }
 
 func (ac Auth0Client) getClient(ctx context.Context) (*management.Management, error) {
+	ctx, span := log.StartSpan(ctx, "AuthO.GetClient")
+	defer span.End()
+
 	x, err := management.New(ac.cfg.Auth0Domain, ac.cfg.Auth0ClientID, ac.cfg.Auth0ClientSecret, management.WithContext(ctx), management.WithDebug(false))
 	count := 0
 	for err != nil && strings.Contains(strings.ToLower(err.Error()), "unexpected eof") && count < 3 {
@@ -70,7 +73,7 @@ type TenantContext struct {
 }
 
 func (ac Auth0Client) Provision(ctx context.Context, personRecords []*models.Person) error {
-	spanCtx, span := log.StartSpan(ctx, "Provision")
+	spanCtx, span := log.StartSpan(ctx, "AuthO.Provision")
 	defer span.End()
 
 	if len(personRecords) == 0 {
@@ -154,7 +157,7 @@ func (ac Auth0Client) Provision(ctx context.Context, personRecords []*models.Per
 }
 
 func (ac Auth0Client) Unprovision(ctx context.Context, tenantID, userID string) error {
-	spanCtx, span := log.StartSpan(ctx, "Unprovision")
+	spanCtx, span := log.StartSpan(ctx, "AuthO.Unprovision")
 	defer span.End()
 
 	logger := log.WithTenantID(tenantID).WithCustom("userId", userID)
@@ -189,7 +192,7 @@ func (ac Auth0Client) Unprovision(ctx context.Context, tenantID, userID string) 
 }
 
 func (ac Auth0Client) ImportUsers(ctx context.Context, tenantID string) ([]*orchardPb.Person, error) {
-	spanCtx, span := log.StartSpan(ctx, "ImportUsers")
+	spanCtx, span := log.StartSpan(ctx, "AuthO.ImportUsers")
 	defer span.End()
 
 	logger := log.WithTenantID(tenantID)
@@ -219,7 +222,7 @@ func (ac Auth0Client) ImportUsers(ctx context.Context, tenantID string) ([]*orch
 }
 
 func (ac Auth0Client) GetRoleUsers(ctx context.Context, roleID string) ([]*orchardPb.Person, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetRoleUsers")
+	spanCtx, span := log.StartSpan(ctx, "AuthO.GetRoleUsers")
 	defer span.End()
 
 	logger := log.WithCustom("roleId", roleID)
@@ -249,6 +252,9 @@ func (ac Auth0Client) GetRoleUsers(ctx context.Context, roleID string) ([]*orcha
 }
 
 func (ac Auth0Client) getRoleUsers(ctx context.Context, client *management.Management, roleID string, page, take int) ([]*management.User, int, error) {
+	ctx, span := log.StartSpan(ctx, "AuthO.GetRoleUsers")
+	defer span.End()
+
 	usersRes, err := client.Role.Users(roleID, management.IncludeTotals(true), management.Page(page), management.PerPage(take))
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "error getting list of users by role from auth0")
@@ -260,6 +266,9 @@ func (ac Auth0Client) getRoleUsers(ctx context.Context, client *management.Manag
 }
 
 func (ac Auth0Client) getByUserID(ctx context.Context, client *management.Management, tenantID, userID string) (*management.User, error) {
+	ctx, span := log.StartSpan(ctx, "AuthO.GetByUserID")
+	defer span.End()
+
 	q := fmt.Sprintf(`(app_metadata.tenant_id:"%s" AND app_metadata.person_id:"%s") OR (app_metadata.tenant_contexts.tenant_id:"%s" AND app_metadata.tenant_contexts.user_id:"%s")`, tenantID, userID, tenantID, userID)
 	mQ := management.Query(q)
 	users, err := client.User.List(mQ, management.PerPage(1), management.Parameter("search_engine", "v3"))
@@ -303,6 +312,9 @@ func (ac Auth0Client) sortUsersByUsage(users *management.UserList) {
 }
 
 func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.Management, tenantID, email string) ([]*management.User, error) {
+	ctx, span := log.StartSpan(ctx, "AuthO.SearchUserByEmail")
+	defer span.End()
+
 	q := fmt.Sprintf(`email:"%s"`, strings.TrimSpace(email))
 	mQ := management.Query(q)
 	users, err := client.User.List(mQ, management.PerPage(50), management.Parameter("search_engine", "v3"))
@@ -319,6 +331,9 @@ func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.
 }
 
 func (ac Auth0Client) getUsersByTenantID(ctx context.Context, client *management.Management, tenantID string, page, take int) ([]*management.User, int, error) {
+	ctx, span := log.StartSpan(ctx, "AuthO.GetUsersByTenantID")
+	defer span.End()
+
 	q := fmt.Sprintf(`(app_metadata.tenant_id:"%s" OR app_metadata.tenant_contexts.tenant_id:"%s") AND app_metadata.license.is_active:true`, tenantID, tenantID)
 	mQ := management.Query(q)
 	users, err := client.User.List(mQ, management.IncludeTotals(true), management.Page(page), management.PerPage(take), management.Parameter("search_engine", "v3"))

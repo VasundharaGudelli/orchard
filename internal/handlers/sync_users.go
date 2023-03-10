@@ -19,14 +19,11 @@ import (
 const DefaultBatchSize = 2000
 
 func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "SyncUsers")
-	defer span.End()
-
 	syncSince := in.SyncSince.AsTime()
 
 	logger := log.WithTenantID(in.TenantId).WithCustom("syncSince", syncSince)
 
-	latestCRMUsers, err := h.crmClient.GetLatestChangedPeople(spanCtx, in.TenantId, in.SyncSince)
+	latestCRMUsers, err := h.crmClient.GetLatestChangedPeople(ctx, in.TenantId, in.SyncSince)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person data from crm-data-access")
 		logger.Error(err)
@@ -35,7 +32,7 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 
 	personSvc := h.db.NewPersonService()
 
-	wp, _ := commonSync.NewWorkerPool(spanCtx, 10)
+	wp, _ := commonSync.NewWorkerPool(ctx, 10)
 	l := len(latestCRMUsers)
 	batchCount := calculateBatchCount(l, DefaultBatchSize)
 	results := make([][]*models.Person, batchCount)
@@ -45,7 +42,7 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 		if l < cursor+batchSize {
 			batchSize = l - cursor
 		}
-		wp.Go(h.createPeopleBatch(spanCtx, in.TenantId, personSvc, latestCRMUsers[cursor:batchSize+cursor], results, i))
+		wp.Go(h.createPeopleBatch(ctx, in.TenantId, personSvc, latestCRMUsers[cursor:batchSize+cursor], results, i))
 	}
 	if err := wp.Wait(ctx); err != nil {
 		err := errors.Wrap(err, "error waiting for upsert person batches to create")
@@ -53,7 +50,7 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 		return nil, err.AsGRPC()
 	}
 
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating transaction")
 		logger.Error(err)
@@ -62,14 +59,14 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 	personSvc.SetTransaction(tx)
 
 	for _, batch := range results {
-		if err := h.batchUpsertUsers(spanCtx, personSvc, batch)(); err != nil {
+		if err := h.batchUpsertUsers(ctx, personSvc, batch)(); err != nil {
 			err := errors.Wrap(err, "error running batch upsert people")
 			logger.Error(err)
 			return nil, err.AsGRPC()
 		}
 	}
 
-	if err := h.updatePersonGroups(spanCtx, in.TenantId, personSvc.GetTransaction()); err != nil {
+	if err := h.updatePersonGroups(ctx, in.TenantId, personSvc.GetTransaction()); err != nil {
 		err := errors.Wrap(err, "error updating person groups")
 		logger.Error(err)
 		personSvc.Rollback()

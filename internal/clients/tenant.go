@@ -35,6 +35,9 @@ func (client *TenantClient) Close() {
 }
 
 func (client *TenantClient) GetProvisionedUsers(ctx context.Context, tenantID string) ([]*orchardPb.Person, error) {
+	ctx, span := log.StartSpan(ctx, "Tenant.GetProvisionedUsers")
+	defer span.End()
+
 	res, err := client.client.GetTenantProvisionedUsers(ctx, &servicePb.GetTenantProvisionedUsersRequest{TenantId: tenantID})
 	if err != nil {
 		return nil, err
