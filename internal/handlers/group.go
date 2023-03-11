@@ -273,7 +273,11 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	// Convert db models to protos
 	parGroup, _ := commonSync.NewWorkerPool(spanCtx, 10)
 	flatProtos := make([]*servicePb.GroupWithMembers, len(flatGroups))
+	forceKeepLevelMap := map[string]bool{}
 	for i, g := range flatGroups {
+		if g.ActiveMemberCount > 0 {
+			forceKeepLevelMap[g.ID] = true
+		}
 		parGroup.Go(h.runGroupTreeProtoConversion(spanCtx, i, g, flatProtos, in.TenantId, in.HydrateUsers, in.HydrateCrmRoles))
 	}
 	if err := parGroup.Close(); err != nil {
@@ -312,7 +316,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	for i, root := range roots {
 		wg.Add(1)
 		go func(w *sync.WaitGroup, r *servicePb.GroupWithMembers, all []*servicePb.GroupWithMembers, idx int) {
-			depth := recursivelyGetGroupChildren(r, all, 1, in.Simplify)
+			depth := recursivelyGetGroupChildren(r, all, 1, in.Simplify, forceKeepLevelMap)
 			finalRoots[idx] = &servicePb.GroupSubtreeRoot{
 				GroupId: r.Group.Id,
 				Depth:   int32(depth),
@@ -384,15 +388,18 @@ func (h *Handlers) runGroupTreeProtoConversion(ctx context.Context, idx int, g *
 	}
 }
 
-func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*servicePb.GroupWithMembers, depth int, simplify bool) int {
+func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*servicePb.GroupWithMembers, depth int, simplify bool, forceKeepLevelMap map[string]bool) int {
+	if forceKeepLevelMap == nil {
+		forceKeepLevelMap = map[string]bool{}
+	}
 	maxDepth := depth
 	for _, g := range groups {
 		if g.Group.ParentId == node.Group.Id {
-			maxDepth = max(recursivelyGetGroupChildren(g, groups, depth+1, simplify), maxDepth)
+			maxDepth = max(recursivelyGetGroupChildren(g, groups, depth+1, simplify, forceKeepLevelMap), maxDepth)
 			node.Children = append(node.Children, g)
 		}
 	}
-	if simplify {
+	if simplify && !forceKeepLevelMap[node.Group.Id] {
 		if len(node.Children) == 1 && node.Children[0].Group.Type == orchardPb.SystemRoleType_IC && len(node.Children[0].Members) > 0 && len(node.Children[0].Members) <= 25 {
 			node.Members = append(node.Members, node.Children[0].Members...)
 			node.Children = []*servicePb.GroupWithMembers{}
