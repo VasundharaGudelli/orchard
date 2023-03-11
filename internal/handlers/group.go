@@ -275,7 +275,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	flatProtos := make([]*servicePb.GroupWithMembers, len(flatGroups))
 	forceKeepLevelMap := map[string]bool{}
 	for i, g := range flatGroups {
-		if g.ActiveMemberCount > 0 {
+		if g.ActiveMemberCount > 0 && g.Type == "manager" {
 			forceKeepLevelMap[g.ID] = true
 		}
 		parGroup.Go(h.runGroupTreeProtoConversion(spanCtx, i, g, flatProtos, in.TenantId, in.HydrateUsers, in.HydrateCrmRoles))
@@ -399,7 +399,7 @@ func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*ser
 			node.Children = append(node.Children, g)
 		}
 	}
-	if simplify && !forceKeepLevelMap[node.Group.Id] {
+	if simplify {
 		if len(node.Children) == 1 && node.Children[0].Group.Type == orchardPb.SystemRoleType_IC && len(node.Children[0].Members) > 0 && len(node.Children[0].Members) <= 25 {
 			node.Members = append(node.Members, node.Children[0].Members...)
 			node.Children = []*servicePb.GroupWithMembers{}
