@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"sync"
 	"time"
 
@@ -281,8 +280,6 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		}
 		parGroup.Go(h.runGroupTreeProtoConversion(spanCtx, i, g, flatProtos, in.TenantId, in.HydrateUsers, in.HydrateCrmRoles))
 	}
-	b, _ := json.Marshal(forceKeepLevelMap)
-	logger.Debugf("force keep level map: %s", string(b))
 
 	if err := parGroup.Close(); err != nil {
 		logger.Error(err)
