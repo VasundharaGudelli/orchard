@@ -320,7 +320,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	for i, root := range roots {
 		wg.Add(1)
 		go func(w *sync.WaitGroup, r *servicePb.GroupWithMembers, all []*servicePb.GroupWithMembers, idx int) {
-			depth := recursivelyGetGroupChildren(r, all, 1, in.Simplify, forceKeepLevelMap)
+			depth, _ := recursivelyGetGroupChildren(r, all, 1, in.Simplify, forceKeepLevelMap)
 			finalRoots[idx] = &servicePb.GroupSubtreeRoot{
 				GroupId: r.Group.Id,
 				Depth:   int32(depth),
@@ -330,9 +330,6 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		}(&wg, root, flatProtos, i)
 	}
 	wg.Wait()
-
-	// b, _ := json.Marshal(finalRoots)
-	// fmt.Println(string(b), "finalRoots")
 
 	return &servicePb.GetGroupSubTreeResponse{
 		Roots: finalRoots,
@@ -392,29 +389,33 @@ func (h *Handlers) runGroupTreeProtoConversion(ctx context.Context, idx int, g *
 	}
 }
 
-func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*servicePb.GroupWithMembers, depth int, simplify bool, forceKeepLevelMap map[string]bool) int {
+func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*servicePb.GroupWithMembers, depth int, simplify bool, forceKeepLevelMap map[string]bool) (int, map[string]bool) {
 	if forceKeepLevelMap == nil {
 		forceKeepLevelMap = map[string]bool{}
 	}
 	maxDepth := depth
+	currentDepth := depth
+	simplifiedGroups := map[string]bool{}
 	for _, g := range groups {
 		if g.Group.ParentId == node.Group.Id {
-			maxDepth = max(recursivelyGetGroupChildren(g, groups, depth+1, simplify, forceKeepLevelMap), maxDepth)
+			currentDepth, simplifiedGroups = recursivelyGetGroupChildren(g, groups, depth+1, simplify, forceKeepLevelMap)
+			maxDepth = max(currentDepth, maxDepth)
 			node.Children = append(node.Children, g)
 		}
 	}
 	if simplify {
 		if len(node.Children) == 1 && node.Children[0].Group.Type == orchardPb.SystemRoleType_IC && len(node.Children[0].Members) > 0 && len(node.Children[0].Members) <= 25 {
-			if !forceKeepLevelMap[node.Children[0].Group.Id] {
+			if !forceKeepLevelMap[node.Children[0].Group.Id] && !simplifiedGroups[node.Children[0].Group.Id] {
 				node.Members = append(node.Members, node.Children[0].Members...)
 				node.Children = []*servicePb.GroupWithMembers{}
 				node.Group.Type = orchardPb.SystemRoleType_IC
+				simplifiedGroups[node.Group.Id] = true
 			} else {
 				log.Debugf("skipped simplify: parent::%s , child::%s", node.Group.Id, node.Children[0].Group.Id)
 			}
 		}
 	}
-	return maxDepth
+	return maxDepth, simplifiedGroups
 }
 
 func max(x, y int) int {
