@@ -410,11 +410,8 @@ func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*ser
 				node.Children = []*servicePb.GroupWithMembers{}
 				node.Group.Type = orchardPb.SystemRoleType_IC
 				simplifiedGroups[node.Group.Id] = true
-			} else {
-				log.Debugf("skipped simplify: parent::%s , child::%s", node.Group.Id, node.Children[0].Group.Id)
-				if simplifiedGroups[node.Children[0].Group.Id] {
-					log.Debugf("simplifying AGAIN: parent::%s , child::%s", node.Group.Id, node.Children[0].Group.Id)
-				}
+			} else if simplifiedGroups[node.Children[0].Group.Id] {
+				log.WithTenantID(node.Group.TenantId).Debugf("simplifying hierarchy additional redundancy: parent::%s , child::%s", node.Group.Id, node.Children[0].Group.Id)
 			}
 		}
 	}
