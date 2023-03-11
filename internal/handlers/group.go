@@ -391,13 +391,15 @@ func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*ser
 		forceKeepLevelMap = map[string]bool{}
 	}
 	maxDepth := depth
-	currentDepth := depth
 	simplifiedGroups := map[string]bool{}
 	for _, g := range groups {
 		if g.Group.ParentId == node.Group.Id {
-			currentDepth, simplifiedGroups = recursivelyGetGroupChildren(g, groups, depth+1, simplify, forceKeepLevelMap)
+			currentDepth, sfg := recursivelyGetGroupChildren(g, groups, depth+1, simplify, forceKeepLevelMap)
 			maxDepth = max(currentDepth, maxDepth)
 			node.Children = append(node.Children, g)
+			for k, v := range sfg {
+				simplifiedGroups[k] = v
+			}
 		}
 	}
 	if simplify {
