@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"sync"
 	"time"
 
@@ -281,8 +280,6 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		}
 		parGroup.Go(h.runGroupTreeProtoConversion(spanCtx, i, g, flatProtos, in.TenantId, in.HydrateUsers, in.HydrateCrmRoles))
 	}
-	b, _ := json.Marshal(forceKeepLevelMap)
-	logger.Debugf("force keep level map: %s", string(b))
 
 	if err := parGroup.Close(); err != nil {
 		logger.Error(err)
@@ -394,13 +391,15 @@ func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*ser
 		forceKeepLevelMap = map[string]bool{}
 	}
 	maxDepth := depth
-	currentDepth := depth
 	simplifiedGroups := map[string]bool{}
 	for _, g := range groups {
 		if g.Group.ParentId == node.Group.Id {
-			currentDepth, simplifiedGroups = recursivelyGetGroupChildren(g, groups, depth+1, simplify, forceKeepLevelMap)
+			currentDepth, sfg := recursivelyGetGroupChildren(g, groups, depth+1, simplify, forceKeepLevelMap)
 			maxDepth = max(currentDepth, maxDepth)
 			node.Children = append(node.Children, g)
+			for k, v := range sfg {
+				simplifiedGroups[k] = v
+			}
 		}
 	}
 	if simplify {
@@ -410,11 +409,8 @@ func recursivelyGetGroupChildren(node *servicePb.GroupWithMembers, groups []*ser
 				node.Children = []*servicePb.GroupWithMembers{}
 				node.Group.Type = orchardPb.SystemRoleType_IC
 				simplifiedGroups[node.Group.Id] = true
-			} else {
-				log.Debugf("skipped simplify: parent::%s , child::%s", node.Group.Id, node.Children[0].Group.Id)
-				if simplifiedGroups[node.Children[0].Group.Id] {
-					log.Debugf("simplifying AGAIN: parent::%s , child::%s", node.Group.Id, node.Children[0].Group.Id)
-				}
+			} else if simplifiedGroups[node.Children[0].Group.Id] {
+				log.WithTenantID(node.Group.TenantId).Debugf("simplifying hierarchy additional redundancy: parent::%s , child::%s", node.Group.Id, node.Children[0].Group.Id)
 			}
 		}
 	}
