@@ -252,7 +252,7 @@ func (ac Auth0Client) GetRoleUsers(ctx context.Context, roleID string) ([]*orcha
 }
 
 func (ac Auth0Client) getRoleUsers(ctx context.Context, client *management.Management, roleID string, page, take int) ([]*management.User, int, error) {
-	ctx, span := log.StartSpan(ctx, "AuthO.GetRoleUsers")
+	_, span := log.StartSpan(ctx, "AuthO.GetRoleUsers")
 	defer span.End()
 
 	usersRes, err := client.Role.Users(roleID, management.IncludeTotals(true), management.Page(page), management.PerPage(take))
@@ -266,7 +266,7 @@ func (ac Auth0Client) getRoleUsers(ctx context.Context, client *management.Manag
 }
 
 func (ac Auth0Client) getByUserID(ctx context.Context, client *management.Management, tenantID, userID string) (*management.User, error) {
-	ctx, span := log.StartSpan(ctx, "AuthO.GetByUserID")
+	_, span := log.StartSpan(ctx, "AuthO.GetByUserID")
 	defer span.End()
 
 	q := fmt.Sprintf(`(app_metadata.tenant_id:"%s" AND app_metadata.person_id:"%s") OR (app_metadata.tenant_contexts.tenant_id:"%s" AND app_metadata.tenant_contexts.user_id:"%s")`, tenantID, userID, tenantID, userID)
@@ -312,7 +312,7 @@ func (ac Auth0Client) sortUsersByUsage(users *management.UserList) {
 }
 
 func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.Management, tenantID, email string) ([]*management.User, error) {
-	ctx, span := log.StartSpan(ctx, "AuthO.SearchUserByEmail")
+	_, span := log.StartSpan(ctx, "AuthO.SearchUserByEmail")
 	defer span.End()
 
 	q := fmt.Sprintf(`email:"%s"`, strings.TrimSpace(email))
@@ -331,7 +331,7 @@ func (ac Auth0Client) searchUserByEmail(ctx context.Context, client *management.
 }
 
 func (ac Auth0Client) getUsersByTenantID(ctx context.Context, client *management.Management, tenantID string, page, take int) ([]*management.User, int, error) {
-	ctx, span := log.StartSpan(ctx, "AuthO.GetUsersByTenantID")
+	_, span := log.StartSpan(ctx, "AuthO.GetUsersByTenantID")
 	defer span.End()
 
 	q := fmt.Sprintf(`(app_metadata.tenant_id:"%s" OR app_metadata.tenant_contexts.tenant_id:"%s") AND app_metadata.license.is_active:true`, tenantID, tenantID)
