@@ -9,6 +9,7 @@ import (
 
 	"github.com/loupe-co/go-common/fixtures"
 	commonSync "github.com/loupe-co/go-common/sync"
+	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/clients"
 	"github.com/loupe-co/orchard/internal/db"
 	"github.com/loupe-co/orchard/internal/models"
@@ -38,6 +39,9 @@ func GetImportAuth0Command() *cli.Command {
 }
 
 func importAuth0Users(ctx context.Context, env string, debug bool) error {
+	ctx, span := log.StartSpan(ctx, "ImportAuth0Users")
+	defer span.End()
+
 	setAuth0Roles(env)
 
 	dbClient, err := GetOrchardDB(env)
@@ -82,6 +86,9 @@ func importAuth0Users(ctx context.Context, env string, debug bool) error {
 }
 
 func runTenantAuth0Users(ctx context.Context, env, tenantID string, dbClient *db.DB, auth0Client *clients.Auth0Client, userRoles map[string]string, debug bool) func() error {
+	ctx, span := log.StartSpan(ctx, "RunTenantAuth0Users")
+	defer span.End()
+
 	return func() error {
 		fmt.Println("Importing users for tenant", tenantID)
 		people, err := auth0Client.ImportUsers(ctx, tenantID)

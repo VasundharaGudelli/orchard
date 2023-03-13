@@ -11,10 +11,7 @@ import (
 )
 
 func (h *Handlers) GetLegacyTeamStructure(ctx context.Context, in *servicePb.GetLegacyTeamStructureRequest) (*servicePb.GetLegacyTeamStructureResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetLegacyTeamStructure")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -25,7 +22,7 @@ func (h *Handlers) GetLegacyTeamStructure(ctx context.Context, in *servicePb.Get
 	svc := h.db.NewGroupService()
 	personSvc := h.db.NewPersonService()
 
-	flatGroups, err := svc.GetFullTenantTree(spanCtx, in.TenantId, true)
+	flatGroups, err := svc.GetFullTenantTree(ctx, in.TenantId, true)
 	if err != nil {
 		err := errors.Wrap(err, "error getting full tenant team tree from sql")
 		logger.Error(err)

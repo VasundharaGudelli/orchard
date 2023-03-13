@@ -9,10 +9,7 @@ import (
 )
 
 func (h *Handlers) IsHierarchySynced(ctx context.Context, in *servicePb.IsHierarchySyncedRequest) (*servicePb.IsHierarchySyncedResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "IsHierarchySynced")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -22,7 +19,7 @@ func (h *Handlers) IsHierarchySynced(ctx context.Context, in *servicePb.IsHierar
 
 	svc := h.db.NewGroupService()
 
-	isSynced, err := svc.IsCRMSynced(spanCtx, in.TenantId)
+	isSynced, err := svc.IsCRMSynced(ctx, in.TenantId)
 	if err != nil {
 		err := errors.Wrap(err, "error checking if tenant crm roles are synced with groups")
 		logger.Error(err)

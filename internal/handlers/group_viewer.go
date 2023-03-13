@@ -15,10 +15,7 @@ import (
 )
 
 func (h *Handlers) InsertGroupViewer(ctx context.Context, in *servicePb.InsertGroupViewerRequest) (*servicePb.InsertGroupViewerResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "InsertGroupViewer")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.GroupViewer == nil {
 		err := ErrBadRequest.New("groupViewer can't be null")
@@ -36,7 +33,7 @@ func (h *Handlers) InsertGroupViewer(ctx context.Context, in *servicePb.InsertGr
 
 	gv := svc.FromProto(in.GroupViewer)
 
-	if err := svc.Insert(spanCtx, gv); err != nil {
+	if err := svc.Insert(ctx, gv); err != nil {
 		err := errors.Wrap(err, "error inserting group viewer into sql")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -53,10 +50,7 @@ func (h *Handlers) InsertGroupViewer(ctx context.Context, in *servicePb.InsertGr
 }
 
 func (h *Handlers) GetGroupViewers(ctx context.Context, in *servicePb.IdRequest) (*servicePb.GetGroupViewersResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetGroupViewers")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
 		err := ErrBadRequest.New("tenantId and groupId can't be empty")
@@ -66,7 +60,7 @@ func (h *Handlers) GetGroupViewers(ctx context.Context, in *servicePb.IdRequest)
 
 	svc := h.db.NewGroupViewerService()
 
-	peeps, err := svc.GetGroupViewers(spanCtx, in.TenantId, in.GroupId)
+	peeps, err := svc.GetGroupViewers(ctx, in.TenantId, in.GroupId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting group viewers from sql")
 		logger.Error(err)
@@ -94,10 +88,7 @@ func (h *Handlers) GetGroupViewers(ctx context.Context, in *servicePb.IdRequest)
 }
 
 func (h *Handlers) GetPersonViewableGroups(ctx context.Context, in *servicePb.IdRequest) (*servicePb.GetPersonViewableGroupsResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetPersonViewableGroups")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId and personId can't be empty")
@@ -107,7 +98,7 @@ func (h *Handlers) GetPersonViewableGroups(ctx context.Context, in *servicePb.Id
 
 	svc := h.db.NewGroupViewerService()
 
-	groups, err := svc.GetPersonViewableGroups(spanCtx, in.TenantId, in.PersonId)
+	groups, err := svc.GetPersonViewableGroups(ctx, in.TenantId, in.PersonId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person viewable groups from sql")
 		logger.Error(err)
@@ -135,10 +126,7 @@ func (h *Handlers) GetPersonViewableGroups(ctx context.Context, in *servicePb.Id
 }
 
 func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.SetPersonViewableGroupsRequest) (*servicePb.SetPersonViewableGroupsResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "SetPersonViewableGroups")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId and personId can't be empty")
@@ -159,7 +147,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 	permissions := p[permissionSet]
 
 	svc := h.db.NewGroupViewerService()
-	viewableGroups, err := svc.GetPersonViewableGroups(spanCtx, in.TenantId, in.PersonId)
+	viewableGroups, err := svc.GetPersonViewableGroups(ctx, in.TenantId, in.PersonId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person viewable groups from sql")
 		logger.Error(err)
@@ -171,7 +159,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 		groupIds[vg.ID] = struct{}{}
 	}
 
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error starting setpersonviewable groups transaction")
 		logger.Error(err)
@@ -195,7 +183,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 			}
 			gv := svc.FromProto(gvProto)
 
-			if err := svc.Insert(spanCtx, gv); err != nil {
+			if err := svc.Insert(ctx, gv); err != nil {
 				err := errors.Wrap(err, "error inserting new groupviewers in sql")
 				logger.Error(err)
 				svc.Rollback()
@@ -211,7 +199,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 
 	for gId := range groupIds {
 		if _, ok := groupViewerIds[gId]; !ok {
-			if err := svc.DeleteByID(spanCtx, in.TenantId, gId, in.PersonId); err != nil {
+			if err := svc.DeleteByID(ctx, in.TenantId, gId, in.PersonId); err != nil {
 				err := errors.Wrap(err, "error deleting group viewer in sql")
 				logger.Error(err)
 				svc.Rollback()
@@ -220,7 +208,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 		}
 	}
 
-	groups, err := svc.GetPersonViewableGroups(spanCtx, in.TenantId, in.PersonId)
+	groups, err := svc.GetPersonViewableGroups(ctx, in.TenantId, in.PersonId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting person viewable groups from sql")
 		logger.Error(err)
@@ -247,7 +235,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 		}
 	}
 
-	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+	if _, err := h.bouncerClient.BustAuthCache(ctx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
 		err := errors.Wrap(err, "error busting auth data cache for user")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -259,10 +247,7 @@ func (h *Handlers) SetPersonViewableGroups(ctx context.Context, in *servicePb.Se
 }
 
 func (h *Handlers) UpdateGroupViewer(ctx context.Context, in *servicePb.UpdateGroupViewerRequest) (*servicePb.UpdateGroupViewerResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "UpdateGroupViewer")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.GroupViewer == nil {
 		err := ErrBadRequest.New("groupViewer can't be null")
@@ -280,7 +265,7 @@ func (h *Handlers) UpdateGroupViewer(ctx context.Context, in *servicePb.UpdateGr
 
 	gv := svc.FromProto(in.GroupViewer)
 
-	if err := svc.Update(spanCtx, gv); err != nil {
+	if err := svc.Update(ctx, gv); err != nil {
 		err := errors.Wrap(err, "error updating group viewer in sql")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -293,7 +278,7 @@ func (h *Handlers) UpdateGroupViewer(ctx context.Context, in *servicePb.UpdateGr
 		return nil, err.AsGRPC()
 	}
 
-	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+	if _, err := h.bouncerClient.BustAuthCache(ctx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
 		err := errors.Wrap(err, "error busting auth data cache for user")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -303,10 +288,7 @@ func (h *Handlers) UpdateGroupViewer(ctx context.Context, in *servicePb.UpdateGr
 }
 
 func (h *Handlers) DeleteGroupViewerById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
-	spanCtx, span := log.StartSpan(ctx, "UpdateGroupViewer")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" || in.GroupId == "" || in.PersonId == "" {
 		err := ErrBadRequest.New("tenantId, groupId and personId can't be empty")
@@ -316,13 +298,13 @@ func (h *Handlers) DeleteGroupViewerById(ctx context.Context, in *servicePb.IdRe
 
 	svc := h.db.NewGroupViewerService()
 
-	if err := svc.DeleteByID(spanCtx, in.TenantId, in.GroupId, in.PersonId); err != nil {
+	if err := svc.DeleteByID(ctx, in.TenantId, in.GroupId, in.PersonId); err != nil {
 		err := errors.Wrap(err, "error deleting group viewer in sql")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
 
-	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
+	if _, err := h.bouncerClient.BustAuthCache(ctx, &bouncerPb.BustAuthCacheRequest{TenantId: in.TenantId, UserId: in.PersonId}); err != nil {
 		err := errors.Wrap(err, "error busting auth data cache for user")
 		logger.Error(err)
 		return nil, err.AsGRPC()

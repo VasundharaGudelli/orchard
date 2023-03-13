@@ -138,6 +138,7 @@ type HasDupsResult struct {
 func (svc *GroupService) CheckDuplicateCRMRoleIDs(ctx context.Context, id, tenantID string, crmRolesIDs []string) (bool, error) {
 	spanCtx, span := log.StartSpan(ctx, "Group.CheckDuplicateCRMRoleIDs")
 	defer span.End()
+	
 	result := HasDupsResult{}
 	err := queries.Raw(checkDuplicateCRMIDsQuery, types.StringArray(crmRolesIDs), tenantID, id).Bind(spanCtx, svc.GetContextExecutor(), &result)
 	if err != nil && err != sql.ErrNoRows {

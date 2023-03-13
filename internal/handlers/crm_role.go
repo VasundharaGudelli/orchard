@@ -11,12 +11,9 @@ import (
 )
 
 func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "SyncCrmRoles")
-	defer span.End()
-
 	syncSince := in.SyncSince.AsTime()
 
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("syncSince", syncSince)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("syncSince", syncSince)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -24,7 +21,7 @@ func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) 
 		return nil, err.AsGRPC()
 	}
 
-	latestCRMRoles, err := h.crmClient.GetLatestCRMRoles(spanCtx, in.TenantId, in.SyncSince)
+	latestCRMRoles, err := h.crmClient.GetLatestCRMRoles(ctx, in.TenantId, in.SyncSince)
 	if err != nil {
 		err := errors.Wrap(err, "error getting latest crm roles from crm-data-access")
 		logger.Error(err)
@@ -37,7 +34,7 @@ func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) 
 		// return nil, errors.Error("no latest crm_roles returned from crm-data-access")
 	}
 
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error starting sync_crm_roles transaction")
 		logger.Error(err)
@@ -53,14 +50,14 @@ func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) 
 		dbCRMRoles[i] = svc.FromProto(role)
 	}
 
-	if err := svc.UpsertAll(spanCtx, dbCRMRoles); err != nil {
+	if err := svc.UpsertAll(ctx, dbCRMRoles); err != nil {
 		err := errors.Wrap(err, "error upserting latest crm roles for sync")
 		logger.Error(err)
 		svc.Rollback()
 		return nil, err.AsGRPC()
 	}
 
-	if err := svc.DeleteUnSynced(spanCtx, in.TenantId, ids...); err != nil {
+	if err := svc.DeleteUnSynced(ctx, in.TenantId, ids...); err != nil {
 		err := errors.Wrap(err, "error deleting unsynced crm_roles")
 		logger.Error(err)
 		svc.Rollback()
@@ -78,10 +75,7 @@ func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) 
 }
 
 func (h *Handlers) UpsertCRMRoles(ctx context.Context, in *servicePb.UpsertCRMRolesRequest) (*servicePb.UpsertCRMRolesResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "UpsertCRMRoles")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -103,7 +97,7 @@ func (h *Handlers) UpsertCRMRoles(ctx context.Context, in *servicePb.UpsertCRMRo
 		crmRoles[i] = svc.FromProto(role)
 	}
 
-	if err := svc.UpsertAll(spanCtx, crmRoles); err != nil {
+	if err := svc.UpsertAll(ctx, crmRoles); err != nil {
 		err := errors.Wrap(err, "error upserting crmRoles in sql")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -113,10 +107,7 @@ func (h *Handlers) UpsertCRMRoles(ctx context.Context, in *servicePb.UpsertCRMRo
 }
 
 func (h *Handlers) GetCRMRoleById(ctx context.Context, in *servicePb.IdRequest) (*orchardPb.CRMRole, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetCRMRoleById")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
 		err := ErrBadRequest.New("id can't be empty")
@@ -132,7 +123,7 @@ func (h *Handlers) GetCRMRoleById(ctx context.Context, in *servicePb.IdRequest) 
 
 	svc := h.db.NewCRMRoleService()
 
-	cr, err := svc.GetByID(spanCtx, in.Id, in.TenantId)
+	cr, err := svc.GetByID(ctx, in.Id, in.TenantId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting crmRole from sql by id")
 		logger.Error(err)
@@ -150,10 +141,7 @@ func (h *Handlers) GetCRMRoleById(ctx context.Context, in *servicePb.IdRequest) 
 }
 
 func (h *Handlers) GetCRMRoles(ctx context.Context, in *servicePb.GetCRMRolesRequest) (*servicePb.GetCRMRolesResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetCRMRoles")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("search", in.Search)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("search", in.Search)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -172,7 +160,7 @@ func (h *Handlers) GetCRMRoles(ctx context.Context, in *servicePb.GetCRMRolesReq
 
 	svc := h.db.NewCRMRoleService()
 
-	crs, total, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset)
+	crs, total, err := svc.Search(ctx, in.TenantId, in.Search, limit, offset)
 	if err != nil {
 		err := errors.Wrap(err, "error getting crmRole from sql by id")
 		logger.Error(err)
@@ -194,10 +182,7 @@ func (h *Handlers) GetCRMRoles(ctx context.Context, in *servicePb.GetCRMRolesReq
 }
 
 func (h *Handlers) GetUnsyncedCRMRoles(ctx context.Context, in *servicePb.GetUnsyncedCRMRolesRequest) (*servicePb.GetUnsyncedCRMRolesResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetCRMRoles")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -207,7 +192,7 @@ func (h *Handlers) GetUnsyncedCRMRoles(ctx context.Context, in *servicePb.GetUns
 
 	svc := h.db.NewCRMRoleService()
 
-	crs, err := svc.GetUnsynced(spanCtx, in.TenantId)
+	crs, err := svc.GetUnsynced(ctx, in.TenantId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting unsynced crmRoles from sql")
 		logger.Error(err)
@@ -229,10 +214,7 @@ func (h *Handlers) GetUnsyncedCRMRoles(ctx context.Context, in *servicePb.GetUns
 }
 
 func (h *Handlers) DeleteCRMRoleById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
-	spanCtx, span := log.StartSpan(ctx, "DeleteCRMRoleById")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
 		err := ErrBadRequest.New("id can't be empty")
@@ -248,7 +230,7 @@ func (h *Handlers) DeleteCRMRoleById(ctx context.Context, in *servicePb.IdReques
 
 	svc := h.db.NewCRMRoleService()
 
-	err := svc.DeleteByID(spanCtx, in.Id, in.TenantId)
+	err := svc.DeleteByID(ctx, in.Id, in.TenantId)
 	if err != nil {
 		err := errors.Wrap(err, "error deleting crmRole from sql by id")
 		logger.Error(err)

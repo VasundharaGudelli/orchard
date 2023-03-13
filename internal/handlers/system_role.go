@@ -14,10 +14,7 @@ import (
 )
 
 func (h *Handlers) CreateSystemRole(ctx context.Context, in *servicePb.CreateSystemRoleRequest) (*servicePb.CreateSystemRoleResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "CreateSystemRole")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -47,7 +44,7 @@ func (h *Handlers) CreateSystemRole(ctx context.Context, in *servicePb.CreateSys
 
 	sr := svc.FromProto(in.SystemRole)
 
-	if err := svc.Insert(spanCtx, sr); err != nil {
+	if err := svc.Insert(ctx, sr); err != nil {
 		err := errors.Wrap(err, "error inserting system role into sql")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -64,10 +61,7 @@ func (h *Handlers) CreateSystemRole(ctx context.Context, in *servicePb.CreateSys
 }
 
 func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSystemRoleRequest) (*servicePb.CloneSystemRoleResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "CloneSystemRole")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -95,7 +89,7 @@ func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSyste
 
 	svc := h.db.NewSystemRoleService()
 
-	br, err := svc.GetByID(spanCtx, in.BaseRoleId)
+	br, err := svc.GetByID(ctx, in.BaseRoleId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting base system role")
 		logger.Error(err)
@@ -114,7 +108,7 @@ func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSyste
 
 	// if base role not empty move up a level
 	if br.BaseRoleID.Valid && !br.BaseRoleID.IsZero() {
-		br, err = svc.GetByID(spanCtx, br.BaseRoleID.String)
+		br, err = svc.GetByID(ctx, br.BaseRoleID.String)
 		if err != nil {
 			err := errors.Wrap(err, "error getting base system role")
 			logger.Error(err)
@@ -148,7 +142,7 @@ func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSyste
 	sr.Type = roleType
 	sr.Status = roleStatus
 
-	if err := svc.Insert(spanCtx, sr); err != nil {
+	if err := svc.Insert(ctx, sr); err != nil {
 		err := errors.Wrap(err, "error inserting system role into sql")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -165,10 +159,7 @@ func (h *Handlers) CloneSystemRole(ctx context.Context, in *servicePb.CloneSyste
 }
 
 func (h *Handlers) GetSystemRoleById(ctx context.Context, in *servicePb.IdRequest) (*orchardPb.SystemRole, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetSystemRoleById")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
 		err := ErrBadRequest.New("id can't be empty")
@@ -178,7 +169,7 @@ func (h *Handlers) GetSystemRoleById(ctx context.Context, in *servicePb.IdReques
 
 	svc := h.db.NewSystemRoleService()
 
-	sr, err := svc.GetByID(spanCtx, in.Id)
+	sr, err := svc.GetByID(ctx, in.Id)
 	if err != nil {
 		err := errors.Wrap(err, "error getting systemRole by id")
 		logger.Error(err)
@@ -196,10 +187,7 @@ func (h *Handlers) GetSystemRoleById(ctx context.Context, in *servicePb.IdReques
 }
 
 func (h *Handlers) GetSystemRoleWithBaseRole(ctx context.Context, in *servicePb.IdRequest) (*servicePb.GetSystemRoleWithBaseRoleResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetSystemRoleWithBaseRole")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
 		err := ErrBadRequest.New("id can't be empty")
@@ -209,7 +197,7 @@ func (h *Handlers) GetSystemRoleWithBaseRole(ctx context.Context, in *servicePb.
 
 	svc := h.db.NewSystemRoleService()
 
-	srs, err := svc.GetByIDWithBaseRole(spanCtx, in.Id)
+	srs, err := svc.GetByIDWithBaseRole(ctx, in.Id)
 	if err != nil {
 		err := errors.Wrap(err, "error getting systemRole with base role")
 		logger.Error(err)
@@ -251,14 +239,11 @@ func (h *Handlers) GetSystemRoleWithBaseRole(ctx context.Context, in *servicePb.
 }
 
 func (h *Handlers) GetSystemRoles(ctx context.Context, in *servicePb.GetSystemRolesRequest) (*servicePb.GetSystemRolesResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetSystemRoles")
-	defer span.End()
-
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("search", in.Search)
+	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("search", in.Search)
 
 	svc := h.db.NewSystemRoleService()
 
-	srs, err := svc.Search(spanCtx, in.TenantId, in.Search)
+	srs, err := svc.Search(ctx, in.TenantId, in.Search)
 	if err != nil {
 		err := errors.Wrap(err, "error searching systemRoles")
 		logger.Error(err)
@@ -282,12 +267,9 @@ func (h *Handlers) GetSystemRoles(ctx context.Context, in *servicePb.GetSystemRo
 }
 
 func (h *Handlers) UpdateSystemRole(ctx context.Context, in *servicePb.UpdateSystemRoleRequest) (*servicePb.UpdateSystemRoleResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "UpdateSystemRole")
-	defer span.End()
-
 	if in.SystemRole == nil {
 		err := ErrBadRequest.New("systemRole can't be null")
-		log.WithContext(spanCtx).Warn(err.Error())
+		log.WithContext(ctx).Warn(err.Error())
 		return nil, err.AsGRPC()
 	}
 
@@ -296,13 +278,13 @@ func (h *Handlers) UpdateSystemRole(ctx context.Context, in *servicePb.UpdateSys
 	}
 	if in.SystemRole.Id == "" {
 		err := ErrBadRequest.New("id can't be empty")
-		log.WithContext(spanCtx).Warn(err.Error())
+		log.WithContext(ctx).Warn(err.Error())
 		return nil, err.AsGRPC()
 	}
 
-	logger := log.WithContext(spanCtx).WithTenantID(in.SystemRole.TenantId).WithCustom("id", in.Id)
+	logger := log.WithContext(ctx).WithTenantID(in.SystemRole.TenantId).WithCustom("id", in.Id)
 
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating update system role transaction")
 		logger.Error(err)
@@ -314,7 +296,7 @@ func (h *Handlers) UpdateSystemRole(ctx context.Context, in *servicePb.UpdateSys
 
 	sr := svc.FromProto(in.SystemRole)
 
-	if err := svc.Update(spanCtx, sr, in.OnlyFields); err != nil {
+	if err := svc.Update(ctx, sr, in.OnlyFields); err != nil {
 		err := errors.Wrap(err, "error updating systemRole")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -322,7 +304,7 @@ func (h *Handlers) UpdateSystemRole(ctx context.Context, in *servicePb.UpdateSys
 
 	if len(in.OnlyFields) == 0 || strUtil.Strings(in.OnlyFields).Has("permissions") {
 		// TODO: eventually, probably want to check the tenantID on the deleted system_role to see if we can be more specific with our cache bust
-		if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{}); err != nil {
+		if _, err := h.bouncerClient.BustAuthCache(ctx, &bouncerPb.BustAuthCacheRequest{}); err != nil {
 			err := errors.Wrap(err, "error busting auth data cache in bouncer")
 			logger.Error(err)
 			if err := svc.Rollback(); err != nil {
@@ -352,9 +334,6 @@ func (h *Handlers) UpdateSystemRole(ctx context.Context, in *servicePb.UpdateSys
 }
 
 func (h *Handlers) DeleteSystemRoleById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
-	spanCtx, span := log.StartSpan(ctx, "DeleteSystemRoleById")
-	defer span.End()
-
 	logger := log.WithTenantID(in.TenantId).WithCustom("id", in.Id)
 
 	if in.Id == "" {
@@ -368,7 +347,7 @@ func (h *Handlers) DeleteSystemRoleById(ctx context.Context, in *servicePb.IdReq
 	}
 
 	personSvc := h.db.NewPersonService()
-	numPeople, err := personSvc.CountPeopleByRoleId(spanCtx, in.TenantId, in.Id)
+	numPeople, err := personSvc.CountPeopleByRoleId(ctx, in.TenantId, in.Id)
 	if err != nil {
 		err := errors.Wrap(err, "error checking if role has users attached")
 		logger.Error(err)
@@ -381,7 +360,7 @@ func (h *Handlers) DeleteSystemRoleById(ctx context.Context, in *servicePb.IdReq
 		return nil, err.AsGRPC()
 	}
 
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating delete system role transaction")
 		logger.Error(err)
@@ -391,14 +370,14 @@ func (h *Handlers) DeleteSystemRoleById(ctx context.Context, in *servicePb.IdReq
 	svc := h.db.NewSystemRoleService()
 	svc.SetTransaction(tx)
 
-	if err := svc.SoftDeleteByID(spanCtx, in.Id, in.TenantId, in.UserId); err != nil {
+	if err := svc.SoftDeleteByID(ctx, in.Id, in.TenantId, in.UserId); err != nil {
 		err := errors.Wrap(err, "error deleting systemRole by id")
 		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
 
 	// TODO: eventually, probably want to check the tenantID on the deleted system_role to see if we can be more specific with our cache bust
-	if _, err := h.bouncerClient.BustAuthCache(spanCtx, &bouncerPb.BustAuthCacheRequest{}); err != nil {
+	if _, err := h.bouncerClient.BustAuthCache(ctx, &bouncerPb.BustAuthCacheRequest{}); err != nil {
 		err := errors.Wrap(err, "error busting auth data cache in bouncer")
 		logger.Error(err)
 		if err := svc.Rollback(); err != nil {
