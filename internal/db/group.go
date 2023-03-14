@@ -173,10 +173,11 @@ func (svc *GroupService) Search(ctx context.Context, tenantID, query string) ([]
 }
 
 type GroupTreeNode struct {
-	models.Group `boil:",bind"`
-	MembersRaw   types.StringArray `boil:"members_raw"`
-	Members      []models.Person   `boil:"-"`
-	Children     []*GroupTreeNode  `boil:"-"`
+	models.Group      `boil:",bind"`
+	MembersRaw        types.StringArray `boil:"members_raw"`
+	ActiveMemberCount int               `boil:"active_member_count"`
+	Members           []models.Person   `boil:"-"`
+	Children          []*GroupTreeNode  `boil:"-"`
 }
 
 const (
@@ -187,14 +188,17 @@ const (
 	"group".created_at as "group.created_at", "group".created_by as "group.created_by", "group".updated_at as "group.updated_at", "group".updated_by as "group.updated_by",
 	ARRAY_REMOVE(
 		ARRAY_AGG(
-			CASE WHEN p.id IS NULL THEN NULL ELSE
+			CASE WHEN p.id IS NULL THEN NULL
+			WHEN NOT {MANAGER_EXCLUSION_PART} THEN NULL
+			ELSE
 				{PERSON_SELECT}
 			END
 		),
 		NULL
-	) as "members_raw"
+	) as "members_raw",
+	COUNT(CASE WHEN p.status = 'active' THEN p.id ELSE NULL END) AS active_member_count
 FROM "group"
-LEFT OUTER JOIN person p ON (p.group_id = "group".id AND p.tenant_id = "group".tenant_id {STATUS_PART} {MANAGER_EXCLUSION_PART})
+LEFT OUTER JOIN person p ON (p.group_id = "group".id AND p.tenant_id = "group".tenant_id {STATUS_PART})
 WHERE {GROUP_SELECT} AND "group".tenant_id = $2 AND "group".status = 'active'
 GROUP BY
 	"group".id, "group".tenant_id, "group".name, "group".type, "group".status, "group".role_ids, "group".crm_role_ids, "group".parent_id,
@@ -307,9 +311,9 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 		statusPart = `AND p."status" = 'active'`
 	}
 
-	managerExclusionPart := ""
+	managerExclusionPart := "TRUE"
 	if excludeManagerUsers {
-		managerExclusionPart = `AND ("group".type  = 'ic')`
+		managerExclusionPart = `("group".type  = 'ic')`
 	}
 
 	query := strings.ReplaceAll(getGroupSubTreeQuery, "{PERSON_SELECT}", personSelect)
