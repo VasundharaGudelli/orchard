@@ -384,6 +384,7 @@ func (svc *GroupService) GetFullTenantTree(ctx context.Context, tenantID string,
 			'role_ids', p.role_ids, 'crm_role_ids', p.crm_role_ids, 'is_provisioned', p.is_provisioned, 'is_synced', p.is_synced, 'status', p.status,
 			'created_at', TO_CHAR(p.created_at, 'YYYY-MM-DD"T"HH:MI:SS"Z"'), 'created_by', p.created_by,
 			'updated_at', TO_CHAR(p.updated_at, 'YYYY-MM-DD"T"HH:MI:SS"Z"'), 'updated_by', p.updated_by
+			'outreach_id', p.outreach_id, 'outreach_is_admin', p.outreach_is_admin,
 		)`
 	}
 	query := strings.ReplaceAll(getFullTenantTreeQuery, "{PERSON_SELECT}", personSelect)
