@@ -26,7 +26,7 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 	logger.Info("begin SyncUsers")
 
 	var (
-		batchSize = 1000
+		batchSize = h.cfg.SyncUsersBatchSize
 		total     int
 		nextToken string
 		err       error
