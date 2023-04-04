@@ -36,15 +36,24 @@ func (client *CRMClient) Close() {
 	}
 }
 
-func (client *CRMClient) GetLatestChangedPeople(ctx context.Context, tenantID string, changeSince *timestamp.Timestamp) ([]*orchardPb.Person, error) {
+func (client *CRMClient) GetLatestChangedPeople(ctx context.Context, tenantID string, changeSince *timestamp.Timestamp, limit int, token string) ([]*orchardPb.Person, int, string, error) {
 	ctx, span := log.StartSpan(ctx, "Crm.GetLatestChangedPeople")
 	defer span.End()
 
-	res, err := client.client.GetLatestPeople(ctx, &servicePb.GetLatestPeopleRequest{TenantId: tenantID, ChangeSince: changeSince}, grpc.MaxCallRecvMsgSize(math.MaxInt32))
+	res, err := client.client.GetLatestPeople(
+		ctx,
+		&servicePb.GetLatestPeopleRequest{
+			TenantId:    tenantID,
+			ChangeSince: changeSince,
+			Limit:       int32(limit),
+			Token:       token,
+		},
+		grpc.MaxCallRecvMsgSize(math.MaxInt32),
+	)
 	if err != nil {
-		return nil, err
+		return nil, 0, "", err
 	}
-	return res.LatestPeople, nil
+	return res.LatestPeople, int(res.Total), res.NextToken, nil
 }
 
 func (client *CRMClient) GetLatestCRMRoles(ctx context.Context, tenantID string, changeSince *timestamp.Timestamp) ([]*orchardPb.CRMRole, error) {

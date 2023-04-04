@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/loupe-co/go-common/errors"
-	commonSync "github.com/loupe-co/go-common/sync"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/db"
 	"github.com/loupe-co/orchard/internal/models"
@@ -16,69 +15,77 @@ import (
 	"github.com/volatiletech/null/v8"
 )
 
-const DefaultBatchSize = 2000
-
 func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
-	syncSince := in.SyncSince.AsTime()
+	ctx, span := log.StartSpan(ctx, "SyncUsers")
+	defer span.End()
 
-	logger := log.WithTenantID(in.TenantId).WithCustom("syncSince", syncSince)
+	logger := log.WithContext(ctx).
+		WithTenantID(in.TenantId).
+		WithCustom("syncSince", in.SyncSince.AsTime())
 
-	latestCRMUsers, err := h.crmClient.GetLatestChangedPeople(ctx, in.TenantId, in.SyncSince)
-	if err != nil {
-		err := errors.Wrap(err, "error getting person data from crm-data-access")
-		logger.Error(err)
-		return nil, err.AsGRPC()
-	}
+	logger.Info("begin SyncUsers")
 
-	personSvc := h.db.NewPersonService()
+	var (
+		batchSize = 1000
+		total     int
+		nextToken string
+		err       error
+	)
 
-	wp, _ := commonSync.NewWorkerPool(ctx, 10)
-	l := len(latestCRMUsers)
-	batchCount := calculateBatchCount(l, DefaultBatchSize)
-	results := make([][]*models.Person, batchCount)
-	for i := 0; i < batchCount; i++ {
-		batchSize := DefaultBatchSize
-		cursor := i * DefaultBatchSize
-		if l < cursor+batchSize {
-			batchSize = l - cursor
+	for {
+		var latestCRMUsers []*orchardPb.Person
+		latestCRMUsers, total, nextToken, err = h.crmClient.GetLatestChangedPeople(ctx, in.TenantId, in.SyncSince, batchSize, nextToken)
+		if err != nil {
+			err := errors.Wrap(err, "error getting person data from crm-data-access")
+			logger.Error(err)
+			return nil, err.Clean().AsGRPC()
 		}
-		wp.Go(h.createPeopleBatch(ctx, in.TenantId, personSvc, latestCRMUsers[cursor:batchSize+cursor], results, i))
-	}
-	if err := wp.Wait(ctx); err != nil {
-		err := errors.Wrap(err, "error waiting for upsert person batches to create")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+
+		if len(latestCRMUsers) == 0 {
+			break
+		}
+
+		batch, err := h.createPeopleBatch(ctx, in.TenantId, latestCRMUsers)
+		if err != nil {
+			err := errors.Wrap(err, "error creating people batch")
+			logger.Error(err)
+			return nil, err.Clean().AsGRPC()
+		}
+
+		if err := h.batchUpsertUsers(ctx, batch); err != nil {
+			err := errors.Wrap(err, "error upserting batch users")
+			logger.Error(err)
+			return nil, err.Clean().AsGRPC()
+		}
+
+		if nextToken == "" {
+			break
+		}
 	}
 
+	svc := h.db.NewPersonService()
 	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating transaction")
 		logger.Error(err)
-		return nil, err
+		return nil, err.Clean().AsGRPC()
 	}
-	personSvc.SetTransaction(tx)
+	svc.SetTransaction(tx)
+	defer svc.Rollback()
 
-	for _, batch := range results {
-		if err := h.batchUpsertUsers(ctx, personSvc, batch)(); err != nil {
-			err := errors.Wrap(err, "error running batch upsert people")
-			logger.Error(err)
-			return nil, err.AsGRPC()
-		}
-	}
-
-	if err := h.updatePersonGroups(ctx, in.TenantId, personSvc.GetTransaction()); err != nil {
+	if err := h.updatePersonGroups(ctx, in.TenantId, svc.GetTransaction()); err != nil {
 		err := errors.Wrap(err, "error updating person groups")
 		logger.Error(err)
-		personSvc.Rollback()
 		return nil, err.AsGRPC()
 	}
 
-	if err := personSvc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting sync users transactions in sql")
+	if err := svc.Commit(); err != nil {
+		err := errors.Wrap(err, "error commiting sync users transactions")
 		logger.Error(err)
-		personSvc.Rollback()
-		return nil, err.AsGRPC()
+		return nil, err.Clean().AsGRPC()
 	}
+
+	logger.WithCustom("total", total).Info("finish SyncUsers")
 
 	return &servicePb.SyncResponse{}, nil
 }
@@ -88,72 +95,80 @@ func calculateBatchCount(total, batchSize int) int {
 	return int(math.Ceil(batchCount))
 }
 
-func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, svc *db.PersonService, people []*orchardPb.Person, results [][]*models.Person, resultIdx int) func() error {
-	return func() error {
-		spanCtx, span := log.StartSpan(ctx, "createPeopleBatch")
-		defer span.End()
+func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, people []*orchardPb.Person) ([]*models.Person, error) {
+	ctx, span := log.StartSpan(ctx, "createPeopleBatch")
+	defer span.End()
 
-		ids := make([]interface{}, len(people))
-		for i, person := range people {
-			ids[i] = person.Id
-		}
+	svc := h.db.NewPersonService()
 
-		currentPeople, err := svc.GetByIDs(spanCtx, tenantID, ids...)
-		if err != nil {
-			err := errors.Wrap(err, "error getting existing person records from sql")
-			return err
-		}
-
-		existingPeople := make(map[string]*models.Person, len(currentPeople))
-		for _, person := range currentPeople {
-			existingPeople[person.ID] = person
-		}
-
-		batch := make([]*models.Person, len(people))
-		for i, person := range people {
-			p := svc.FromProto(person)
-			p.TenantID = tenantID
-			p.UpdatedBy = db.DefaultTenantID
-			p.UpdatedAt = time.Now().UTC()
-			if current, ok := existingPeople[person.Id]; ok {
-				if current.CreatedBy != db.DefaultTenantID {
-					batch[i] = nil
-					continue
-				}
-				if len(p.RoleIds) == 0 {
-					p.RoleIds = current.RoleIds
-				}
-				if !p.GroupID.Valid || p.GroupID.String == "" {
-					p.GroupID = current.GroupID
-				}
-				p.IsSynced = current.IsSynced
-				p.IsProvisioned = current.IsProvisioned
-			} else {
-				p.CreatedBy = db.DefaultTenantID
-				p.CreatedAt = time.Now().UTC()
-				p.IsSynced = true
-			}
-			if strings.EqualFold(p.Status, orchardPb.BasicStatus_Inactive.String()) {
-				p.IsProvisioned = false
-				p.Email = null.String{String: "", Valid: false}
-			}
-			batch[i] = p
-		}
-
-		results[resultIdx] = batch
-
-		return nil
+	ids := make([]interface{}, len(people))
+	for i, person := range people {
+		ids[i] = person.Id
 	}
+
+	currentPeople, err := svc.GetByIDs(ctx, tenantID, ids...)
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting existing person records from sql")
+	}
+
+	existingPeople := make(map[string]*models.Person, len(currentPeople))
+	for _, person := range currentPeople {
+		existingPeople[person.ID] = person
+	}
+
+	batch := make([]*models.Person, len(people))
+	for i, person := range people {
+		p := svc.FromProto(person)
+		p.TenantID = tenantID
+		p.UpdatedBy = db.DefaultTenantID
+		p.UpdatedAt = time.Now().UTC()
+		if current, ok := existingPeople[person.Id]; ok {
+			if current.CreatedBy != db.DefaultTenantID {
+				batch[i] = nil
+				continue
+			}
+			if len(p.RoleIds) == 0 {
+				p.RoleIds = current.RoleIds
+			}
+			if !p.GroupID.Valid || p.GroupID.String == "" {
+				p.GroupID = current.GroupID
+			}
+			p.IsSynced = current.IsSynced
+			p.IsProvisioned = current.IsProvisioned
+		} else {
+			p.CreatedBy = db.DefaultTenantID
+			p.CreatedAt = time.Now().UTC()
+			p.IsSynced = true
+		}
+		if strings.EqualFold(p.Status, orchardPb.BasicStatus_Inactive.String()) {
+			p.IsProvisioned = false
+			p.Email = null.String{String: "", Valid: false}
+		}
+		batch[i] = p
+	}
+
+	return batch, nil
 }
 
-func (h *Handlers) batchUpsertUsers(ctx context.Context, svc *db.PersonService, people []*models.Person) func() error {
-	return func() error {
-		spanCtx, span := log.StartSpan(ctx, "batchUpsertUsers")
-		defer span.End()
-		if err := svc.UpsertAll(spanCtx, people); err != nil {
-			err := errors.Wrap(err, "error upserting people records batch")
-			return err
-		}
-		return nil
+func (h *Handlers) batchUpsertUsers(ctx context.Context, people []*models.Person) error {
+	ctx, span := log.StartSpan(ctx, "batchUpsertUsers")
+	defer span.End()
+
+	svc := h.db.NewPersonService()
+	tx, err := h.db.NewTransaction(ctx)
+	if err != nil {
+		return errors.Wrap(err, "error creating transaction")
 	}
+	svc.SetTransaction(tx)
+	defer svc.Rollback()
+
+	if err := svc.UpsertAll(ctx, people); err != nil {
+		return errors.Wrap(err, "error upserting people records batch")
+	}
+
+	if err := svc.Commit(); err != nil {
+		return errors.Wrap(err, "error committing transaction")
+	}
+
+	return nil
 }
