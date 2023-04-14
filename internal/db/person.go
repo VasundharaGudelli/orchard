@@ -503,10 +503,14 @@ func (svc *PersonService) GetSFSandboxEmail(email string) string {
 	return fmt.Sprintf("%s.invalid", strings.TrimSpace(email))
 }
 
+type OutreachIDContainer struct {
+	OutreachID null.String `boil:"outreach_id" json:"outreach_id,omitempty" toml:"outreach_id" yaml:"outreach_id,omitempty"`
+}
+
 func (svc *PersonService) GetOutreachIdsFromCommitIds(ctx context.Context, tenantID string, entityID string) ([]string, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetOutreachIdsFromCommitIds")
 	defer span.End()
-	res := []string{}
+	res := []*OutreachIDContainer{}
 	err := queries.RawG(
 		fmt.Sprintf(`
 		SELECT p.outreach_id
@@ -529,5 +533,10 @@ func (svc *PersonService) GetOutreachIdsFromCommitIds(ctx context.Context, tenan
 		return nil, err
 	}
 
-	return res, nil
+	returnArr := make([]string, len(res))
+
+	for idx, oID := range res {
+		returnArr[idx] = oID.OutreachID.String
+	}
+	return returnArr, nil
 }
