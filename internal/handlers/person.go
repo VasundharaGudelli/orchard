@@ -1261,3 +1261,30 @@ func updateUserProvisioning(ctx context.Context, tenantID string, personID strin
 
 	return false, nil
 }
+
+func (h *Handlers) GetOutreachUserCommitMappings(ctx context.Context, in *servicePb.GetOutreachUserCommitMappingsRequest) (*servicePb.GetOutreachUserCommitMappingsResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "GetOutreachUserCommitMappings")
+	defer span.End()
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+
+	if in.TenantId == "" || in.CommitId == "" {
+		err := ErrBadRequest.New("tenantId and commitId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	personService := h.db.NewPersonService()
+	var outreachReturnIDS []string
+
+	if outreachIDs, err := personService.GetOutreachIdsFromCommitIds(spanCtx, in.TenantId, in.CommitId); err != nil {
+		logger.Errorf("error deleting person by id: %s", err.Error())
+		return nil, err
+	} else {
+		outreachReturnIDS = outreachIDs
+	}
+
+	return &servicePb.GetOutreachUserCommitMappingsResponse{
+		OutreachIds: outreachReturnIDS,
+	}, nil
+}

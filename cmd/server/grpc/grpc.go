@@ -246,3 +246,7 @@ func (server *OrchardGRPCServer) GetTenantPersonCount(ctx context.Context, in *s
 func (server *OrchardGRPCServer) GetPeopleByEmail(ctx context.Context, in *servicePb.GetPeopleByEmailRequest) (*servicePb.GetPeopleByEmailResponse, error) {
 	return server.handlers.GetPeopleByEmail(ctx, in)
 }
+
+func (server *OrchardGRPCServer) GetOutreachUserCommitMappings(ctx context.Context, in *servicePb.GetOutreachUserCommitMappingsRequest) (*servicePb.GetOutreachUserCommitMappingsResponse, error) {
+	return server.handlers.GetOutreachUserCommitMappings(ctx, in)
+}
