@@ -502,3 +502,32 @@ func (svc *PersonService) GetSFSandboxEmail(email string) string {
 
 	return fmt.Sprintf("%s.invalid", strings.TrimSpace(email))
 }
+
+func (svc *PersonService) GetOutreachIdsFromCommitIds(ctx context.Context, tenantID string, entityID string) ([]string, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetOutreachIdsFromCommitIds")
+	defer span.End()
+	res := []string{}
+	err := queries.RawG(
+		fmt.Sprintf(`
+		SELECT p.outreach_id
+		FROM "group" g
+		INNER JOIN person p ON p.group_id = g.id AND p.tenant_id = $1
+		WHERE g.tenant_id = $1
+		AND g.group_path  ~ '*.%s.*{1,}'
+		AND g.status = 'active'
+		AND p.outreach_id IS NOT NULL
+		UNION ALL
+		SELECT p.outreach_id
+		FROM person p
+		WHERE tenant_id = $1
+		AND id = $2
+		AND p.outreach_id IS NOT NULL
+		`, strings.ReplaceAll(entityID, "-", "_")),
+		tenantID, entityID).BindG(spanCtx, &res)
+
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
+	return res, nil
+}

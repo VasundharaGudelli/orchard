@@ -12,7 +12,7 @@ require (
 	github.com/loupe-co/bouncer v1.2.0
 	github.com/loupe-co/go-common v1.3.5
 	github.com/loupe-co/go-loupe-logger v1.2.0
-	github.com/loupe-co/protos v1.1.0
+	github.com/loupe-co/protos v1.3.0-rc.2
 	github.com/spf13/viper v1.12.0
 	github.com/urfave/cli/v2 v2.23.5
 	github.com/volatiletech/null/v8 v8.1.2
@@ -70,11 +70,11 @@ require (
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.103.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
