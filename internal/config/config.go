@@ -28,4 +28,5 @@ type Config struct {
 	RedisPassword         string `env:"REDIS_PASS" envDefault:"" yaml:"redis_password"`
 	SentryDSN             string `env:"SENTRY_DSN" envDefault:"" yaml:"sentry_dsn" exportENV:"SENTRY_DSN"`
 	SyncUsersBatchSize    int    `env:"SYNC_USERS_BATCH_SIZE" envDefault:"1000"`
+	SyncRolesBatchSize    int    `env:"SYNC_ROLES_BATCH_SIZE" envDefault:"500"`
 }

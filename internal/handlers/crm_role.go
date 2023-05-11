@@ -11,12 +11,16 @@ import (
 )
 
 func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "SyncCrmRoles")
+	ctx, span := log.StartSpan(ctx, "SyncCrmRoles")
 	defer span.End()
 
 	syncSince := in.SyncSince.AsTime()
 
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("syncSince", syncSince)
+	logger := log.WithContext(ctx).
+		WithTenantID(in.TenantId).
+		WithCustom("syncSince", syncSince)
+
+	logger.Info("begin SyncCrmRoles")
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -24,20 +28,7 @@ func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) 
 		return nil, err.AsGRPC()
 	}
 
-	latestCRMRoles, err := h.crmClient.GetLatestCRMRoles(spanCtx, in.TenantId, in.SyncSince)
-	if err != nil {
-		err := errors.Wrap(err, "error getting latest crm roles from crm-data-access")
-		logger.Error(err)
-		return nil, err.AsGRPC()
-	}
-
-	if len(latestCRMRoles) == 0 {
-		logger.Info("no new crm_roles to sync")
-		return &servicePb.SyncResponse{}, nil
-		// return nil, errors.Error("no latest crm_roles returned from crm-data-access")
-	}
-
-	tx, err := h.db.NewTransaction(spanCtx)
+	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		err := errors.Wrap(err, "error starting sync_crm_roles transaction")
 		logger.Error(err)
@@ -46,25 +37,40 @@ func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) 
 	svc := h.db.NewCRMRoleService()
 	svc.SetTransaction(tx)
 
-	ids := make([]interface{}, len(latestCRMRoles))
-	dbCRMRoles := make([]*models.CRMRole, len(latestCRMRoles))
-	for i, role := range latestCRMRoles {
-		ids[i] = role.Id
-		dbCRMRoles[i] = svc.FromProto(role)
-	}
+	var (
+		batchSize = h.cfg.SyncRolesBatchSize
+		total     int
+		nextToken string
+	)
 
-	if err := svc.UpsertAll(spanCtx, dbCRMRoles); err != nil {
-		err := errors.Wrap(err, "error upserting latest crm roles for sync")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
-	}
+	for {
+		var latestCRMRoles []*orchardPb.CRMRole
+		latestCRMRoles, total, nextToken, err = h.crmClient.GetLatestCRMRoles(ctx, in.TenantId, in.SyncSince, batchSize, nextToken)
+		if err != nil {
+			err := errors.Wrap(err, "error getting latest crm roles from crm-data-access")
+			logger.Error(err)
+			return nil, err.Clean().AsGRPC()
+		}
 
-	if err := svc.DeleteUnSynced(spanCtx, in.TenantId, ids...); err != nil {
-		err := errors.Wrap(err, "error deleting unsynced crm_roles")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+		if len(latestCRMRoles) == 0 {
+			break
+		}
+
+		dbCRMRoles := make([]*models.CRMRole, len(latestCRMRoles))
+		for i, role := range latestCRMRoles {
+			dbCRMRoles[i] = svc.FromProto(role)
+		}
+
+		if err := svc.UpsertAll(ctx, dbCRMRoles); err != nil {
+			err := errors.Wrap(err, "error upserting latest crm roles for sync")
+			logger.Error(err)
+			svc.Rollback()
+			return nil, err.Clean().AsGRPC()
+		}
+
+		if nextToken == "" {
+			break
+		}
 	}
 
 	if err := svc.Commit(); err != nil {
@@ -73,6 +79,8 @@ func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) 
 		svc.Rollback()
 		return nil, err.AsGRPC()
 	}
+
+	logger.WithCustom("total", total).Info("finish SyncCrmRoles")
 
 	return &servicePb.SyncResponse{}, nil
 }
