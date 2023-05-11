@@ -56,13 +56,19 @@ func (client *CRMClient) GetLatestChangedPeople(ctx context.Context, tenantID st
 	return res.LatestPeople, int(res.Total), res.NextToken, nil
 }
 
-func (client *CRMClient) GetLatestCRMRoles(ctx context.Context, tenantID string, changeSince *timestamp.Timestamp) ([]*orchardPb.CRMRole, error) {
-	ctx, span := log.StartSpan(ctx, "Crm.GetLatestCRMRoles")
-	defer span.End()
-
-	res, err := client.client.GetLatestCRMRoles(ctx, &servicePb.GetLatestCRMRolesRequest{TenantId: tenantID, ChangeSince: changeSince})
+func (client *CRMClient) GetLatestCRMRoles(ctx context.Context, tenantID string, changeSince *timestamp.Timestamp, limit int, token string) ([]*orchardPb.CRMRole, int, string, error) {
+	res, err := client.client.GetLatestCRMRoles(
+		ctx,
+		&servicePb.GetLatestCRMRolesRequest{
+			TenantId:    tenantID,
+			ChangeSince: changeSince,
+			Limit:       int32(limit),
+			Token:       token,
+		},
+		grpc.MaxCallRecvMsgSize(math.MaxInt32),
+	)
 	if err != nil {
-		return nil, err
+		return nil, 0, "", err
 	}
-	return res.LatestRoles, nil
+	return res.LatestRoles, int(res.Total), res.NextToken, nil
 }

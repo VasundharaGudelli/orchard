@@ -12,7 +12,7 @@ require (
 	github.com/loupe-co/bouncer v1.2.0
 	github.com/loupe-co/go-common v1.3.5
 	github.com/loupe-co/go-loupe-logger v1.2.0
-	github.com/loupe-co/protos v1.3.0-rc.3
+	github.com/loupe-co/protos v1.3.5-rc.1
 	github.com/spf13/viper v1.12.0
 	github.com/urfave/cli/v2 v2.23.5
 	github.com/volatiletech/null/v8 v8.1.2
@@ -37,7 +37,7 @@ require (
 	github.com/PuerkitoBio/rehttp v1.0.0 // indirect
 	github.com/aws/aws-sdk-go v1.36.32 // indirect
 	github.com/aybabtme/iocontrol v0.0.0-20150809002002-ad15bcfc95a0 // indirect
-	github.com/benbjohnson/clock v1.3.0 // indirect
+	github.com/benbjohnson/clock v1.3.4 // indirect
 	github.com/caarlos0/env/v6 v6.7.2 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
@@ -45,7 +45,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/ericlagergren/decimal v0.0.0-20211103172832-aca2edc11f73 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
-	github.com/getsentry/sentry-go v0.19.0 // indirect
+	github.com/getsentry/sentry-go v0.3.0 // indirect
 	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect

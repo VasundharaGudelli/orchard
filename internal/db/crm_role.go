@@ -67,7 +67,7 @@ const (
 )
 
 func (svc *CRMRoleService) UpsertAll(ctx context.Context, crmRoles []*models.CRMRole) error {
-	spanCtx, span := log.StartSpan(ctx, "CRMRole.UpsertAll")
+	ctx, span := log.StartSpan(ctx, "CRMRole.UpsertAll")
 	defer span.End()
 
 	subs := []string{}
@@ -82,7 +82,7 @@ func (svc *CRMRoleService) UpsertAll(ctx context.Context, crmRoles []*models.CRM
 
 	query := strings.ReplaceAll(crmRoleUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 
-	_, err := queries.Raw(query, vals...).ExecContext(spanCtx, svc.GetContextExecutor())
+	_, err := queries.Raw(query, vals...).ExecContext(ctx, svc.GetContextExecutor())
 	if err != nil {
 		argsRaw, _ := json.Marshal(vals)
 		fmt.Println("QUERY", query)
@@ -187,10 +187,13 @@ func (svc *CRMRoleService) DeleteByID(ctx context.Context, id, tenantID string) 
 }
 
 func (svc *CRMRoleService) DeleteUnSynced(ctx context.Context, tenantID string, syncedIDs ...interface{}) error {
-	spanCtx, span := log.StartSpan(ctx, "CRMRole.DeleteUnSynced")
+	ctx, span := log.StartSpan(ctx, "CRMRole.DeleteUnSynced")
 	defer span.End()
 
-	_, err := models.CRMRoles(qm.WhereNotIn("id NOT IN ?", syncedIDs...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(syncedIDs)+1), tenantID)).DeleteAll(spanCtx, svc.GetContextExecutor())
+	_, err := models.CRMRoles(
+		qm.WhereNotIn("id NOT IN ?", syncedIDs...),
+		qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(syncedIDs)+1), tenantID),
+	).DeleteAll(ctx, svc.GetContextExecutor())
 	if err != nil {
 		return err
 	}
