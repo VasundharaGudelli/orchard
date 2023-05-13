@@ -520,3 +520,41 @@ func (svc *PersonService) GetSFSandboxEmail(email string) string {
 
 	return fmt.Sprintf("%s.invalid", strings.TrimSpace(email))
 }
+
+type OutreachIDContainer struct {
+	OutreachID null.String `boil:"outreach_id" json:"outreach_id,omitempty" toml:"outreach_id" yaml:"outreach_id,omitempty"`
+}
+
+func (svc *PersonService) GetOutreachIdsFromCommitIds(ctx context.Context, tenantID string, entityID string) ([]string, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetOutreachIdsFromCommitIds")
+	defer span.End()
+	res := []*OutreachIDContainer{}
+	err := queries.RawG(
+		fmt.Sprintf(`
+		SELECT p.outreach_id
+		FROM "group" g
+		INNER JOIN person p ON p.group_id = g.id AND p.tenant_id = $1
+		WHERE g.tenant_id = $1
+		AND g.group_path  ~ '*.%s.*{1,}'
+		AND g.status = 'active'
+		AND p.outreach_id IS NOT NULL
+		UNION ALL
+		SELECT p.outreach_id
+		FROM person p
+		WHERE tenant_id = $1
+		AND id = $2
+		AND p.outreach_id IS NOT NULL
+		`, strings.ReplaceAll(entityID, "-", "_")),
+		tenantID, entityID).BindG(spanCtx, &res)
+
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
+	returnArr := make([]string, len(res))
+
+	for idx, oID := range res {
+		returnArr[idx] = oID.OutreachID.String
+	}
+	return returnArr, nil
+}
