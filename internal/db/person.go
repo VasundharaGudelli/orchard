@@ -351,10 +351,28 @@ func (svc *PersonService) CountPeopleByRoleId(ctx context.Context, tenantID, rol
 	return numPeople, nil
 }
 
-func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string) ([]*models.Person, error) {
+func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string, since *timestamppb.Timestamp) ([]*models.Person, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetVirtualUsers")
 	defer span.End()
-	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2", tenantID, DefaultTenantID)).All(spanCtx, svc.GetContextExecutor())
+	t := time.Time{}
+	if since != nil && since.IsValid() {
+		t = since.AsTime()
+	}
+	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2 AND updated_at >= $3", tenantID, DefaultTenantID, t)).All(spanCtx, svc.GetContextExecutor())
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	return people, nil
+}
+
+func (svc *PersonService) GetNonOutreachSyncedVirtualUsers(ctx context.Context, tenantID string, since *timestamppb.Timestamp) ([]*models.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetVirtualUsers")
+	defer span.End()
+	t := time.Time{}
+	if since != nil && since.IsValid() {
+		t = since.AsTime()
+	}
+	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2 AND updated_at >= $3 AND (outreach_guid IS NULL OR outreach_guid = '')", tenantID, DefaultTenantID, t)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
