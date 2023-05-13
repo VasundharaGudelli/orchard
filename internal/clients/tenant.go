@@ -9,6 +9,7 @@ import (
 	servicePb "github.com/loupe-co/protos/src/services/tenant"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type TenantClient struct {
@@ -43,4 +44,12 @@ func (client *TenantClient) GetProvisionedUsers(ctx context.Context, tenantID st
 		return nil, err
 	}
 	return res.ProvisionedUsers, nil
+}
+
+func (client *TenantClient) GetTenantLastFullDataSync(ctx context.Context, tenantID string) (*timestamppb.Timestamp, error) {
+	res, err := client.client.GetTenantLastFullDataSync(ctx, &servicePb.GetTenantLastFullDataSyncRequest{TenantId: tenantID})
+	if err != nil {
+		return nil, err
+	}
+	return res.LastSync, nil
 }
