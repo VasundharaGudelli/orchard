@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -125,6 +126,10 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 
 	paramIdx := 1
 	for _, p := range people {
+		if p.Email.String == "will.jaynes+ct@outreach.io" {
+			b, _ := json.Marshal(p)
+			fmt.Println(string(b))
+		}
 		if p == nil {
 			continue
 		}
