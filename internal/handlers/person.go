@@ -494,7 +494,7 @@ func (h *Handlers) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtual
 		return nil, err.AsGRPC()
 	}
 
-	peeps, err := svc.GetVirtualUsers(spanCtx, in.TenantId, lastFullDataSync)
+	peeps, err := svc.GetVirtualUsers(ctx, in.TenantId, lastFullDataSync)
 	if err != nil {
 		err := errors.Wrap(err, "error getting virtual user records")
 		logger.Error(err)
