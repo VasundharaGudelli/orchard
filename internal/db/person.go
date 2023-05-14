@@ -351,10 +351,28 @@ func (svc *PersonService) CountPeopleByRoleId(ctx context.Context, tenantID, rol
 	return numPeople, nil
 }
 
-func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string) ([]*models.Person, error) {
+func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string, since *timestamppb.Timestamp) ([]*models.Person, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetVirtualUsers")
 	defer span.End()
-	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2", tenantID, DefaultTenantID)).All(spanCtx, svc.GetContextExecutor())
+	t := time.Time{}
+	if since != nil && since.IsValid() {
+		t = since.AsTime()
+	}
+	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2 AND updated_at >= $3", tenantID, DefaultTenantID, t)).All(spanCtx, svc.GetContextExecutor())
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	return people, nil
+}
+
+func (svc *PersonService) GetNonOutreachSyncedVirtualUsers(ctx context.Context, tenantID string, since *timestamppb.Timestamp) ([]*models.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetVirtualUsers")
+	defer span.End()
+	t := time.Time{}
+	if since != nil && since.IsValid() {
+		t = since.AsTime()
+	}
+	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2 AND updated_at >= $3 AND (outreach_guid IS NULL OR outreach_guid = '')", tenantID, DefaultTenantID, t)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -501,4 +519,42 @@ func (svc *PersonService) GetSFSandboxEmail(email string) string {
 	}
 
 	return fmt.Sprintf("%s.invalid", strings.TrimSpace(email))
+}
+
+type OutreachIDContainer struct {
+	OutreachID null.String `boil:"outreach_id" json:"outreach_id,omitempty" toml:"outreach_id" yaml:"outreach_id,omitempty"`
+}
+
+func (svc *PersonService) GetOutreachIdsFromCommitIds(ctx context.Context, tenantID string, entityID string) ([]string, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetOutreachIdsFromCommitIds")
+	defer span.End()
+	res := []*OutreachIDContainer{}
+	err := queries.RawG(
+		fmt.Sprintf(`
+		SELECT p.outreach_id
+		FROM "group" g
+		INNER JOIN person p ON p.group_id = g.id AND p.tenant_id = $1
+		WHERE g.tenant_id = $1
+		AND g.group_path  ~ '*.%s.*{1,}'
+		AND g.status = 'active'
+		AND p.outreach_id IS NOT NULL
+		UNION ALL
+		SELECT p.outreach_id
+		FROM person p
+		WHERE tenant_id = $1
+		AND id = $2
+		AND p.outreach_id IS NOT NULL
+		`, strings.ReplaceAll(entityID, "-", "_")),
+		tenantID, entityID).BindG(spanCtx, &res)
+
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
+	returnArr := make([]string, len(res))
+
+	for idx, oID := range res {
+		returnArr[idx] = oID.OutreachID.String
+	}
+	return returnArr, nil
 }
