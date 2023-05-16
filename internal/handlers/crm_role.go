@@ -151,6 +151,51 @@ func (h *Handlers) GetCRMRoleById(ctx context.Context, in *servicePb.IdRequest) 
 	return crmRole, nil
 }
 
+func (h *Handlers) GetCRMRolesByIds(ctx context.Context, in *servicePb.IdsRequest) (*servicePb.GetCRMRolesByIdsResponse, error) {
+	ctx, span := log.StartSpan(ctx, "GetCRMRolesByIds")
+	defer span.End()
+
+	logger := log.WithContext(ctx).
+		WithTenantID(in.TenantId).
+		WithCustom("ids", in.Ids)
+
+	if len(in.Ids) == 0 {
+		err := ErrBadRequest.New("ids can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	if in.TenantId == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := h.db.NewCRMRoleService()
+
+	crs, err := svc.GetByIDs(ctx, in.TenantId, in.Ids...)
+	if err != nil {
+		err := errors.Wrap(err, "error getting crmRoles from sql by ids")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	res := &servicePb.GetCRMRolesByIdsResponse{
+		Roles: make([]*orchardPb.CRMRole, len(crs)),
+	}
+	for i, cr := range crs {
+		crmRole, err := svc.ToProto(cr)
+		if err != nil {
+			err := errors.Wrap(err, "error converting crmRole from db model to proto")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		res.Roles[i] = crmRole
+	}
+
+	return res, nil
+}
+
 func (h *Handlers) GetCRMRoles(ctx context.Context, in *servicePb.GetCRMRolesRequest) (*servicePb.GetCRMRolesResponse, error) {
 	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("search", in.Search)
 
