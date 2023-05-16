@@ -120,6 +120,14 @@ func (client *OrchardClient) GetCRMRoleById(ctx context.Context, in *servicePb.I
 	return client.client.GetCRMRoleById(ctx, in)
 }
 
+func (client *OrchardClient) GetCRMRolesByIds(ctx context.Context, in *servicePb.IdsRequest) ([]*orchardPb.CRMRole, error) {
+	res, err := client.client.GetCRMRolesByIds(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return res.Roles, nil
+}
+
 func (client *OrchardClient) GetCRMRoles(ctx context.Context, in *servicePb.GetCRMRolesRequest) (*servicePb.GetCRMRolesResponse, error) {
 	return client.client.GetCRMRoles(ctx, in)
 }
