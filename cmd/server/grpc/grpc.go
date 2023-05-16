@@ -114,6 +114,10 @@ func (server *OrchardGRPCServer) GetCRMRoleById(ctx context.Context, in *service
 	return server.handlers.GetCRMRoleById(ctx, in)
 }
 
+func (server *OrchardGRPCServer) GetCRMRolesByIds(ctx context.Context, in *servicePb.IdsRequest) (*servicePb.GetCRMRolesByIdsResponse, error) {
+	return server.handlers.GetCRMRolesByIds(ctx, in)
+}
+
 func (server *OrchardGRPCServer) GetCRMRoles(ctx context.Context, in *servicePb.GetCRMRolesRequest) (*servicePb.GetCRMRolesResponse, error) {
 	return server.handlers.GetCRMRoles(ctx, in)
 }
