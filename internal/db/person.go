@@ -141,6 +141,11 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 		vals = append(vals, p.ID, p.TenantID, p.Name, p.FirstName, p.LastName, p.Email, p.PhotoURL, p.ManagerID, p.GroupID, p.RoleIds, p.CRMRoleIds, p.IsProvisioned, p.IsSynced, p.Status, p.CreatedAt, p.CreatedBy, p.UpdatedAt, p.UpdatedBy)
 	}
 
+	// Check both just in case, neither is valid
+	if len(vals) == 0 || len(subs) == 0 {
+		return nil
+	}
+
 	query := strings.ReplaceAll(personUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 
 	_, err := queries.Raw(query, vals...).ExecContext(spanCtx, svc.GetContextExecutor())
