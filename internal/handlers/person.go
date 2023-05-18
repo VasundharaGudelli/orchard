@@ -1237,7 +1237,6 @@ func (h *Handlers) GetOutreachUserCommitMappings(ctx context.Context, in *servic
 	}
 
 	personService := h.db.NewPersonService()
-	var outreachReturnIDS []string
 
 	outreachReturnIDS, err := personService.GetOutreachIdsFromCommitIds(spanCtx, in.TenantId, in.CommitId)
 	if err != nil {
