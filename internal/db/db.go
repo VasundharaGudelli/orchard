@@ -17,6 +17,7 @@ import (
 
 const DefaultDBTimeout = 30 * time.Second
 const DefaultTenantID = "00000000-0000-0000-0000-000000000000"
+const DefaultOutreachSyncID = "00000000-0000-0000-0000-000000000001"
 
 var (
 	DefaultHealthCheckPolicy = ekg.HealthCheckPolicy{

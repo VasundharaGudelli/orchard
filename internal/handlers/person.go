@@ -508,7 +508,14 @@ func (h *Handlers) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtual
 
 	svc := h.db.NewPersonService()
 
-	peeps, err := svc.GetVirtualUsers(spanCtx, in.TenantId)
+	lastFullDataSync, err := h.tenantClient.GetTenantLastFullDataSync(ctx, in.TenantId)
+	if err != nil {
+		err := errors.Wrap(err, "error getting tenant last full data sync")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	peeps, err := svc.GetVirtualUsers(spanCtx, in.TenantId, lastFullDataSync)
 	if err != nil {
 		err := errors.Wrap(err, "error getting virtual user records")
 		logger.Error(err)
@@ -587,7 +594,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	}
 
 	// Check if this is virtual user that is no longer provisioned: -> status=inactive
-	if !in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID {
+	if !in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
 		in.Person.Status = orchardPb.BasicStatus_Inactive
 		if len(in.OnlyFields) > 0 {
 			in.OnlyFields = append(in.OnlyFields, "status")
@@ -595,7 +602,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	}
 
 	// If virtual user and provisioning, set to active
-	if in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID {
+	if in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
 		in.Person.Status = orchardPb.BasicStatus_Active
 		if len(in.OnlyFields) > 0 {
 			in.OnlyFields = append(in.OnlyFields, "status")
@@ -977,7 +984,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	svc := h.db.NewPersonService()
 
 	// get virtual users for tenant
-	peeps, err := svc.GetVirtualUsers(spanCtx, in.GetTenantId())
+	peeps, err := svc.GetNonOutreachSyncedVirtualUsers(spanCtx, in.GetTenantId(), nil)
 	if err != nil {
 		err := errors.Wrap(err, "error getting virtual user records")
 		logger.Error(err)

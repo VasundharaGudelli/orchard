@@ -141,6 +141,11 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 		vals = append(vals, p.ID, p.TenantID, p.Name, p.FirstName, p.LastName, p.Email, p.PhotoURL, p.ManagerID, p.GroupID, p.RoleIds, p.CRMRoleIds, p.IsProvisioned, p.IsSynced, p.Status, p.CreatedAt, p.CreatedBy, p.UpdatedAt, p.UpdatedBy)
 	}
 
+	// Check both just in case, neither is valid
+	if len(vals) == 0 || len(subs) == 0 {
+		return nil
+	}
+
 	query := strings.ReplaceAll(personUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 
 	_, err := queries.Raw(query, vals...).ExecContext(spanCtx, svc.GetContextExecutor())
@@ -351,10 +356,28 @@ func (svc *PersonService) CountPeopleByRoleId(ctx context.Context, tenantID, rol
 	return numPeople, nil
 }
 
-func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string) ([]*models.Person, error) {
+func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string, since *timestamppb.Timestamp) ([]*models.Person, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetVirtualUsers")
 	defer span.End()
-	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2", tenantID, DefaultTenantID)).All(spanCtx, svc.GetContextExecutor())
+	t := time.Time{}
+	if since != nil && since.IsValid() {
+		t = since.AsTime()
+	}
+	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2 AND updated_at >= $3", tenantID, DefaultTenantID, t)).All(spanCtx, svc.GetContextExecutor())
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	return people, nil
+}
+
+func (svc *PersonService) GetNonOutreachSyncedVirtualUsers(ctx context.Context, tenantID string, since *timestamppb.Timestamp) ([]*models.Person, error) {
+	spanCtx, span := log.StartSpan(ctx, "Person.GetVirtualUsers")
+	defer span.End()
+	t := time.Time{}
+	if since != nil && since.IsValid() {
+		t = since.AsTime()
+	}
+	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2 AND updated_at >= $3 AND (outreach_guid IS NULL OR outreach_guid = '')", tenantID, DefaultTenantID, t)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
