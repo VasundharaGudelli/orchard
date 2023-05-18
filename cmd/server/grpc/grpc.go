@@ -4,14 +4,12 @@ import (
 	"context"
 
 	"github.com/loupe-co/bouncer/pkg/client"
-	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/orchard/internal/clients"
 	"github.com/loupe-co/orchard/internal/config"
 	"github.com/loupe-co/orchard/internal/db"
 	"github.com/loupe-co/orchard/internal/handlers"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
-	"google.golang.org/grpc/codes"
 )
 
 type OrchardGRPCServer struct {
@@ -254,5 +252,5 @@ func (server *OrchardGRPCServer) GetPeopleByEmail(ctx context.Context, in *servi
 }
 
 func (server *OrchardGRPCServer) GetOutreachUserCommitMappings(ctx context.Context, in *servicePb.GetOutreachUserCommitMappingsRequest) (*servicePb.GetOutreachUserCommitMappingsResponse, error) {
-	return nil, errors.New("unimplemented").WithCode(codes.Unimplemented).Clean().AsGRPC()
+	return server.handlers.GetOutreachUserCommitMappings(ctx, in)
 }
