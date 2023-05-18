@@ -1284,11 +1284,11 @@ func (h *Handlers) GetOutreachUserCommitMappings(ctx context.Context, in *servic
 	personService := h.db.NewPersonService()
 	var outreachReturnIDS []string
 
-	if outreachIDs, err := personService.GetOutreachIdsFromCommitIds(spanCtx, in.TenantId, in.CommitId); err != nil {
-		logger.Errorf("error deleting person by id: %s", err.Error())
+	outreachReturnIDS, err := personService.GetOutreachIdsFromCommitIds(spanCtx, in.TenantId, in.CommitId)
+	if err != nil {
+		err := errors.Wrap(err, "error deleting person by id")
+		logger.Error(err)
 		return nil, err
-	} else {
-		outreachReturnIDS = outreachIDs
 	}
 
 	return &servicePb.GetOutreachUserCommitMappingsResponse{
