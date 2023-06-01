@@ -9,10 +9,10 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/lib/pq v1.10.6
-	github.com/loupe-co/bouncer v1.2.0
-	github.com/loupe-co/go-common v1.3.5
-	github.com/loupe-co/go-loupe-logger v1.2.0
-	github.com/loupe-co/protos v1.3.7
+	github.com/loupe-co/bouncer v1.2.1
+	github.com/loupe-co/go-common v1.3.7
+	github.com/loupe-co/go-loupe-logger v1.2.3
+	github.com/loupe-co/protos v1.3.10
 	github.com/spf13/viper v1.12.0
 	github.com/urfave/cli/v2 v2.23.5
 	github.com/volatiletech/null/v8 v8.1.2
@@ -20,7 +20,7 @@ require (
 	github.com/volatiletech/sqlboiler/v4 v4.14.2
 	github.com/volatiletech/strmangle v0.0.4
 	google.golang.org/grpc v1.52.1
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.29.1
 	gopkg.in/auth0.v4 v4.7.0
 )
 
@@ -45,7 +45,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/ericlagergren/decimal v0.0.0-20211103172832-aca2edc11f73 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
-	github.com/getsentry/sentry-go v0.19.0 // indirect
+	github.com/getsentry/sentry-go v0.20.0 // indirect
 	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
