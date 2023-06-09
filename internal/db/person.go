@@ -540,7 +540,11 @@ func (svc *PersonService) GetOutreachIdsFromCommitIds(ctx context.Context, tenan
 		FROM "group" g
 		INNER JOIN person p ON p.group_id = g.id AND p.tenant_id = $1
 		WHERE g.tenant_id = $1
-		AND g.group_path  ~ '*.%s.*{1,}'
+		AND (
+			g.group_path  ~ '*.%s.*{1,}'
+			OR
+			p.group_id = $2
+		)
 		AND g.status = 'active'
 		AND p.outreach_id IS NOT NULL
 		UNION ALL
