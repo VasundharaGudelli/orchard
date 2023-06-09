@@ -1240,7 +1240,7 @@ func (h *Handlers) GetOutreachUserCommitMappings(ctx context.Context, in *servic
 
 	outreachReturnIDS, err := personService.GetOutreachIdsFromCommitIds(spanCtx, in.TenantId, in.CommitId)
 	if err != nil {
-		err := errors.Wrap(err, "error deleting person by id")
+		err := errors.Wrap(err, "error mapping people ids")
 		logger.Error(err)
 		return nil, err
 	}
