@@ -543,7 +543,7 @@ func (svc *PersonService) GetOutreachIdsFromCommitIds(ctx context.Context, tenan
 		AND (
 			g.group_path  ~ '*.%s.*{1,}'
 			OR
-			p.group_id = $1
+			p.group_id = $2
 		)
 		AND g.status = 'active'
 		AND p.outreach_id IS NOT NULL
