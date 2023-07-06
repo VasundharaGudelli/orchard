@@ -568,7 +568,7 @@ func testCRMRolesSelect(t *testing.T) {
 }
 
 var (
-	crmRoleDBTypes = map[string]string{`ID`: `text`, `TenantID`: `uuid`, `Name`: `text`, `Description`: `text`, `ParentID`: `text`, `UpdatedAt`: `timestamp without time zone`}
+	crmRoleDBTypes = map[string]string{`ID`: `text`, `TenantID`: `uuid`, `Name`: `text`, `Description`: `text`, `ParentID`: `text`, `UpdatedAt`: `timestamp without time zone`, `OutreachID`: `text`, `OutreachParentID`: `text`}
 	_              = bytes.MinRead
 )
 

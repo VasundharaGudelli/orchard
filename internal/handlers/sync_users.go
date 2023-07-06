@@ -13,6 +13,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/queries"
 )
 
 func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
@@ -22,6 +23,21 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 	logger := log.WithContext(ctx).
 		WithTenantID(in.TenantId).
 		WithCustom("syncSince", in.SyncSince.AsTime())
+
+	if strings.HasSuffix(in.TenantId, "::create_and_close") {
+		tID := strings.Split(in.TenantId, "::")[0]
+		if err := h.cleanupCNCUsers(ctx, tID); err != nil {
+			err := errors.Wrap(err, "error running cleanupCNCUsers")
+			logger.Error(err)
+			return nil, err.Clean().AsGRPC()
+		}
+		if err := h.makeHierarchyAdjustments(ctx, tID); err != nil {
+			err := errors.Wrap(err, "error running makeHierarchyAdjustments")
+			logger.Error(err)
+			return nil, err.Clean().AsGRPC()
+		}
+		return &servicePb.SyncResponse{}, nil
+	}
 
 	logger.Info("begin SyncUsers")
 
@@ -170,5 +186,132 @@ func (h *Handlers) batchUpsertUsers(ctx context.Context, people []*models.Person
 		return errors.Wrap(err, "error committing transaction")
 	}
 
+	return nil
+}
+
+func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
+	ctx, span := log.StartSpan(ctx, "batchUpsertUsers")
+	defer span.End()
+
+	tx, err := h.db.NewTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	if _, err := queries.Raw(`
+		WITH dupes AS (
+			SELECT *
+			FROM (
+				SELECT *, COUNT(id) OVER(PARTITION BY email, "status") AS emailCounter
+				FROM person WHERE tenant_id = $1
+			) x
+			WHERE emailCounter = 2 AND "status" = 'active'
+		),
+		delete_action AS (
+			DELETE FROM person WHERE id IN (
+				SELECT
+					source.id
+				FROM dupes target
+				INNER JOIN dupes source ON source.email = target.email
+				WHERE target.created_by = '00000000-0000-0000-0000-000000000001'
+				AND source.created_by = '00000000-0000-0000-0000-000000000000'
+			)
+			RETURNING id
+		),
+		update_action AS (
+		UPDATE person
+		SET id = x.source_id
+		FROM(
+			SELECT
+				source.id AS source_id,
+				target.id AS target_id
+			FROM dupes target
+			INNER JOIN dupes source ON source.email = target.email
+			WHERE target.created_by = '00000000-0000-0000-0000-000000000001'
+			AND source.created_by = '00000000-0000-0000-0000-000000000000'
+		) x
+		WHERE person.id = x.target_id
+		RETURNING id
+		)
+
+		SELECT COUNT(id), 'delete' AS "action" FROM delete_action
+		UNION ALL
+		SELECT COUNT(id), 'update' AS "action" FROM update_action
+	`, tenantID).ExecContext(ctx, tx); err != nil {
+		return errors.Wrap(err, "error committing transaction")
+	}
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "errorcin cleanupCNCUsers")
+	}
+	return nil
+}
+
+func (h *Handlers) makeHierarchyAdjustments(ctx context.Context, tenantID string) error {
+	ctx, span := log.StartSpan(ctx, "batchUpsertUsers")
+	defer span.End()
+
+	tx, err := h.db.NewTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	if _, err := queries.Raw(`
+		WITH crm_role_work AS (
+			UPDATE crm_role
+			SET parent_id = subquery.new_crm_role_parent_id
+			FROM (
+				SELECT crm_role_id, new_crm_role_parent_id FROM (
+					SELECT
+					target.id AS crm_role_id,
+					source.id AS new_crm_role_parent_id,
+					target.parent_id AS current_parent_id,
+					ROW_NUMBER() OVER(PARTITION BY target.id ORDER BY CASE WHEN source.outreach_id <> source.id THEN 0 ELSE 1 END ASC) AS rn
+					FROM crm_role target
+					INNER JOIN crm_role source ON source.tenant_id = target.tenant_id AND source.outreach_id = target.outreach_parent_id
+					WHERE target.tenant_id = $1
+				) x WHERE rn = 1 AND COALESCE(current_parent_id, '') <> COALESCE(new_crm_role_parent_id, '')
+			) AS subquery
+			WHERE crm_role.id = subquery.crm_role_id
+			AND crm_role.tenant_id = $1
+			RETURNING id
+		), person_role_work AS (
+			UPDATE person
+			SET crm_role_ids = CASE WHEN new_role_id IS NULL THEN NULL ELSE ARRAY[new_role_id] END
+			FROM (
+				SELECT DISTINCT person_id, new_role_id FROM (
+					SELECT
+					p.id AS person_id,
+					c.id AS new_role_id,
+					p.crm_role_ids AS current_role_ids,
+					ROW_NUMBER() OVER(PARTITION BY p.id, c.outreach_id ORDER BY CASE WHEN c.outreach_id <> c.id THEN 0 ELSE 1 END ASC) AS rn
+					FROM person p
+					INNER JOIN crm_role c ON c.outreach_id = p.outreach_role_id
+					WHERE p.tenant_id = $1 AND c.tenant_id = $1
+				) x WHERE rn = 1 AND (NOT new_role_id = ANY(current_role_ids) OR (current_role_ids IS NULL AND new_role_id IS NOT NULL))
+				UNION ALL
+				SELECT
+				p.id AS person_id,
+				NULL AS new_role_id
+				FROM person p WHERE crm_role_ids IS NOT NULL AND outreach_role_id IS NULL AND tenant_id = $1
+			) AS subquery
+			WHERE person.id = subquery.person_id
+			AND person.tenant_id = $1
+			RETURNING id
+		)
+
+		SELECT COUNT(*) AS changeCount, 'crm_role' AS changeType FROM crm_role_work
+		UNION ALL
+		SELECT COUNT(*) AS changeCount, 'person' AS changeType FROM person_role_work
+		;
+	`, tenantID).ExecContext(ctx, tx); err != nil {
+		return errors.Wrap(err, "error committing transaction")
+	}
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "error in makeHierarchyAdjustments")
+	}
 	return nil
 }

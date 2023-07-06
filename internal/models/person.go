@@ -47,6 +47,7 @@ type Person struct {
 	OutreachID      null.String       `boil:"outreach_id" json:"outreach_id,omitempty" toml:"outreach_id" yaml:"outreach_id,omitempty"`
 	OutreachIsAdmin null.Bool         `boil:"outreach_is_admin" json:"outreach_is_admin,omitempty" toml:"outreach_is_admin" yaml:"outreach_is_admin,omitempty"`
 	OutreachGUID    null.String       `boil:"outreach_guid" json:"outreach_guid,omitempty" toml:"outreach_guid" yaml:"outreach_guid,omitempty"`
+	OutreachRoleID  null.String       `boil:"outreach_role_id" json:"outreach_role_id,omitempty" toml:"outreach_role_id" yaml:"outreach_role_id,omitempty"`
 
 	R *personR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L personL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -75,6 +76,7 @@ var PersonColumns = struct {
 	OutreachID      string
 	OutreachIsAdmin string
 	OutreachGUID    string
+	OutreachRoleID  string
 }{
 	ID:              "id",
 	TenantID:        "tenant_id",
@@ -98,6 +100,7 @@ var PersonColumns = struct {
 	OutreachID:      "outreach_id",
 	OutreachIsAdmin: "outreach_is_admin",
 	OutreachGUID:    "outreach_guid",
+	OutreachRoleID:  "outreach_role_id",
 }
 
 var PersonTableColumns = struct {
@@ -123,6 +126,7 @@ var PersonTableColumns = struct {
 	OutreachID      string
 	OutreachIsAdmin string
 	OutreachGUID    string
+	OutreachRoleID  string
 }{
 	ID:              "person.id",
 	TenantID:        "person.tenant_id",
@@ -146,6 +150,7 @@ var PersonTableColumns = struct {
 	OutreachID:      "person.outreach_id",
 	OutreachIsAdmin: "person.outreach_is_admin",
 	OutreachGUID:    "person.outreach_guid",
+	OutreachRoleID:  "person.outreach_role_id",
 }
 
 // Generated where
@@ -206,6 +211,7 @@ var PersonWhere = struct {
 	OutreachID      whereHelpernull_String
 	OutreachIsAdmin whereHelpernull_Bool
 	OutreachGUID    whereHelpernull_String
+	OutreachRoleID  whereHelpernull_String
 }{
 	ID:              whereHelperstring{field: "\"person\".\"id\""},
 	TenantID:        whereHelperstring{field: "\"person\".\"tenant_id\""},
@@ -229,6 +235,7 @@ var PersonWhere = struct {
 	OutreachID:      whereHelpernull_String{field: "\"person\".\"outreach_id\""},
 	OutreachIsAdmin: whereHelpernull_Bool{field: "\"person\".\"outreach_is_admin\""},
 	OutreachGUID:    whereHelpernull_String{field: "\"person\".\"outreach_guid\""},
+	OutreachRoleID:  whereHelpernull_String{field: "\"person\".\"outreach_role_id\""},
 }
 
 // PersonRels is where relationship names are stored.
@@ -248,9 +255,9 @@ func (*personR) NewStruct() *personR {
 type personL struct{}
 
 var (
-	personAllColumns            = []string{"id", "tenant_id", "name", "first_name", "last_name", "email", "manager_id", "role_ids", "crm_role_ids", "is_provisioned", "is_synced", "status", "created_by", "created_at", "updated_by", "updated_at", "group_id", "type", "photo_url", "outreach_id", "outreach_is_admin", "outreach_guid"}
+	personAllColumns            = []string{"id", "tenant_id", "name", "first_name", "last_name", "email", "manager_id", "role_ids", "crm_role_ids", "is_provisioned", "is_synced", "status", "created_by", "created_at", "updated_by", "updated_at", "group_id", "type", "photo_url", "outreach_id", "outreach_is_admin", "outreach_guid", "outreach_role_id"}
 	personColumnsWithoutDefault = []string{"id", "tenant_id"}
-	personColumnsWithDefault    = []string{"name", "first_name", "last_name", "email", "manager_id", "role_ids", "crm_role_ids", "is_provisioned", "is_synced", "status", "created_by", "created_at", "updated_by", "updated_at", "group_id", "type", "photo_url", "outreach_id", "outreach_is_admin", "outreach_guid"}
+	personColumnsWithDefault    = []string{"name", "first_name", "last_name", "email", "manager_id", "role_ids", "crm_role_ids", "is_provisioned", "is_synced", "status", "created_by", "created_at", "updated_by", "updated_at", "group_id", "type", "photo_url", "outreach_id", "outreach_is_admin", "outreach_guid", "outreach_role_id"}
 	personPrimaryKeyColumns     = []string{"tenant_id", "id"}
 	personGeneratedColumns      = []string{}
 )
