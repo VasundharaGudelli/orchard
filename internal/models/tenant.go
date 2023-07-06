@@ -45,6 +45,7 @@ type Tenant struct {
 	LicenseType       null.String      `boil:"license_type" json:"license_type,omitempty" toml:"license_type" yaml:"license_type,omitempty"`
 	LicenseTier       null.String      `boil:"license_tier" json:"license_tier,omitempty" toml:"license_tier" yaml:"license_tier,omitempty"`
 	LastSysSync       null.Time        `boil:"last_sys_sync" json:"last_sys_sync,omitempty" toml:"last_sys_sync" yaml:"last_sys_sync,omitempty"`
+	Region            null.String      `boil:"region" json:"region,omitempty" toml:"region" yaml:"region,omitempty"`
 
 	R *tenantR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L tenantL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -71,6 +72,7 @@ var TenantColumns = struct {
 	LicenseType       string
 	LicenseTier       string
 	LastSysSync       string
+	Region            string
 }{
 	ID:                "id",
 	Status:            "status",
@@ -92,6 +94,7 @@ var TenantColumns = struct {
 	LicenseType:       "license_type",
 	LicenseTier:       "license_tier",
 	LastSysSync:       "last_sys_sync",
+	Region:            "region",
 }
 
 var TenantTableColumns = struct {
@@ -115,6 +118,7 @@ var TenantTableColumns = struct {
 	LicenseType       string
 	LicenseTier       string
 	LastSysSync       string
+	Region            string
 }{
 	ID:                "tenant.id",
 	Status:            "tenant.status",
@@ -136,6 +140,7 @@ var TenantTableColumns = struct {
 	LicenseType:       "tenant.license_type",
 	LicenseTier:       "tenant.license_tier",
 	LastSysSync:       "tenant.last_sys_sync",
+	Region:            "tenant.region",
 }
 
 // Generated where
@@ -206,6 +211,7 @@ var TenantWhere = struct {
 	LicenseType       whereHelpernull_String
 	LicenseTier       whereHelpernull_String
 	LastSysSync       whereHelpernull_Time
+	Region            whereHelpernull_String
 }{
 	ID:                whereHelperstring{field: "\"tenant\".\"id\""},
 	Status:            whereHelperstring{field: "\"tenant\".\"status\""},
@@ -227,6 +233,7 @@ var TenantWhere = struct {
 	LicenseType:       whereHelpernull_String{field: "\"tenant\".\"license_type\""},
 	LicenseTier:       whereHelpernull_String{field: "\"tenant\".\"license_tier\""},
 	LastSysSync:       whereHelpernull_Time{field: "\"tenant\".\"last_sys_sync\""},
+	Region:            whereHelpernull_String{field: "\"tenant\".\"region\""},
 }
 
 // TenantRels is where relationship names are stored.
@@ -246,9 +253,9 @@ func (*tenantR) NewStruct() *tenantR {
 type tenantL struct{}
 
 var (
-	tenantAllColumns            = []string{"id", "status", "name", "created_at", "updated_at", "view_params", "crm_id", "is_test_instance", "parent_tenant_id", "group_sync_state", "group_sync_metadata", "permissions", "prelaunch_state", "description", "initial_type", "outreach_org", "outreach_bento", "license_type", "license_tier", "last_sys_sync"}
+	tenantAllColumns            = []string{"id", "status", "name", "created_at", "updated_at", "view_params", "crm_id", "is_test_instance", "parent_tenant_id", "group_sync_state", "group_sync_metadata", "permissions", "prelaunch_state", "description", "initial_type", "outreach_org", "outreach_bento", "license_type", "license_tier", "last_sys_sync", "region"}
 	tenantColumnsWithoutDefault = []string{"id", "status", "name"}
-	tenantColumnsWithDefault    = []string{"created_at", "updated_at", "view_params", "crm_id", "is_test_instance", "parent_tenant_id", "group_sync_state", "group_sync_metadata", "permissions", "prelaunch_state", "description", "initial_type", "outreach_org", "outreach_bento", "license_type", "license_tier", "last_sys_sync"}
+	tenantColumnsWithDefault    = []string{"created_at", "updated_at", "view_params", "crm_id", "is_test_instance", "parent_tenant_id", "group_sync_state", "group_sync_metadata", "permissions", "prelaunch_state", "description", "initial_type", "outreach_org", "outreach_bento", "license_type", "license_tier", "last_sys_sync", "region"}
 	tenantPrimaryKeyColumns     = []string{"id"}
 	tenantGeneratedColumns      = []string{}
 )
