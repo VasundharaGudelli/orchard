@@ -24,17 +24,21 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 		WithTenantID(in.TenantId).
 		WithCustom("syncSince", in.SyncSince.AsTime())
 
-	if strings.HasSuffix(in.TenantId, "::create_and_close") {
-		tID := strings.Split(in.TenantId, "::")[0]
+	if strings.Contains(in.TenantId, "create_and_close") {
+		spl := strings.Split(in.TenantId, "::")
+		tID := spl[0]
+		licenseType := spl[1]
 		if err := h.cleanupCNCUsers(ctx, tID); err != nil {
 			err := errors.Wrap(err, "error running cleanupCNCUsers")
 			logger.Error(err)
 			return nil, err.Clean().AsGRPC()
 		}
-		if err := h.makeHierarchyAdjustments(ctx, tID); err != nil {
-			err := errors.Wrap(err, "error running makeHierarchyAdjustments")
-			logger.Error(err)
-			return nil, err.Clean().AsGRPC()
+		if strings.EqualFold(licenseType, "create_and_close") {
+			if err := h.makeHierarchyAdjustments(ctx, tID); err != nil {
+				err := errors.Wrap(err, "error running makeHierarchyAdjustments")
+				logger.Error(err)
+				return nil, err.Clean().AsGRPC()
+			}
 		}
 		return &servicePb.SyncResponse{}, nil
 	}
