@@ -206,14 +206,6 @@ func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
 
 	if _, err := queries.Raw(`
 	WITH
-	active_dupe_set AS (
-		SELECT *
-		FROM (
-			SELECT *, COUNT(id) OVER(PARTITION BY email, "status") AS emailCounter
-			FROM person WHERE tenant_id = $1
-		) x
-		WHERE emailCounter = 2 AND "status" = 'active'
-	),
 	cleanup_set AS (
 		SELECT *,
 		CASE WHEN rn > 1 THEN
@@ -242,6 +234,15 @@ func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
 			) x
 			WHERE emailCounter > 1
 		) x
+	),
+	active_dupe_set AS (
+		SELECT *
+		FROM (
+			SELECT *, COUNT(id) OVER(PARTITION BY email, "status") AS emailCounter
+			FROM person WHERE tenant_id = $1
+		) x
+		WHERE emailCounter = 2 AND "status" = 'active'
+		AND id NOT IN (SELECT id FROM cleanup_set)
 	),
 	delete_action AS (
 		DELETE FROM person WHERE id IN (
