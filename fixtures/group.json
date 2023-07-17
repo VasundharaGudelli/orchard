@@ -72,6 +72,24 @@
   "TestUpdateGroupBadRequestEmptyTenantID": {},
   "TestUpdateGroupBadRequestEmptyID": {},
   "TestUpdateGroupBadRequestNilGroup": {},
+  "TestUpdateGroupBadRequestSameGroupIDParentID": {
+    "id": "bd170094-b284-41fb-8138-82f811dc6bd6",
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "group": {
+      "id": "bd170094-b284-41fb-8138-82f811dc6bd6",
+      "tenant_id": "00000000-0000-0000-0000-000000000000",
+      "name": "SDR Managers",
+      "type": 2,
+      "status": 1,
+      "role_ids": ["a2e39cf5-e016-44a4-b037-057a16fe14fc"],
+      "crm_role_ids": ["a44307a3-c800-4590-a99d-7608edb07a59"],
+      "parent_id": "bd170094-b284-41fb-8138-82f811dc6bd6",
+      "group_path": "00000000_0000_0000_0000_000000000000.d0766561_8f86_4010_88c7_fe4857811e5a.f2cee8e5_10b7_4566_ad6a_6bc5750ba7f7.ffa46973_1f28_41d8_9cee_dfadb51eeae2.bd170094_b284_41fb_8138_82f811dc6bd6",
+      "order": 7,
+      "created_by": "00000000-0000-0000-0000-000000000000",
+      "updated_by": "00000000-0000-0000-0000-000000000000"
+    }
+  },
   "TestDeleteGroup": {
     "tenant_id": "921c8950-1a0c-43bd-ba37-e8357c93c8e9",
     "group_id": "7b30808b-0764-11ec-a7fb-1e54545024f6"
