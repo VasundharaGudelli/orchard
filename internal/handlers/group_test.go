@@ -913,6 +913,48 @@ func TestUpdateGroupBadRequestNilGroup(t *testing.T) {
 	}
 }
 
+func TestUpdateGroupBadRequestSameGroupIDParentID(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestUpdateGroupBadRequestSameGroupIDParentID")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.UpdateGroupRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	_, err = testServer.UpdateGroup(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
+		t.Fail()
+		return
+	}
+
+	if !strings.Contains(err.Error(), "Bad Request") {
+		t.Log("expected error to contain 'Bad Request', but didn't")
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestUpdateGroupBadRequestSameGroupIDParentID.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
 func TestDeleteGroup(t *testing.T) {
 	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestDeleteGroup")
 	if err != nil {
