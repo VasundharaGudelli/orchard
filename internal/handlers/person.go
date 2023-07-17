@@ -530,6 +530,17 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		return &servicePb.UpdatePersonResponse{}, nil
 	}
 
+	if in.Person.Id == "" && in.PersonId == "" {
+		err := ErrBadRequest.New("person.ID can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+	// If a top-level personId was given but no id on the person record, then add it to person record id.
+	// Otherwise then we're good as we don't actually use the top level id.
+	if in.Person.Id == "" && in.PersonId != "" {
+		in.Person.Id = in.PersonId
+	}
+
 	if in.Person.UpdatedBy == "" {
 		in.Person.UpdatedBy = db.DefaultTenantID
 	}
