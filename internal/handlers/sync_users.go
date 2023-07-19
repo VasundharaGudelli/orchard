@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	_ "embed"
+
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/db"
@@ -27,7 +29,10 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 	if strings.Contains(in.TenantId, "create_and_close") {
 		spl := strings.Split(in.TenantId, "::")
 		tID := spl[0]
-		licenseType := spl[1]
+		licenseType := ""
+		if len(spl) > 0 {
+			licenseType = spl[1]
+		}
 		if err := h.cleanupCNCUsers(ctx, tID); err != nil {
 			err := errors.Wrap(err, "error running cleanupCNCUsers")
 			logger.Error(err)
@@ -193,6 +198,9 @@ func (h *Handlers) batchUpsertUsers(ctx context.Context, people []*models.Person
 	return nil
 }
 
+//go:embed queries/cleanupCNCUsers.sql
+var cleanupCNCUsersQuery string
+
 func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
 	ctx, span := log.StartSpan(ctx, "batchUpsertUsers")
 	defer span.End()
@@ -204,100 +212,7 @@ func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
 
 	defer tx.Rollback()
 
-	if _, err := queries.Raw(`
-	WITH
-	cleanup_set AS (
-		SELECT *,
-		CASE WHEN rn > 1 THEN
-			(
-				CASE WHEN NOT is_provisioned AND id::TEXT = outreach_guid::TEXT THEN 'delete'
-				ELSE 'unlink'
-				END
-			)
-		ELSE 'do_nothing'
-		END AS cleanup_action
-		FROM (
-			SELECT
-			*,
-			ROW_NUMBER() OVER(
-				PARTITION BY outreach_guid ORDER BY
-				CASE WHEN "status"::TEXT = 'active' THEN 1 ELSE 0 END DESC,
-				CASE WHEN is_provisioned THEN 1 ELSE 0 END DESC,
-				CASE WHEN created_by = '00000000-0000-0000-0000-000000000000' THEN 2 ELSE (CASE WHEN created_by = '00000000-0000-0000-0000-000000000001' THEN 1 ELSE 0 END) END DESC,
-				CASE WHEN id::TEXT <> outreach_guid::TEXT AND created_by = '00000000-0000-0000-0000-000000000000' THEN 2 ELSE (CASE WHEN id::TEXT <> outreach_guid::TEXT THEN 1 ELSE 0 END) END DESC
-			) AS rn
-			FROM (
-				SELECT *, COUNT(id) OVER(PARTITION BY email) AS emailCounter
-				FROM person
-				WHERE tenant_id = $1
-				AND COALESCE(outreach_guid, '') <> ''
-			) x
-			WHERE emailCounter > 1
-		) x
-	),
-	active_dupe_set AS (
-		SELECT *
-		FROM (
-			SELECT *, COUNT(id) OVER(PARTITION BY email, "status") AS emailCounter
-			FROM person WHERE tenant_id = $1
-		) x
-		WHERE emailCounter = 2 AND "status" = 'active'
-		AND id NOT IN (SELECT id FROM cleanup_set)
-	),
-	delete_action AS (
-		DELETE FROM person WHERE id IN (
-			SELECT z.id FROM (
-				SELECT x.id FROM
-				(
-					SELECT
-						source.id
-					FROM active_dupe_set target
-					INNER JOIN active_dupe_set source ON source.email = target.email
-					WHERE target.created_by = '00000000-0000-0000-0000-000000000001'
-					AND source.created_by = '00000000-0000-0000-0000-000000000000'
-				) x
-				UNION ALL
-				SELECT y.id FROM
-				(
-					SELECT id FROM cleanup_set WHERE cleanup_action = 'delete'
-				) y
-			) z
-		)
-		AND tenant_id = $1
-		RETURNING id
-	),
-	swap_action AS (
-		UPDATE person
-		SET id = x.source_id
-		FROM(
-			SELECT
-				source.id AS source_id,
-				target.id AS target_id
-			FROM active_dupe_set target
-			INNER JOIN active_dupe_set source ON source.email = target.email
-			WHERE target.created_by = '00000000-0000-0000-0000-000000000001'
-			AND source.created_by = '00000000-0000-0000-0000-000000000000'
-		) x
-		WHERE person.id = x.target_id
-		AND person.tenant_id = $1
-		RETURNING id
-	),
-	unlink_action AS (
-		UPDATE person
-		SET outreach_id = NULL, outreach_is_admin = NULL, outreach_guid = NULL, outreach_role_id = NULL
-		WHERE person.id IN (
-			SELECT id FROM cleanup_set WHERE cleanup_action = 'unlink'
-		)
-		AND person.tenant_id = $1
-		RETURNING id
-	)
-
-	SELECT COUNT(id), 'delete' AS "action" FROM delete_action
-	UNION ALL
-	SELECT COUNT(id), 'swap' AS "action" FROM swap_action
-	UNION ALL
-	SELECT COUNT(id), 'unlink' AS "action" FROM unlink_action
-	`, tenantID).ExecContext(ctx, tx); err != nil {
+	if _, err := queries.Raw(cleanupCNCUsersQuery, tenantID).ExecContext(ctx, tx); err != nil {
 		return errors.Wrap(err, "error committing transaction")
 	}
 	if err := tx.Commit(); err != nil {
@@ -305,6 +220,9 @@ func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
 	}
 	return nil
 }
+
+//go:embed queries/makeUsersHierarchicalQuery.sql
+var makeUsersHierarchicalQuery string
 
 func (h *Handlers) makeHierarchyAdjustments(ctx context.Context, tenantID string) error {
 	ctx, span := log.StartSpan(ctx, "batchUpsertUsers")
@@ -317,55 +235,7 @@ func (h *Handlers) makeHierarchyAdjustments(ctx context.Context, tenantID string
 
 	defer tx.Rollback()
 
-	if _, err := queries.Raw(`
-		WITH crm_role_work AS (
-			UPDATE crm_role
-			SET parent_id = subquery.new_crm_role_parent_id
-			FROM (
-				SELECT crm_role_id, new_crm_role_parent_id FROM (
-					SELECT
-					target.id AS crm_role_id,
-					source.id AS new_crm_role_parent_id,
-					target.parent_id AS current_parent_id,
-					ROW_NUMBER() OVER(PARTITION BY target.id ORDER BY CASE WHEN source.outreach_id <> source.id THEN 0 ELSE 1 END ASC) AS rn
-					FROM crm_role target
-					INNER JOIN crm_role source ON source.tenant_id = target.tenant_id AND source.outreach_id = target.outreach_parent_id
-					WHERE target.tenant_id = $1
-				) x WHERE rn = 1 AND COALESCE(current_parent_id, '') <> COALESCE(new_crm_role_parent_id, '')
-			) AS subquery
-			WHERE crm_role.id = subquery.crm_role_id
-			AND crm_role.tenant_id = $1
-			RETURNING id
-		), person_role_work AS (
-			UPDATE person
-			SET crm_role_ids = CASE WHEN new_role_id IS NULL THEN NULL ELSE ARRAY[new_role_id] END
-			FROM (
-				SELECT DISTINCT person_id, new_role_id FROM (
-					SELECT
-					p.id AS person_id,
-					c.id AS new_role_id,
-					p.crm_role_ids AS current_role_ids,
-					ROW_NUMBER() OVER(PARTITION BY p.id, c.outreach_id ORDER BY CASE WHEN c.outreach_id <> c.id THEN 0 ELSE 1 END ASC) AS rn
-					FROM person p
-					INNER JOIN crm_role c ON c.outreach_id = p.outreach_role_id
-					WHERE p.tenant_id = $1 AND c.tenant_id = $1
-				) x WHERE rn = 1 AND (NOT new_role_id = ANY(current_role_ids) OR (current_role_ids IS NULL AND new_role_id IS NOT NULL))
-				UNION ALL
-				SELECT
-				p.id AS person_id,
-				NULL AS new_role_id
-				FROM person p WHERE crm_role_ids IS NOT NULL AND outreach_role_id IS NULL AND tenant_id = $1
-			) AS subquery
-			WHERE person.id = subquery.person_id
-			AND person.tenant_id = $1
-			RETURNING id
-		)
-
-		SELECT COUNT(*) AS changeCount, 'crm_role' AS changeType FROM crm_role_work
-		UNION ALL
-		SELECT COUNT(*) AS changeCount, 'person' AS changeType FROM person_role_work
-		;
-	`, tenantID).ExecContext(ctx, tx); err != nil {
+	if _, err := queries.Raw(makeUsersHierarchicalQuery, tenantID).ExecContext(ctx, tx); err != nil {
 		return errors.Wrap(err, "error committing transaction")
 	}
 	if err := tx.Commit(); err != nil {
