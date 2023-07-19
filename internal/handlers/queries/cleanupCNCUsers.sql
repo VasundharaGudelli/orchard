@@ -61,11 +61,39 @@ WITH
 	),
 	swap_action AS (
 		UPDATE person
-		SET id = x.source_id
+		SET
+			id = x.source_id,
+			photo_url = COALESCE(x.target_photo_url, x.source_photo_url),
+			manager_id = COALESCE(x.target_manager_id, x.source_manager_id),
+			group_id = COALESCE(x.target_group_id, x.source_group_id),
+			role_ids = x.source_role_ids,
+			crm_role_ids = x.source_crm_role_ids,
+			"type" = source_type,
+			is_provisioned = x.target_is_provisioned OR x.source_is_provisioned,
+			is_synced = x.source_is_synced,
+			"status" = x.source_status
 		FROM(
 			SELECT
 				source.id AS source_id,
-				target.id AS target_id
+				target.id AS target_id,
+				source.photo_url AS source_photo_url,
+				source.manager_id AS source_manager_id,
+				source.group_id AS source_group_id,
+				source.role_ids AS source_role_ids,
+				source.crm_role_ids AS source_crm_role_ids,
+				source."type" AS source_type,
+				source.is_provisioned AS source_is_provisioned,
+				source.is_synced AS source_is_synced,
+				source."status" AS source_status,
+				target.photo_url AS target_photo_url,
+				target.manager_id AS target_manager_id,
+				target.group_id AS target_group_id,
+				target.role_ids AS target_role_ids,
+				target.crm_role_ids AS target_crm_role_ids,
+				target."type" AS target_type,
+				target.is_provisioned AS target_is_provisioned,
+				target.is_synced AS target_is_synced,
+				target."status" AS target_status
 			FROM active_dupe_set target
 			INNER JOIN active_dupe_set source ON source.email = target.email
 			WHERE target.created_by = '00000000-0000-0000-0000-000000000001'
