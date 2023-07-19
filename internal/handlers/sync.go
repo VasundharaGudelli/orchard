@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -14,6 +15,13 @@ import (
 func (h *Handlers) Sync(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "Sync")
 	defer span.End()
+
+	if strings.Contains(in.TenantId, "create_and_close") {
+		if _, err := h.SyncUsers(spanCtx, in); err != nil {
+			return nil, err
+		}
+		return &servicePb.SyncResponse{}, nil
+	}
 
 	if _, err := h.SyncCrmRoles(spanCtx, in); err != nil {
 		return nil, err

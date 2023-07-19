@@ -568,7 +568,7 @@ func testTenantsSelect(t *testing.T) {
 }
 
 var (
-	tenantDBTypes = map[string]string{`ID`: `uuid`, `Status`: `enum.tenant_status('active','deleted','pending','expired','archived')`, `Name`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `ViewParams`: `jsonb`, `CRMID`: `text`, `IsTestInstance`: `boolean`, `ParentTenantID`: `uuid`, `GroupSyncState`: `enum.group_sync_status('active','people_only','inactive')`, `GroupSyncMetadata`: `jsonb`, `Permissions`: `ARRAYbigint`, `PrelaunchState`: `jsonb`, `Description`: `text`, `InitialType`: `text`, `OutreachOrg`: `uuid`, `OutreachBento`: `text`, `LicenseType`: `text`, `LicenseTier`: `text`, `LastSysSync`: `timestamp without time zone`}
+	tenantDBTypes = map[string]string{`ID`: `uuid`, `Status`: `enum.tenant_status('active','deleted','pending','expired','archived')`, `Name`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `ViewParams`: `jsonb`, `CRMID`: `text`, `IsTestInstance`: `boolean`, `ParentTenantID`: `uuid`, `GroupSyncState`: `enum.group_sync_status('active','people_only','inactive')`, `GroupSyncMetadata`: `jsonb`, `Permissions`: `ARRAYbigint`, `PrelaunchState`: `jsonb`, `Description`: `text`, `InitialType`: `text`, `OutreachOrg`: `uuid`, `OutreachBento`: `text`, `LicenseType`: `text`, `LicenseTier`: `text`, `LastSysSync`: `timestamp without time zone`, `Region`: `text`}
 	_             = bytes.MinRead
 )
 

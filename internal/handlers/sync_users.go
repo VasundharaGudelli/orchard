@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	_ "embed"
+
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/db"
@@ -13,6 +15,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/queries"
 )
 
 func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
@@ -22,6 +25,28 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 	logger := log.WithContext(ctx).
 		WithTenantID(in.TenantId).
 		WithCustom("syncSince", in.SyncSince.AsTime())
+
+	if strings.Contains(in.TenantId, "create_and_close") {
+		spl := strings.Split(in.TenantId, "::")
+		tID := spl[0]
+		licenseType := ""
+		if len(spl) > 0 {
+			licenseType = spl[1]
+		}
+		if err := h.cleanupCNCUsers(ctx, tID); err != nil {
+			err := errors.Wrap(err, "error running cleanupCNCUsers")
+			logger.Error(err)
+			return nil, err.Clean().AsGRPC()
+		}
+		if strings.EqualFold(licenseType, "create_and_close") {
+			if err := h.makeHierarchyAdjustments(ctx, tID); err != nil {
+				err := errors.Wrap(err, "error running makeHierarchyAdjustments")
+				logger.Error(err)
+				return nil, err.Clean().AsGRPC()
+			}
+		}
+		return &servicePb.SyncResponse{}, nil
+	}
 
 	logger.Info("begin SyncUsers")
 
@@ -170,5 +195,51 @@ func (h *Handlers) batchUpsertUsers(ctx context.Context, people []*models.Person
 		return errors.Wrap(err, "error committing transaction")
 	}
 
+	return nil
+}
+
+//go:embed queries/cleanupCNCUsers.sql
+var cleanupCNCUsersQuery string
+
+func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
+	ctx, span := log.StartSpan(ctx, "batchUpsertUsers")
+	defer span.End()
+
+	tx, err := h.db.NewTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	if _, err := queries.Raw(cleanupCNCUsersQuery, tenantID).ExecContext(ctx, tx); err != nil {
+		return errors.Wrap(err, "error committing transaction")
+	}
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "error in cleanupCNCUsers")
+	}
+	return nil
+}
+
+//go:embed queries/makeUsersHierarchicalQuery.sql
+var makeUsersHierarchicalQuery string
+
+func (h *Handlers) makeHierarchyAdjustments(ctx context.Context, tenantID string) error {
+	ctx, span := log.StartSpan(ctx, "batchUpsertUsers")
+	defer span.End()
+
+	tx, err := h.db.NewTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	if _, err := queries.Raw(makeUsersHierarchicalQuery, tenantID).ExecContext(ctx, tx); err != nil {
+		return errors.Wrap(err, "error committing transaction")
+	}
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "error in makeHierarchyAdjustments")
+	}
 	return nil
 }

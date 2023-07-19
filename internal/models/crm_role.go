@@ -24,47 +24,57 @@ import (
 
 // CRMRole is an object representing the database table.
 type CRMRole struct {
-	ID          string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TenantID    string      `boil:"tenant_id" json:"tenant_id" toml:"tenant_id" yaml:"tenant_id"`
-	Name        string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Description null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
-	ParentID    null.String `boil:"parent_id" json:"parent_id,omitempty" toml:"parent_id" yaml:"parent_id,omitempty"`
-	UpdatedAt   time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID               string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TenantID         string      `boil:"tenant_id" json:"tenant_id" toml:"tenant_id" yaml:"tenant_id"`
+	Name             string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Description      null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
+	ParentID         null.String `boil:"parent_id" json:"parent_id,omitempty" toml:"parent_id" yaml:"parent_id,omitempty"`
+	UpdatedAt        time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	OutreachID       null.String `boil:"outreach_id" json:"outreach_id,omitempty" toml:"outreach_id" yaml:"outreach_id,omitempty"`
+	OutreachParentID null.String `boil:"outreach_parent_id" json:"outreach_parent_id,omitempty" toml:"outreach_parent_id" yaml:"outreach_parent_id,omitempty"`
 
 	R *crmRoleR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L crmRoleL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var CRMRoleColumns = struct {
-	ID          string
-	TenantID    string
-	Name        string
-	Description string
-	ParentID    string
-	UpdatedAt   string
+	ID               string
+	TenantID         string
+	Name             string
+	Description      string
+	ParentID         string
+	UpdatedAt        string
+	OutreachID       string
+	OutreachParentID string
 }{
-	ID:          "id",
-	TenantID:    "tenant_id",
-	Name:        "name",
-	Description: "description",
-	ParentID:    "parent_id",
-	UpdatedAt:   "updated_at",
+	ID:               "id",
+	TenantID:         "tenant_id",
+	Name:             "name",
+	Description:      "description",
+	ParentID:         "parent_id",
+	UpdatedAt:        "updated_at",
+	OutreachID:       "outreach_id",
+	OutreachParentID: "outreach_parent_id",
 }
 
 var CRMRoleTableColumns = struct {
-	ID          string
-	TenantID    string
-	Name        string
-	Description string
-	ParentID    string
-	UpdatedAt   string
+	ID               string
+	TenantID         string
+	Name             string
+	Description      string
+	ParentID         string
+	UpdatedAt        string
+	OutreachID       string
+	OutreachParentID string
 }{
-	ID:          "crm_role.id",
-	TenantID:    "crm_role.tenant_id",
-	Name:        "crm_role.name",
-	Description: "crm_role.description",
-	ParentID:    "crm_role.parent_id",
-	UpdatedAt:   "crm_role.updated_at",
+	ID:               "crm_role.id",
+	TenantID:         "crm_role.tenant_id",
+	Name:             "crm_role.name",
+	Description:      "crm_role.description",
+	ParentID:         "crm_role.parent_id",
+	UpdatedAt:        "crm_role.updated_at",
+	OutreachID:       "crm_role.outreach_id",
+	OutreachParentID: "crm_role.outreach_parent_id",
 }
 
 // Generated where
@@ -152,19 +162,23 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 }
 
 var CRMRoleWhere = struct {
-	ID          whereHelperstring
-	TenantID    whereHelperstring
-	Name        whereHelperstring
-	Description whereHelpernull_String
-	ParentID    whereHelpernull_String
-	UpdatedAt   whereHelpertime_Time
+	ID               whereHelperstring
+	TenantID         whereHelperstring
+	Name             whereHelperstring
+	Description      whereHelpernull_String
+	ParentID         whereHelpernull_String
+	UpdatedAt        whereHelpertime_Time
+	OutreachID       whereHelpernull_String
+	OutreachParentID whereHelpernull_String
 }{
-	ID:          whereHelperstring{field: "\"crm_role\".\"id\""},
-	TenantID:    whereHelperstring{field: "\"crm_role\".\"tenant_id\""},
-	Name:        whereHelperstring{field: "\"crm_role\".\"name\""},
-	Description: whereHelpernull_String{field: "\"crm_role\".\"description\""},
-	ParentID:    whereHelpernull_String{field: "\"crm_role\".\"parent_id\""},
-	UpdatedAt:   whereHelpertime_Time{field: "\"crm_role\".\"updated_at\""},
+	ID:               whereHelperstring{field: "\"crm_role\".\"id\""},
+	TenantID:         whereHelperstring{field: "\"crm_role\".\"tenant_id\""},
+	Name:             whereHelperstring{field: "\"crm_role\".\"name\""},
+	Description:      whereHelpernull_String{field: "\"crm_role\".\"description\""},
+	ParentID:         whereHelpernull_String{field: "\"crm_role\".\"parent_id\""},
+	UpdatedAt:        whereHelpertime_Time{field: "\"crm_role\".\"updated_at\""},
+	OutreachID:       whereHelpernull_String{field: "\"crm_role\".\"outreach_id\""},
+	OutreachParentID: whereHelpernull_String{field: "\"crm_role\".\"outreach_parent_id\""},
 }
 
 // CRMRoleRels is where relationship names are stored.
@@ -184,9 +198,9 @@ func (*crmRoleR) NewStruct() *crmRoleR {
 type crmRoleL struct{}
 
 var (
-	crmRoleAllColumns            = []string{"id", "tenant_id", "name", "description", "parent_id", "updated_at"}
+	crmRoleAllColumns            = []string{"id", "tenant_id", "name", "description", "parent_id", "updated_at", "outreach_id", "outreach_parent_id"}
 	crmRoleColumnsWithoutDefault = []string{"id", "tenant_id", "name"}
-	crmRoleColumnsWithDefault    = []string{"description", "parent_id", "updated_at"}
+	crmRoleColumnsWithDefault    = []string{"description", "parent_id", "updated_at", "outreach_id", "outreach_parent_id"}
 	crmRolePrimaryKeyColumns     = []string{"tenant_id", "id"}
 	crmRoleGeneratedColumns      = []string{}
 )
