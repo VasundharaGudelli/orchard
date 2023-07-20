@@ -223,7 +223,7 @@ func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
 	defer tx.Rollback()
 	result := []*CNCUserCleanupResult{}
 
-	if err := queries.Raw(cleanupCNCUsersQuery, tenantID).Bind(ctx, tx, result); err != nil {
+	if err := queries.Raw(cleanupCNCUsersQuery, tenantID).Bind(ctx, tx, &result); err != nil {
 		return errors.Wrap(err, "error committing transaction")
 	}
 
