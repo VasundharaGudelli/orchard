@@ -456,7 +456,7 @@ const (
 	updateGroupPathsQuery = `WITH RECURSIVE group_tree AS (
 		SELECT id, tenant_id, parent_id, CONCAT(REPLACE($1, '-', '_'), '.', REPLACE(id, '-', '_')) as group_path
 		FROM "group"
-		WHERE tenant_id::TEXT = $1 AND parent_id IS NULL AND status = 'active'
+		WHERE tenant_id::TEXT = $1 AND (parent_id IS NULL OR parent_id = '') AND status = 'active'
 		UNION
 		SELECT g.id, g.tenant_id, g.parent_id, CONCAT(gt.group_path, '.', REPLACE(g.id, '-', '_')) as group_path
 		FROM "group" g
