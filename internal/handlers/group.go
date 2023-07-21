@@ -16,6 +16,7 @@ import (
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	tenantPb "github.com/loupe-co/protos/src/common/tenant"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
+	"github.com/volatiletech/null/v8"
 	"google.golang.org/grpc/codes"
 )
 
@@ -122,6 +123,9 @@ func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupReq
 	insertableGroup := svc.FromProto(in.Group)
 	insertableGroup.CreatedAt = time.Now().UTC()
 	insertableGroup.UpdatedAt = time.Now().UTC()
+	if insertableGroup.ParentID.String == "" {
+		insertableGroup.ParentID = null.NewString("", false)
+	}
 
 	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(spanCtx, in.Group.Id, in.TenantId, in.Group.CrmRoleIds); err != nil {
 		err := errors.Wrap(err, "error checking for duplicate crm_role_ids before write")
@@ -465,6 +469,10 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 	svc.SetTransaction(tx)
 
 	updateableGroup := svc.FromProto(in.Group)
+
+	if updateableGroup.ParentID.String == "" {
+		updateableGroup.ParentID = null.NewString("", false)
+	}
 
 	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(spanCtx, in.Group.Id, in.TenantId, in.Group.CrmRoleIds); err != nil {
 		err := errors.Wrap(err, "error checking for duplicate crm_role_ids before write")
