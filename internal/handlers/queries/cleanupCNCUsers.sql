@@ -113,8 +113,8 @@ WITH
 		RETURNING id
 	)
 
-	SELECT COUNT(id), 'delete' AS "action" FROM delete_action
+	SELECT id, 'delete' AS "action" FROM delete_action
 	UNION ALL
-	SELECT COUNT(id), 'swap' AS "action" FROM swap_action
+	SELECT id, 'swap' AS "action" FROM swap_action
 	UNION ALL
-	SELECT COUNT(id), 'unlink' AS "action" FROM unlink_action
+	SELECT id, 'unlink' AS "action" FROM unlink_action
