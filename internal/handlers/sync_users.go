@@ -232,10 +232,18 @@ func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
 	}
 
 	for _, item := range result {
+<<<<<<< HEAD
 		if !item.Action.Valid || !item.ID.Valid || item.Action.String != "swap" {
 			continue
 		}
 		logger.DeepCopy().WithCustom("id", item.ID.String).Debug("reprovisioning swapped user")
+=======
+		log.WithContext(ctx).WithCustom("userId", item.ID.String).WithCustom("action", item.Action.String).Info("user impacted by cleanup")
+		if !item.Action.Valid || !item.ID.Valid || item.Action.String != "swap" {
+			continue
+		}
+		log.WithContext(ctx).WithCustom("userId", item.ID.String).Debug("reprovisioning swapped user")
+>>>>>>> log-user-cleanup-changes
 		if _, err := updateUserProvisioning(ctx, tenantID, item.ID.String, "", pSVC, h.auth0Client); err != nil {
 			return errors.Wrap(err, "error updating user provisioning")
 		}
