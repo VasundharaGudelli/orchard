@@ -363,7 +363,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 			ids[i] = id
 			i++
 		}
-		crmRoles, err := crmSvc.GetByIDs(spanCtx, in.TenantId, ids...)
+		crmRoles, err := crmSvc.GetByIDs(spanCtx, in.TenantId, in.IsOutreach, ids...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting person crm roles")
 			logger.Error(err)

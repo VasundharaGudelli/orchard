@@ -140,7 +140,7 @@ func (h *Handlers) GetCRMRoleById(ctx context.Context, in *servicePb.IdRequest) 
 
 	svc := h.db.NewCRMRoleService()
 
-	cr, err := svc.GetByID(spanCtx, in.Id, in.TenantId)
+	cr, err := svc.GetByID(spanCtx, in.Id, in.TenantId, in.IsOutreach)
 	if err != nil {
 		err := errors.Wrap(err, "error getting crmRole from sql by id")
 		logger.Error(err)
@@ -179,7 +179,7 @@ func (h *Handlers) GetCRMRolesByIds(ctx context.Context, in *servicePb.IdsReques
 
 	svc := h.db.NewCRMRoleService()
 
-	crs, err := svc.GetByIDs(ctx, in.TenantId, in.Ids...)
+	crs, err := svc.GetByIDs(ctx, in.TenantId, in.IsOutreach, in.Ids...)
 	if err != nil {
 		err := errors.Wrap(err, "error getting crmRoles from sql by ids")
 		logger.Error(err)
@@ -225,7 +225,7 @@ func (h *Handlers) GetCRMRoles(ctx context.Context, in *servicePb.GetCRMRolesReq
 
 	svc := h.db.NewCRMRoleService()
 
-	crs, total, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset)
+	crs, total, err := svc.Search(spanCtx, in.TenantId, in.Search, limit, offset, in.IsOutreach)
 	if err != nil {
 		err := errors.Wrap(err, "error getting crmRole from sql by id")
 		logger.Error(err)
@@ -260,7 +260,7 @@ func (h *Handlers) GetUnsyncedCRMRoles(ctx context.Context, in *servicePb.GetUns
 
 	svc := h.db.NewCRMRoleService()
 
-	crs, err := svc.GetUnsynced(spanCtx, in.TenantId)
+	crs, err := svc.GetUnsynced(spanCtx, in.TenantId, in.IsOutreach)
 	if err != nil {
 		err := errors.Wrap(err, "error getting unsynced crmRoles from sql")
 		logger.Error(err)
