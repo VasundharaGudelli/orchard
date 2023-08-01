@@ -112,7 +112,24 @@ func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupReq
 	}
 
 	svc := h.db.NewGroupService()
+	crmSVC := h.db.NewCRMRoleService()
+
 	svc.SetTransaction(tx)
+
+	var outreachToCommitMapping map[string]string
+	commitToOutreachMapping := map[string]string{}
+
+	if in.IsOutreach && len(in.Group.CrmRoleIds) > 0 {
+		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, in.Group.CrmRoleIds...)
+		if err != nil {
+			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		for idx, item := range in.Group.CrmRoleIds {
+			in.Group.CrmRoleIds[idx] = outreachToCommitMapping[item]
+		}
+	}
 
 	insertableGroup := svc.FromProto(in.Group)
 	insertableGroup.CreatedAt = time.Now().UTC()
@@ -167,6 +184,12 @@ func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupReq
 		return nil, err.AsGRPC()
 	}
 
+	if in.IsOutreach && len(group.CrmRoleIds) > 0 {
+		for idx, item := range group.CrmRoleIds {
+			group.CrmRoleIds[idx] = commitToOutreachMapping[item]
+		}
+	}
+
 	if err := svc.Commit(); err != nil {
 		err := errors.Wrap(err, "error commiting transaction for inserting group")
 		logger.Error(err)
@@ -205,6 +228,20 @@ func (h *Handlers) GetGroupById(ctx context.Context, in *servicePb.IdRequest) (*
 		return nil, err.AsGRPC()
 	}
 
+	crmSVC := h.db.NewCRMRoleService()
+
+	if in.IsOutreach && len(group.CrmRoleIds) > 0 {
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, group.CrmRoleIds...)
+		if err != nil {
+			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		for idx, item := range group.CrmRoleIds {
+			group.CrmRoleIds[idx] = commitToOutreachMapping[item]
+		}
+	}
+
 	return group, nil
 }
 
@@ -227,12 +264,31 @@ func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest
 	}
 
 	groups := make([]*orchardPb.Group, len(gs))
+
+	crmRoleIDs := []string{}
 	for i, g := range gs {
 		groups[i], err = svc.ToProto(g)
+		crmRoleIDs = append(crmRoleIDs, groups[i].CrmRoleIds...)
 		if err != nil {
 			err := errors.Wrap(err, "error converting group from db model to proto")
 			logger.Error(err)
 			return nil, err.AsGRPC()
+		}
+	}
+
+	crmSVC := h.db.NewCRMRoleService()
+
+	if in.IsOutreach && len(crmRoleIDs) > 0 {
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, crmRoleIDs...)
+		if err != nil {
+			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		for _, g := range groups {
+			for idx, item := range g.CrmRoleIds {
+				g.CrmRoleIds[idx] = commitToOutreachMapping[item]
+			}
 		}
 	}
 
@@ -259,6 +315,30 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		return nil, err.AsGRPC()
 	}
 
+	if in.IsOutreach {
+		crmSVC := h.db.NewCRMRoleService()
+		crmRoleIDs := []string{}
+		for _, g := range flatGroups {
+			for _, item := range g.CRMRoleIds {
+				crmRoleIDs = append(crmRoleIDs, item)
+			}
+		}
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, crmRoleIDs...)
+		if err != nil {
+			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		for _, g := range flatGroups {
+			for idx, item := range g.CRMRoleIds {
+				g.CRMRoleIds[idx] = commitToOutreachMapping[item]
+			}
+			for idx, item := range g.Group.CRMRoleIds {
+				g.Group.CRMRoleIds[idx] = commitToOutreachMapping[item]
+			}
+		}
+	}
+
 	// Convert db models to protos
 	parGroup, _ := commonSync.NewWorkerPool(ctx, 10)
 	flatProtos := make([]*servicePb.GroupWithMembers, len(flatGroups))
@@ -267,7 +347,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		if g.ActiveMemberCount > 0 && g.Type == "manager" {
 			forceKeepLevelMap[g.ID] = true
 		}
-		parGroup.Go(h.runGroupTreeProtoConversion(ctx, i, g, flatProtos, in.TenantId, in.HydrateUsers, in.HydrateCrmRoles))
+		parGroup.Go(h.runGroupTreeProtoConversion(ctx, i, g, flatProtos, in.TenantId, in.HydrateUsers, in.HydrateCrmRoles, in.IsOutreach))
 	}
 
 	if err := parGroup.Close(); err != nil {
@@ -322,10 +402,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	}, nil
 }
 
-func (h *Handlers) runGroupTreeProtoConversion(ctx context.Context, idx int, g *db.GroupTreeNode, results []*servicePb.GroupWithMembers, tenantID string, hydrateUsers, hydrateRoles bool) func() error {
-	ctx, span := log.StartSpan(ctx, "runGroupTreeProtoConversion")
-	defer span.End()
-
+func (h *Handlers) runGroupTreeProtoConversion(ctx context.Context, idx int, g *db.GroupTreeNode, results []*servicePb.GroupWithMembers, tenantID string, hydrateUsers, hydrateRoles, isOutreach bool) func() error {
 	return func() error {
 		// Parse group
 		svc := h.db.NewGroupService()
@@ -353,7 +430,7 @@ func (h *Handlers) runGroupTreeProtoConversion(ctx context.Context, idx int, g *
 		// If requested, get full crm_roles and put them onto group object
 		if hydrateRoles {
 			crmSvc := h.db.NewCRMRoleService()
-			crmRoles, err := crmSvc.GetByIDs(ctx, tenantID, group.CrmRoleIds...)
+			crmRoles, err := crmSvc.GetByIDs(ctx, tenantID, isOutreach, group.CrmRoleIds...)
 			if err != nil {
 				return errors.Wrap(err, "error getting crm_roles for group").AsGRPC()
 			}
@@ -451,7 +528,24 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 	}
 
 	svc := h.db.NewGroupService()
+	crmSVC := h.db.NewCRMRoleService()
+
 	svc.SetTransaction(tx)
+
+	var outreachToCommitMapping map[string]string
+	commitToOutreachMapping := map[string]string{}
+
+	if in.IsOutreach && len(in.Group.CrmRoleIds) > 0 {
+		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, in.Group.CrmRoleIds...)
+		if err != nil {
+			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+		for idx, item := range in.Group.CrmRoleIds {
+			in.Group.CrmRoleIds[idx] = outreachToCommitMapping[item]
+		}
+	}
 
 	updateableGroup := svc.FromProto(in.Group)
 
@@ -525,6 +619,12 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 		logger.Error(err)
 		svc.Rollback()
 		return nil, err.AsGRPC()
+	}
+
+	if in.IsOutreach && len(group.CrmRoleIds) > 0 {
+		for idx, item := range group.CrmRoleIds {
+			group.CrmRoleIds[idx] = commitToOutreachMapping[item]
+		}
 	}
 
 	if err := svc.Commit(); err != nil {
