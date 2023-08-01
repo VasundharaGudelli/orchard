@@ -334,6 +334,9 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		crmSVC := h.db.NewCRMRoleService()
 		crmRoleIDs := []string{}
 		for _, g := range flatGroups {
+			for _, item := range g.Group.CRMRoleIds {
+				crmRoleIDs = append(crmRoleIDs, item)
+			}
 			for _, item := range g.CRMRoleIds {
 				crmRoleIDs = append(crmRoleIDs, item)
 			}
