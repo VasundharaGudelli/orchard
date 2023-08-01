@@ -353,6 +353,9 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 			logger.Error(err)
 			return nil, err.AsGRPC()
 		}
+
+		logger.WithCustom("crmRoleIDs", crmRoleIDs).WithCustom("commitToOutreachMapping", commitToOutreachMapping).Debug("id mappings")
+
 		for _, g := range flatGroups {
 			for idx, item := range g.CRMRoleIds {
 				g.CRMRoleIds[idx] = commitToOutreachMapping[item]
