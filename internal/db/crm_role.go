@@ -141,7 +141,32 @@ func (svc *CRMRoleService) GetByIDs(ctx context.Context, tenantID string, isOutr
 	return crs, nil
 }
 
-func (svc *CRMRoleService) GetOutreachCommitMappingsByIDs(ctx context.Context, tenantID string, ids ...string) (map[string]string, map[string]string, error) {
+func (svc *CRMRoleService) GetOutreachCommitMappingsByCommitIDs(ctx context.Context, tenantID string, ids ...string) (map[string]string, map[string]string, error) {
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetCommitIDsByOutreachIDs")
+	defer span.End()
+
+	idsParam := make([]interface{}, len(ids))
+	for i, id := range ids {
+		idsParam[i] = id
+	}
+
+	crs, err := models.CRMRoles(qm.WhereIn("id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	outreachToCommitMapping := map[string]string{}
+	commitToOutreachMapping := map[string]string{}
+
+	for _, cr := range crs {
+		outreachToCommitMapping[cr.OutreachID.String] = cr.ID
+		commitToOutreachMapping[cr.ID] = cr.OutreachID.String
+	}
+
+	return outreachToCommitMapping, commitToOutreachMapping, nil
+}
+
+func (svc *CRMRoleService) GetOutreachCommitMappingsByOutreachIDs(ctx context.Context, tenantID string, ids ...string) (map[string]string, map[string]string, error) {
 	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetCommitIDsByOutreachIDs")
 	defer span.End()
 
