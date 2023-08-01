@@ -330,42 +330,6 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		return nil, err.AsGRPC()
 	}
 
-	if in.IsOutreach {
-		crmSVC := h.db.NewCRMRoleService()
-		crmRoleIDs := []string{}
-		for _, g := range flatGroups {
-			for _, item := range g.Group.CRMRoleIds {
-				if item == "" {
-					continue
-				}
-				crmRoleIDs = append(crmRoleIDs, item)
-			}
-			for _, item := range g.CRMRoleIds {
-				if item == "" {
-					continue
-				}
-				crmRoleIDs = append(crmRoleIDs, item)
-			}
-		}
-		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(ctx, in.TenantId, crmRoleIDs...)
-		if err != nil {
-			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
-			logger.Error(err)
-			return nil, err.AsGRPC()
-		}
-
-		logger.WithCustom("crmRoleIDs", crmRoleIDs).WithCustom("commitToOutreachMapping", commitToOutreachMapping).Debug("id mappings")
-
-		for _, g := range flatGroups {
-			for idx, item := range g.CRMRoleIds {
-				g.CRMRoleIds[idx] = commitToOutreachMapping[item]
-			}
-			for idx, item := range g.Group.CRMRoleIds {
-				g.Group.CRMRoleIds[idx] = commitToOutreachMapping[item]
-			}
-		}
-	}
-
 	// Convert db models to protos
 	parGroup, _ := commonSync.NewWorkerPool(spanCtx, 10)
 	flatProtos := make([]*servicePb.GroupWithMembers, len(flatGroups))
@@ -424,9 +388,91 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	}
 	wg.Wait()
 
+	if in.IsOutreach {
+		crmSVC := h.db.NewCRMRoleService()
+		crmRoleIDs := recursivelyGetCRMRolesStart(finalRoots)
+
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(ctx, in.TenantId, crmRoleIDs...)
+		if err != nil {
+			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+
+		logger.WithCustom("crmRoleIDs", crmRoleIDs).WithCustom("commitToOutreachMapping", commitToOutreachMapping).Debug("id mappings")
+
+		recursivelySetCRMRolesStart(finalRoots, commitToOutreachMapping)
+	}
+
 	return &servicePb.GetGroupSubTreeResponse{
 		Roots: finalRoots,
 	}, nil
+}
+
+func recursivelyGetCRMRolesStart(level []*servicePb.GroupSubtreeRoot) []string {
+	crmRoleIDs := []string{}
+	for _, g := range level {
+		appendIDs := recursivelyGetCRMRoles([]*servicePb.GroupWithMembers{g.SubTree})
+		if len(appendIDs) > 0 {
+			crmRoleIDs = append(crmRoleIDs, appendIDs...)
+		}
+	}
+	return crmRoleIDs
+}
+
+func recursivelyGetCRMRoles(level []*servicePb.GroupWithMembers) []string {
+	crmRoleIDs := []string{}
+	for _, g := range level {
+		for _, item := range g.Group.CrmRoleIds {
+			if item == "" {
+				continue
+			}
+			log.Debugf("appending id: %s", item)
+			crmRoleIDs = append(crmRoleIDs, item)
+		}
+		for _, item := range g.Group.CrmRoles {
+			if item == nil {
+				continue
+			}
+			log.Debugf("appending id 2: %s", item.Id)
+			crmRoleIDs = append(crmRoleIDs, item.Id)
+		}
+		if len(g.Children) > 0 {
+			appendIDs := recursivelyGetCRMRoles(g.Children)
+			if len(appendIDs) > 0 {
+				crmRoleIDs = append(crmRoleIDs, appendIDs...)
+			}
+		}
+	}
+	return crmRoleIDs
+}
+
+func recursivelySetCRMRolesStart(level []*servicePb.GroupSubtreeRoot, roleMap map[string]string) {
+	for _, g := range level {
+		recursivelySetCRMRoles([]*servicePb.GroupWithMembers{g.SubTree}, roleMap)
+	}
+}
+
+func recursivelySetCRMRoles(level []*servicePb.GroupWithMembers, roleMap map[string]string) {
+	for _, g := range level {
+		for idx, item := range g.Group.CrmRoleIds {
+			if item == "" {
+				continue
+			}
+			log.Debugf("setting id: %s -> %s", item, roleMap[item])
+			g.Group.CrmRoleIds[idx] = roleMap[item]
+		}
+		for idx, item := range g.Group.CrmRoles {
+			if item == nil {
+				continue
+			}
+			log.Debugf("setting id: %s -> %s", g.Group.CrmRoles[idx].Id, roleMap[g.Group.CrmRoles[idx].Id])
+			g.Group.CrmRoles[idx].Id = roleMap[g.Group.CrmRoles[idx].Id]
+		}
+		if len(g.Children) > 0 {
+			recursivelySetCRMRoles(g.Children, roleMap)
+		}
+	}
 }
 
 func (h *Handlers) runGroupTreeProtoConversion(ctx context.Context, idx int, g *db.GroupTreeNode, results []*servicePb.GroupWithMembers, tenantID string, hydrateUsers, hydrateRoles, isOutreach bool) func() error {
