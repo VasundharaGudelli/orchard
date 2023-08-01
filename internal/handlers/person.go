@@ -1006,7 +1006,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	emails := make([]interface{}, 0, len(peeps))
 	for _, person := range peeps {
 		if person.Email.Valid && !person.Email.IsZero() && person.Status == "active" {
-			emails = append(emails, person.Email.String)
+			emails = append(emails, strings.ToLower(person.Email.String))
 		}
 	}
 
