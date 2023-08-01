@@ -120,7 +120,7 @@ func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupReq
 	commitToOutreachMapping := map[string]string{}
 
 	if in.IsOutreach && len(in.Group.CrmRoleIds) > 0 {
-		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, in.Group.CrmRoleIds...)
+		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByOutreachIDs(ctx, in.TenantId, in.Group.CrmRoleIds...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
 			logger.Error(err)
@@ -231,7 +231,7 @@ func (h *Handlers) GetGroupById(ctx context.Context, in *servicePb.IdRequest) (*
 	crmSVC := h.db.NewCRMRoleService()
 
 	if in.IsOutreach && len(group.CrmRoleIds) > 0 {
-		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, group.CrmRoleIds...)
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(ctx, in.TenantId, group.CrmRoleIds...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
 			logger.Error(err)
@@ -279,7 +279,7 @@ func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest
 	crmSVC := h.db.NewCRMRoleService()
 
 	if in.IsOutreach && len(crmRoleIDs) > 0 {
-		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, crmRoleIDs...)
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(ctx, in.TenantId, crmRoleIDs...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
 			logger.Error(err)
@@ -320,13 +320,19 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		crmRoleIDs := []string{}
 		for _, g := range flatGroups {
 			for _, item := range g.Group.CRMRoleIds {
+				if item == "" {
+					continue
+				}
 				crmRoleIDs = append(crmRoleIDs, item)
 			}
 			for _, item := range g.CRMRoleIds {
+				if item == "" {
+					continue
+				}
 				crmRoleIDs = append(crmRoleIDs, item)
 			}
 		}
-		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, crmRoleIDs...)
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(ctx, in.TenantId, crmRoleIDs...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
 			logger.Error(err)
@@ -539,7 +545,7 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 	commitToOutreachMapping := map[string]string{}
 
 	if in.IsOutreach && len(in.Group.CrmRoleIds) > 0 {
-		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByIDs(ctx, in.TenantId, in.Group.CrmRoleIds...)
+		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByOutreachIDs(ctx, in.TenantId, in.Group.CrmRoleIds...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
 			logger.Error(err)
