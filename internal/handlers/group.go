@@ -636,7 +636,7 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 		updateableGroup.TenantID = in.TenantId
 	}
 
-	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(spanCtx, in.Group.Id, in.TenantId, in.Group.CrmRoleIds); err != nil {
+	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(spanCtx, updateableGroup.ID, in.TenantId, in.Group.CrmRoleIds); err != nil {
 		err := errors.Wrap(err, "error checking for duplicate crm_role_ids before write")
 		logger.Error(err)
 		return nil, err.AsGRPC()
