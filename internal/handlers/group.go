@@ -572,7 +572,7 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 		return nil, err.AsGRPC()
 	}
 
-	if in.Group.ParentId == in.Group.Id {
+	if len(in.OnlyFields) == 0 || (strUtils.Strings(in.OnlyFields).Has("parent_id") && in.Group.ParentId == in.Group.Id) {
 		err := ErrBadRequest.New("can't use group's id as its parent id")
 		logger.Warn(err.Error())
 		return nil, err.AsGRPC()
