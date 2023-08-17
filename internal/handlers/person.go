@@ -581,19 +581,21 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		}
 	}
 
-	// Check if this is virtual user that is no longer provisioned: -> status=inactive
-	if !in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
-		in.Person.Status = orchardPb.BasicStatus_Inactive
-		if len(in.OnlyFields) > 0 {
-			in.OnlyFields = append(in.OnlyFields, "status")
+	if in.Person.CreatedBy == "" {
+		// Check if this is virtual user that is no longer provisioned: -> status=inactive
+		if !in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
+			in.Person.Status = orchardPb.BasicStatus_Inactive
+			if len(in.OnlyFields) > 0 {
+				in.OnlyFields = append(in.OnlyFields, "status")
+			}
 		}
-	}
 
-	// If virtual user and provisioning, set to active
-	if in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
-		in.Person.Status = orchardPb.BasicStatus_Active
-		if len(in.OnlyFields) > 0 {
-			in.OnlyFields = append(in.OnlyFields, "status")
+		// If virtual user and provisioning, set to active
+		if in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
+			in.Person.Status = orchardPb.BasicStatus_Active
+			if len(in.OnlyFields) > 0 {
+				in.OnlyFields = append(in.OnlyFields, "status")
+			}
 		}
 	}
 
