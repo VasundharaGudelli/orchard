@@ -808,6 +808,14 @@ func (h *Handlers) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest)
 		return nil, err.AsGRPC()
 	}
 
+	// Make sure group types are updated correctly
+	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
+		err := errors.Wrap(err, "error updating group types")
+		logger.Error(err)
+		svc.Rollback()
+		return nil, err.AsGRPC()
+	}
+
 	if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
 		svc.Rollback()
 		err := errors.Wrap(err, "error ensuring tenant group sync state")
