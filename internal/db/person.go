@@ -363,7 +363,7 @@ func (svc *PersonService) GetVirtualUsers(ctx context.Context, tenantID string, 
 	if since != nil && since.IsValid() {
 		t = since.AsTime()
 	}
-	people, err := models.People(qm.Where("tenant_id = $1 AND created_by <> $2 AND updated_at >= $3", tenantID, DefaultTenantID, t)).All(spanCtx, svc.GetContextExecutor())
+	people, err := models.People(qm.Where("tenant_id = $1 AND (created_by NOT IN ($2, $3) OR (created_by = $3 AND id = outreach_guid)) AND updated_at >= $4", tenantID, DefaultTenantID, DefaultOutreachSyncID, t)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
