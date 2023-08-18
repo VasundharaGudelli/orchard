@@ -149,7 +149,7 @@ func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, peopl
 		p.UpdatedBy = db.DefaultTenantID
 		p.UpdatedAt = time.Now().UTC()
 		if current, ok := existingPeople[person.Id]; ok {
-			if current.CreatedBy != db.DefaultTenantID {
+			if current.CreatedBy != db.DefaultTenantID && !(current.CreatedBy == db.DefaultOutreachSyncID && current.ID != current.OutreachGUID.String) {
 				batch[i] = nil
 				continue
 			}
