@@ -114,10 +114,10 @@ const (
 	{SUBS}
 ON CONFLICT (tenant_id, id) DO
 	UPDATE SET
-	name = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' THEN person.name ELSE EXCLUDED.name END,
-	first_name = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' THEN person.first_name ELSE EXCLUDED.first_name END,
-	last_name = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' THEN person.last_name ELSE EXCLUDED.last_name END,
-	email = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' THEN person.email ELSE EXCLUDED.email END,
+	name = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' OR COALESCE(person.outreach_guid, '') <> '' THEN person.name ELSE EXCLUDED.name END,
+	first_name = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' OR COALESCE(person.outreach_guid, '') <> '' THEN person.first_name ELSE EXCLUDED.first_name END,
+	last_name = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' OR COALESCE(person.outreach_guid, '') <> '' THEN person.last_name ELSE EXCLUDED.last_name END,
+	email = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' OR COALESCE(person.outreach_guid, '') <> '' THEN person.email ELSE EXCLUDED.email END,
 	photo_url = EXCLUDED.photo_url, manager_id = EXCLUDED.manager_id, group_id = EXCLUDED.group_id,
 	role_ids = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' THEN person.role_ids ELSE EXCLUDED.role_ids END,
 	crm_role_ids = EXCLUDED.crm_role_ids, is_provisioned = EXCLUDED.is_provisioned,
