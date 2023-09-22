@@ -191,7 +191,7 @@ func (svc *PersonService) GetAllActiveNonVirtualByEmails(ctx context.Context, te
 	spanCtx, span := log.StartSpan(ctx, "Person.GetAllActiveNonVirtualByEmails")
 	defer span.End()
 	people, err := models.People(
-		qm.WhereIn("email IN ?", emails...),
+		qm.WhereIn("LOWER(email) IN ?", emails...),
 		qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(emails)+1), tenantID),
 		qm.And(fmt.Sprintf("created_by = $%d", len(emails)+2), DefaultTenantID),
 		qm.And("status = 'active'"),
@@ -207,7 +207,7 @@ func (svc *PersonService) GetAllActiveNonVirtualByEmails(ctx context.Context, te
 func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string) (*models.Person, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetByEmail")
 	defer span.End()
-	person, err := models.People(qm.Where("tenant_id = $1 AND email = $2", tenantID, strings.TrimSpace(email))).One(spanCtx, svc.GetContextExecutor())
+	person, err := models.People(qm.Where("tenant_id = $1 AND LOWER(email) = $2", tenantID, strings.ToLower(strings.TrimSpace(email)))).One(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func (svc *PersonService) GetByEmail(ctx context.Context, tenantID, email string
 func (svc *PersonService) GetAllByEmail(ctx context.Context, email string) ([]*models.Person, error) {
 	spanCtx, span := log.StartSpan(ctx, "Person.GetByEmail")
 	defer span.End()
-	people, err := models.People(qm.Where("email = $1", strings.TrimSpace(email))).All(spanCtx, svc.GetContextExecutor())
+	people, err := models.People(qm.Where("LOWER(email) = $1", strings.ToLower(strings.TrimSpace(email)))).All(spanCtx, svc.GetContextExecutor())
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ const (
 	getAllByEmailForProvisioningQuery = `
 	SELECT *
 	  FROM person
-	 WHERE (email ILIKE $1 OR email ILIKE $2)
+	 WHERE (LOWER(email) ILIKE $1 OR LOWER(email) ILIKE $2)
 	   AND status = 'active'
 		 AND is_provisioned`
 )
@@ -243,6 +243,7 @@ func (svc *PersonService) GetAllByEmailForProvisioning(ctx context.Context, emai
 	_, span := log.StartSpan(ctx, "Person.GetAllByEmailForProvisioning")
 	defer span.End()
 
+	email = strings.ToLower(email)
 	// clean email so that we capture all person records
 	cleanEmail := svc.CleanEmail(email)
 	// alternate email for sandbox

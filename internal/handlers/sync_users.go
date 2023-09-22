@@ -211,6 +211,8 @@ func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
 	ctx, span := log.StartSpan(ctx, "batchUpsertUsers")
 	defer span.End()
 
+	logger := log.WithContext(ctx).WithTenantID(tenantID)
+
 	tx, err := h.db.NewTransaction(ctx)
 	if err != nil {
 		return err
@@ -234,7 +236,7 @@ func (h *Handlers) cleanupCNCUsers(ctx context.Context, tenantID string) error {
 		if !item.Action.Valid || !item.ID.Valid || item.Action.String != "swap" {
 			continue
 		}
-		log.WithContext(ctx).WithCustom("userId", item.ID.String).Debug("reprovisioning swapped user")
+		logger.DeepCopy().WithCustom("id", item.ID.String).Debug("reprovisioning swapped user")
 		if _, err := updateUserProvisioning(ctx, tenantID, item.ID.String, "", pSVC, h.auth0Client); err != nil {
 			return errors.Wrap(err, "error updating user provisioning")
 		}

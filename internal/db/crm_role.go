@@ -93,9 +93,18 @@ func (svc *CRMRoleService) UpsertAll(ctx context.Context, crmRoles []*models.CRM
 	return nil
 }
 
-func (svc *CRMRoleService) GetByID(ctx context.Context, id, tenantID string) (*models.CRMRole, error) {
+func (svc *CRMRoleService) GetByID(ctx context.Context, id, tenantID string, isOutreach bool) (*models.CRMRole, error) {
 	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetByID")
 	defer span.End()
+
+	if isOutreach {
+		cr, err := models.CRMRoles(qm.Where("outreach_id=$1 AND tenant_id=$2", id, tenantID)).One(spanCtx, svc.GetContextExecutor())
+		if err != nil {
+			return nil, err
+		}
+		cr.ID = cr.OutreachID.String
+		return cr, nil
+	}
 
 	cr, err := models.CRMRoles(qm.Where("id=$1 AND tenant_id=$2", id, tenantID)).One(spanCtx, svc.GetContextExecutor())
 	if err != nil {
@@ -104,7 +113,7 @@ func (svc *CRMRoleService) GetByID(ctx context.Context, id, tenantID string) (*m
 	return cr, nil
 }
 
-func (svc *CRMRoleService) GetByIDs(ctx context.Context, tenantID string, ids ...string) ([]*models.CRMRole, error) {
+func (svc *CRMRoleService) GetByIDs(ctx context.Context, tenantID string, isOutreach bool, ids ...string) ([]*models.CRMRole, error) {
 	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetByIDs")
 	defer span.End()
 
@@ -112,12 +121,74 @@ func (svc *CRMRoleService) GetByIDs(ctx context.Context, tenantID string, ids ..
 	for i, id := range ids {
 		idsParam[i] = id
 	}
+
+	if isOutreach {
+		crs, err := models.CRMRoles(qm.WhereIn("outreach_id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
+		if err != nil {
+			return nil, err
+		}
+		for _, cr := range crs {
+			cr.ID = cr.OutreachID.String
+		}
+		return crs, nil
+	}
+
 	crs, err := models.CRMRoles(qm.WhereIn("id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, err
 	}
 
 	return crs, nil
+}
+
+func (svc *CRMRoleService) GetOutreachCommitMappingsByCommitIDs(ctx context.Context, tenantID string, ids ...string) (map[string]string, map[string]string, error) {
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetCommitIDsByOutreachIDs")
+	defer span.End()
+
+	idsParam := make([]interface{}, len(ids))
+	for i, id := range ids {
+		idsParam[i] = id
+	}
+
+	crs, err := models.CRMRoles(qm.WhereIn("id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	outreachToCommitMapping := map[string]string{}
+	commitToOutreachMapping := map[string]string{}
+
+	for _, cr := range crs {
+		outreachToCommitMapping[cr.OutreachID.String] = cr.ID
+		commitToOutreachMapping[cr.ID] = cr.OutreachID.String
+	}
+
+	return outreachToCommitMapping, commitToOutreachMapping, nil
+}
+
+func (svc *CRMRoleService) GetOutreachCommitMappingsByOutreachIDs(ctx context.Context, tenantID string, ids ...string) (map[string]string, map[string]string, error) {
+	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetCommitIDsByOutreachIDs")
+	defer span.End()
+
+	idsParam := make([]interface{}, len(ids))
+	for i, id := range ids {
+		idsParam[i] = id
+	}
+
+	crs, err := models.CRMRoles(qm.WhereIn("outreach_id IN ?", idsParam...), qm.And(fmt.Sprintf("tenant_id::TEXT = $%d", len(ids)+1), tenantID)).All(spanCtx, svc.GetContextExecutor())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	outreachToCommitMapping := map[string]string{}
+	commitToOutreachMapping := map[string]string{}
+
+	for _, cr := range crs {
+		outreachToCommitMapping[cr.OutreachID.String] = cr.ID
+		commitToOutreachMapping[cr.ID] = cr.OutreachID.String
+	}
+
+	return outreachToCommitMapping, commitToOutreachMapping, nil
 }
 
 const (
@@ -127,7 +198,7 @@ const (
 	WHERE g.id IS NULL AND cr.tenant_id = $1`
 )
 
-func (svc *CRMRoleService) GetUnsynced(ctx context.Context, tenantID string) ([]*models.CRMRole, error) {
+func (svc *CRMRoleService) GetUnsynced(ctx context.Context, tenantID string, isOutreach bool) ([]*models.CRMRole, error) {
 	spanCtx, span := log.StartSpan(ctx, "CRMRole.GetUnsynced")
 	defer span.End()
 
@@ -136,10 +207,16 @@ func (svc *CRMRoleService) GetUnsynced(ctx context.Context, tenantID string) ([]
 		log.WithTenantID(tenantID).WithCustom("query", getUnsyncedCRMRolesQuery).Error(err)
 		return nil, err
 	}
+
+	if isOutreach {
+		for _, result := range results {
+			result.ID = result.OutreachID.String
+		}
+	}
 	return results, nil
 }
 
-func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, limit, offset int) ([]*models.CRMRole, int64, error) {
+func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, limit, offset int, isOutreach bool) ([]*models.CRMRole, int64, error) {
 	spanCtx, span := log.StartSpan(ctx, "CRMRole.Search")
 	defer span.End()
 
@@ -166,6 +243,12 @@ func (svc *CRMRoleService) Search(ctx context.Context, tenantID, query string, l
 	crmRoles, err := models.CRMRoles(queryParts...).All(spanCtx, svc.GetContextExecutor())
 	if err != nil {
 		return nil, total, err
+	}
+
+	if isOutreach {
+		for _, crmRole := range crmRoles {
+			crmRole.ID = crmRole.OutreachID.String
+		}
 	}
 
 	return crmRoles, total, nil

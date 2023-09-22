@@ -363,7 +363,7 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 			ids[i] = id
 			i++
 		}
-		crmRoles, err := crmSvc.GetByIDs(spanCtx, in.TenantId, ids...)
+		crmRoles, err := crmSvc.GetByIDs(spanCtx, in.TenantId, in.IsOutreach, ids...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting person crm roles")
 			logger.Error(err)
@@ -542,7 +542,11 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	spanCtx, span := log.StartSpan(ctx, "UpdatePerson")
 	defer span.End()
 
-	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
+	logger := log.WithContext(spanCtx).
+		WithTenantID(in.TenantId).
+		WithCustom("onlyFields", in.OnlyFields).
+		WithCustom("person", in.Person).
+		WithCustom("personId", in.PersonId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -551,7 +555,9 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	}
 
 	if in.Person == nil {
-		return &servicePb.UpdatePersonResponse{}, nil
+		err := ErrBadRequest.New("person can't be null")
+		logger.Warn(err.Error())
+		return nil, err
 	}
 
 	if in.Person.Id == "" && in.PersonId == "" {
@@ -564,12 +570,9 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	if in.Person.Id == "" && in.PersonId != "" {
 		in.Person.Id = in.PersonId
 	}
-
 	if in.Person.UpdatedBy == "" {
 		in.Person.UpdatedBy = db.DefaultTenantID
 	}
-
-	logger = logger.WithCustom("personId", in.Person.Id).WithCustom("onlyFields", in.OnlyFields).WithCustom("person", in.Person)
 
 	// Check if we are updating a person's provisioning
 	changeProvisioning := strUtil.Strings(in.OnlyFields).Has("is_provisioned")
@@ -604,19 +607,21 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		}
 	}
 
-	// Check if this is virtual user that is no longer provisioned: -> status=inactive
-	if !in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
-		in.Person.Status = orchardPb.BasicStatus_Inactive
-		if len(in.OnlyFields) > 0 {
-			in.OnlyFields = append(in.OnlyFields, "status")
+	if in.Person.CreatedBy != "" {
+		// Check if this is virtual user that is no longer provisioned: -> status=inactive
+		if !in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
+			in.Person.Status = orchardPb.BasicStatus_Inactive
+			if len(in.OnlyFields) > 0 {
+				in.OnlyFields = append(in.OnlyFields, "status")
+			}
 		}
-	}
 
-	// If virtual user and provisioning, set to active
-	if in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
-		in.Person.Status = orchardPb.BasicStatus_Active
-		if len(in.OnlyFields) > 0 {
-			in.OnlyFields = append(in.OnlyFields, "status")
+		// If virtual user and provisioning, set to active
+		if in.Person.IsProvisioned && in.Person.CreatedBy != db.DefaultTenantID && in.Person.CreatedBy != db.DefaultOutreachSyncID {
+			in.Person.Status = orchardPb.BasicStatus_Active
+			if len(in.OnlyFields) > 0 {
+				in.OnlyFields = append(in.OnlyFields, "status")
+			}
 		}
 	}
 
@@ -1006,7 +1011,7 @@ func (h *Handlers) ConvertVirtualUsers(ctx context.Context, in *servicePb.Conver
 	emails := make([]interface{}, 0, len(peeps))
 	for _, person := range peeps {
 		if person.Email.Valid && !person.Email.IsZero() && person.Status == "active" {
-			emails = append(emails, person.Email.String)
+			emails = append(emails, strings.ToLower(person.Email.String))
 		}
 	}
 
