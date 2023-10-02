@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/buger/jsonparser"
-	bouncer "github.com/loupe-co/bouncer/pkg/client"
 	configUtil "github.com/loupe-co/go-common/config"
 	"github.com/loupe-co/go-common/fixtures"
+	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/clients"
 	"github.com/loupe-co/orchard/internal/config"
 	"github.com/loupe-co/orchard/internal/db"
@@ -28,6 +28,10 @@ var generatedTestIDs = map[string][]string{
 }
 
 func setup() (*Handlers, error) {
+	os.Setenv("PROJECT_ID", "local")
+	log.InitLogger()
+	os.Setenv("PROJECT_ID", "loupe-dev")
+
 	fixtures.InitTestFixtures("../../fixtures", "../../fixtures/results")
 	cfg := config.Config{}
 	err := configUtil.Load(
@@ -36,14 +40,12 @@ func setup() (*Handlers, error) {
 		configUtil.SetDefaultENV("project", "local"),
 		configUtil.SetDefaultENV("SERVER_NAME", "orchard"),
 		configUtil.SetDefaultENV("PROJECT_ID", "loupe-dev"),
-		configUtil.SetDefaultENV("DB_HOST", "35.245.37.78"),
+		configUtil.SetDefaultENV("DB_HOST", "localhost"),
 		configUtil.SetDefaultENV("DB_PASSWORD", "jLariybb1oe5FbDz"),
-		// configUtil.SetDefaultENV("DB_HOST", "35.230.174.219"),
-		// configUtil.SetDefaultENV("DB_PASSWORD", "aM73nc7L6POJ3FIA"),
 		configUtil.SetDefaultENV("DB_MAX_CONNECTIONS", "10"),
 		configUtil.SetDefaultENV("DB_DEBUG", "false"),
 		configUtil.SetDefaultENV("TENANT_SERVICE_ADDR", "localhost:50053"),
-		configUtil.SetDefaultENV("CRM_SERVICE_ADDR", "localhost:50052"),
+		configUtil.SetDefaultENV("CRM_SERVICE_ADDR", "localhost:50051"),
 		configUtil.SetDefaultENV("BOUNCER_ADDR", "localhost:50051"),
 		configUtil.SetDefaultENV("AUTH_0_ISSUER", "loupe-dev.auth0.com"),
 		configUtil.SetDefaultENV("AUTH_0_AUDIENCE", "Fb8FuT6ezfLFG2tabZeFh2r8NsTD4AAm"),
@@ -52,6 +54,7 @@ func setup() (*Handlers, error) {
 	if err != nil {
 		panic("Error parsing config from environment")
 	}
+
 	dbClient, err := db.New(cfg)
 	if err != nil {
 		return nil, err
@@ -60,24 +63,24 @@ func setup() (*Handlers, error) {
 	if err != nil {
 		return nil, err
 	}
-	tenantClient, err := clients.NewTenantClient(cfg)
-	if err != nil {
-		return nil, err
-	}
-	bouncerClient, err := bouncer.NewBouncerClient(
-		context.Background(),
-		bouncer.SetBouncerAddr(cfg.BouncerAddr),
-		bouncer.SetRedisHost(cfg.RedisHost),
-		bouncer.SetRedisPass(cfg.RedisPassword),
-	)
-	if err != nil {
-		return nil, err
-	}
-	auth0Client := clients.NewAuth0Client(cfg)
-	if err := seed(dbClient); err != nil {
-		return nil, err
-	}
-	return &Handlers{cfg: cfg, db: dbClient, tenantClient: tenantClient, crmClient: crmClient, auth0Client: auth0Client, bouncerClient: bouncerClient}, nil
+	// tenantClient, err := clients.NewTenantClient(cfg)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// bouncerClient, err := bouncer.NewBouncerClient(
+	// 	context.Background(),
+	// 	bouncer.SetBouncerAddr(cfg.BouncerAddr),
+	// 	bouncer.SetRedisHost(cfg.RedisHost),
+	// 	bouncer.SetRedisPass(cfg.RedisPassword),
+	// )
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// auth0Client := clients.NewAuth0Client(cfg)
+	// if err := seed(dbClient); err != nil {
+	// 	return nil, err
+	// }
+	return &Handlers{cfg: cfg, db: dbClient, crmClient: crmClient}, nil
 }
 
 func seed(dbClient *db.DB) error {
@@ -229,15 +232,15 @@ func TestMain(m *testing.M) {
 	server, err := setup()
 	if err != nil {
 		fmt.Println(err)
-		if err := teardown(server.db); err != nil {
-			fmt.Println(err)
-		}
+		// if err := teardown(server.db); err != nil {
+		// 	fmt.Println(err)
+		// }
 		os.Exit(2)
 	}
 	testServer = server
 	code := m.Run()
-	if err := teardown(server.db); err != nil {
-		fmt.Println(err)
-	}
+	// if err := teardown(server.db); err != nil {
+	// 	fmt.Println(err)
+	// }
 	os.Exit(code)
 }
