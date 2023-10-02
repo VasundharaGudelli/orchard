@@ -44,6 +44,7 @@ func (h *Handlers) SyncCrmRoles(ctx context.Context, in *servicePb.SyncRequest) 
 	)
 
 	for {
+		logger.Debug("getting next page of crm roles")
 		var latestCRMRoles []*orchardPb.CRMRole
 		latestCRMRoles, total, nextToken, err = h.crmClient.GetLatestCRMRoles(ctx, in.TenantId, in.SyncSince, batchSize, nextToken)
 		if err != nil {

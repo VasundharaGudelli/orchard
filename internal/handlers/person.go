@@ -351,7 +351,6 @@ func (h *Handlers) SearchPeople(ctx context.Context, in *servicePb.SearchPeopleR
 			ids[i] = id
 			i++
 		}
-
 		crmRoles, err := crmSvc.GetByIDs(ctx, in.TenantId, in.IsOutreach, ids...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting person crm roles")
@@ -519,6 +518,9 @@ func (h *Handlers) GetVirtualUsers(ctx context.Context, in *servicePb.GetVirtual
 }
 
 func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonRequest) (*servicePb.UpdatePersonResponse, error) {
+	ctx, span := log.StartSpan(ctx, "UpdatePerson")
+	defer span.End()
+
 	logger := log.WithContext(ctx).
 		WithTenantID(in.TenantId).
 		WithCustom("onlyFields", in.OnlyFields).

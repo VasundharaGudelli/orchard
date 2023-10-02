@@ -67,6 +67,7 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 		return nil, err.AsGRPC()
 	}
 	if fullSynced { // Attempt to bypass other processes if we're already in a full synced state
+		logger.Info("already fully synced, running sync")
 		if _, err := h.Sync(ctx, &servicePb.SyncRequest{TenantId: in.TenantId}); err != nil {
 			err := errors.Wrap(err, "error syncing crm data")
 			logger.Error(err)
@@ -75,6 +76,8 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 		}
 		return &servicePb.ReSyncCRMResponse{Status: tenantPb.GroupSyncStatus_Active}, nil
 	}
+
+	logger.Info("not fully synced, re-syncing")
 
 	// Check to make sure all the tenant's groups are currently delete before resyncing, because apparently that's an issue?
 	groupCount, err := groupSvc.GetTenantGroupCount(ctx, in.TenantId)
@@ -89,7 +92,7 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 	if groupCount > 0 {
 		err := errors.New("hierarchy must be reset before switching back to full sync").WithCode(codes.FailedPrecondition)
 		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
+		// return nil, err.AsGRPC()
 	}
 
 	// Delete all the tenant's groups just in case
