@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"strings"
 
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -77,6 +78,20 @@ func (svc *TenantService) ToProto(t *models.Tenant) (*tenantPb.Tenant, error) {
 		return nil, errors.Wrap(err, "error unmarshaling groupSyncMetadata")
 	}
 
+	licenseType := tenantPb.LicenseType_LICENSE_TYPE_COMMIT_STANDALONE
+	if t.LicenseType.Valid {
+		switch strings.ToLower(t.LicenseType.String) {
+		case "unknown":
+			licenseType = tenantPb.LicenseType_LICENSE_TYPE_UNKNOWN
+		case "standalone":
+			licenseType = tenantPb.LicenseType_LICENSE_TYPE_COMMIT_STANDALONE
+		case "create_and_close":
+			licenseType = tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE
+		case "create_and_close_hybrid":
+			licenseType = tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE_HYBRID
+		}
+	}
+
 	return &tenantPb.Tenant{
 		Id:                t.ID,
 		Status:            t.Status,
@@ -89,6 +104,7 @@ func (svc *TenantService) ToProto(t *models.Tenant) (*tenantPb.Tenant, error) {
 		Permissions:       t.Permissions,
 		CreatedAt:         createdAt,
 		UpdatedAt:         updatedAt,
+		LicenseType:       licenseType,
 	}, nil
 }
 
