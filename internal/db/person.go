@@ -447,7 +447,7 @@ const (
 	, UpdatedSyncedNullCRMRoles AS (
 		SELECT p.id, p.tenant_id, NULL AS group_id
 		FROM person p
-		p.tenant_id = $1 AND p.is_synced AND p.group_id <> '' AND crm_role_ids IS NULL;
+		WHERE p.tenant_id = $1 AND p.is_synced AND p.group_id <> '' AND crm_role_ids IS NULL;
 	)
 	, UpdatedUnSyncedPersonGroups AS (
 		SELECT
