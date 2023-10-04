@@ -14,6 +14,7 @@ import (
 	"github.com/loupe-co/orchard/internal/db"
 	"github.com/loupe-co/orchard/internal/models"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
+	tenantPb "github.com/loupe-co/protos/src/common/tenant"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/queries"
@@ -25,27 +26,38 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 
 	logger := log.WithContext(ctx).
 		WithTenantID(in.TenantId).
-		WithCustom("syncSince", in.SyncSince.AsTime())
+		WithCustom("syncSince", in.SyncSince.AsTime()).
+		WithCustom("licenseType", in.LicenseType).
+		WithCustom("updatePersonGroups", in.UpdatePersonGroups)
 
-	if strings.Contains(in.TenantId, "create_and_close") {
-		spl := strings.Split(in.TenantId, "::")
-		tID := spl[0]
-		licenseType := ""
-		if len(spl) > 0 {
-			licenseType = spl[1]
-		}
-		if err := h.cleanupCNCUsers(ctx, tID); err != nil {
+	tenantID, license := parseSyncLicense(in)
+
+	if license == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE || license == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE_HYBRID {
+		logger.Info("begin SyncUsers for c&c tenant")
+
+		if err := h.cleanupCNCUsers(ctx, tenantID); err != nil {
 			err := errors.Wrap(err, "error running cleanupCNCUsers")
 			logger.Error(err)
 			return nil, err.Clean().AsGRPC()
 		}
-		if strings.EqualFold(licenseType, "create_and_close") {
-			if err := h.makeHierarchyAdjustments(ctx, tID); err != nil {
+
+		if license == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE {
+			logger.Debug("making hierarchy adjustments for c&c tenant")
+			if err := h.makeHierarchyAdjustments(ctx, tenantID); err != nil {
 				err := errors.Wrap(err, "error running makeHierarchyAdjustments")
 				logger.Error(err)
 				return nil, err.Clean().AsGRPC()
 			}
 		}
+
+		if in.UpdatePersonGroups {
+			if err := h.updatePersonGroups(ctx, tenantID, nil); err != nil {
+				err := errors.Wrap(err, "failed to update person groups")
+				logger.Error(err)
+				return nil, err
+			}
+		}
+
 		return &servicePb.SyncResponse{}, nil
 	}
 

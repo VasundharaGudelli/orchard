@@ -444,6 +444,11 @@ const (
 		INNER JOIN "group" g ON p.crm_role_ids && g.crm_role_ids AND p.tenant_id = g.tenant_id
 		WHERE p.tenant_id = $1 AND p.is_synced
 	)
+	, UpdatedSyncedNullCRMRoles AS (
+		SELECT p.id, p.tenant_id, NULL AS group_id
+		FROM person p
+		p.tenant_id = $1 AND p.is_synced AND p.group_id <> '' AND crm_role_ids IS NULL;
+	)
 	, UpdatedUnSyncedPersonGroups AS (
 		SELECT
 			p.id, p.tenant_id, g.id as group_id
@@ -457,6 +462,8 @@ const (
 		SELECT * FROM UpdatedSyncedPersonGroups
 		UNION ALL
 		SELECT * FROM UpdatedUnSyncedPersonGroups
+		UNION ALL
+		SELECT * FROM UpdatedSyncedNullCRMRoles
 	) g
 	WHERE person.id = g.id AND person.tenant_id = g.tenant_id`
 )
