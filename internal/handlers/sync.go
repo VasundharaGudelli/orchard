@@ -16,7 +16,7 @@ func (h *Handlers) Sync(ctx context.Context, in *servicePb.SyncRequest) (*servic
 	spanCtx, span := log.StartSpan(ctx, "Sync")
 	defer span.End()
 
-	if strings.Contains(in.TenantId, "create_and_close") {
+	if strings.Contains(in.TenantId, "create_and_close") || in.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE || in.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE_HYBRID {
 		if _, err := h.SyncUsers(spanCtx, in); err != nil {
 			return nil, err
 		}
@@ -95,7 +95,7 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 	if groupCount > 0 {
 		err := errors.New("hierarchy must be reset before switching back to full sync").WithCode(codes.FailedPrecondition)
 		logger.Warn(err.Error())
-		// return nil, err.AsGRPC()
+		return nil, err.AsGRPC()
 	}
 
 	// Delete all the tenant's groups just in case
@@ -142,4 +142,23 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 	}
 
 	return &servicePb.ReSyncCRMResponse{Status: tenantPb.GroupSyncStatus_Active}, nil
+}
+
+func parseSyncLicense(in *servicePb.SyncRequest) (tenantID string, license tenantPb.LicenseType) {
+	license = in.LicenseType
+
+	idParts := strings.Split(in.TenantId, "::")
+	tenantID = idParts[0]
+	if len(idParts) > 1 {
+		switch strings.ToLower(idParts[1]) {
+		case "create_and_close":
+			license = tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE
+		case "create_and_close_hybrid":
+			license = tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE_HYBRID
+		default:
+			license = tenantPb.LicenseType_LICENSE_TYPE_COMMIT_STANDALONE
+		}
+	}
+
+	return
 }
