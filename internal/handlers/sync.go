@@ -82,12 +82,32 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 	}
 	if fullSynced { // Attempt to bypass other processes if we're already in a full synced state
 		logger.Info("already fully synced, running sync")
-		if _, err := h.Sync(ctx, &servicePb.SyncRequest{TenantId: in.TenantId, UpdatePersonGroups: true, LicenseType: tenant.LicenseType}); err != nil {
+		if _, err := h.Sync(ctx, &servicePb.SyncRequest{TenantId: in.TenantId}); err != nil {
 			err := errors.Wrap(err, "error syncing crm data")
 			logger.Error(err)
 			groupSvc.Rollback() // Haven't really done anything yet, so not handling error
 			return nil, err.AsGRPC()
 		}
+
+		// C&C tenants need a special sync users pass
+		if tenant.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE || tenant.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE_HYBRID {
+			if _, err := h.SyncUsers(ctx, &servicePb.SyncRequest{TenantId: in.TenantId, UpdatePersonGroups: true, LicenseType: tenant.LicenseType}); err != nil {
+				err := errors.Wrap(err, "error syncing users for c&c tenant")
+				logger.Error(err)
+				groupSvc.Rollback() // Haven't really done anything yet, so not handling error
+				return nil, err.AsGRPC()
+			}
+		}
+
+		if err := tenantSvc.UpdateGroupSyncState(ctx, in.TenantId, tenantPb.GroupSyncStatus_Active); err != nil {
+			err := errors.Wrap(err, "error updating tenant group sync state in sql")
+			logger.Error(err)
+			if err := groupSvc.Rollback(); err != nil {
+				logger.Error(errors.Wrap(err, "error rolling back transaction"))
+			}
+			return nil, err.AsGRPC()
+		}
+
 		return &servicePb.ReSyncCRMResponse{Status: tenantPb.GroupSyncStatus_Active}, nil
 	}
 
