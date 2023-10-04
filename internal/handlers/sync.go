@@ -108,6 +108,13 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 			return nil, err.AsGRPC()
 		}
 
+		if err := tx.Commit(); err != nil {
+			err := errors.Wrap(err, "error committing transaction")
+			logger.Error(err)
+			tx.Rollback()
+			return nil, err.AsGRPC()
+		}
+
 		return &servicePb.ReSyncCRMResponse{Status: tenantPb.GroupSyncStatus_Active}, nil
 	}
 
