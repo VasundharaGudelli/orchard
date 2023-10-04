@@ -16,7 +16,7 @@ func (h *Handlers) Sync(ctx context.Context, in *servicePb.SyncRequest) (*servic
 	spanCtx, span := log.StartSpan(ctx, "Sync")
 	defer span.End()
 
-	if strings.Contains(in.TenantId, "create_and_close") {
+	if strings.Contains(in.TenantId, "create_and_close") || in.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE || in.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE_HYBRID {
 		if _, err := h.SyncUsers(spanCtx, in); err != nil {
 			return nil, err
 		}
@@ -50,6 +50,21 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 
 	logger.Info("Re-Syncing CRM for tenant")
 
+	// Get the tenant record so we know the license type
+	tenantSvc := h.db.NewTenantService()
+	tenantDB, err := tenantSvc.GetByID(ctx, in.TenantId)
+	if err != nil {
+		err := errors.Wrap(err, "error getting tenant record")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+	tenant, err := tenantSvc.ToProto(tenantDB)
+	if err != nil {
+		err := errors.Wrap(err, "error converting tenant db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
 	tx, err := h.db.NewTransaction(spanCtx)
 	if err != nil {
 		err := errors.Wrap(err, "error creating transaction")
@@ -59,7 +74,6 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 
 	groupSvc := h.db.NewGroupService()
 	groupSvc.SetTransaction(tx)
-	tenantSvc := h.db.NewTenantService()
 	tenantSvc.SetTransaction(tx)
 
 	fullSynced, err := groupSvc.IsCRMSynced(spanCtx, in.TenantId)
@@ -70,14 +84,44 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 		return nil, err.AsGRPC()
 	}
 	if fullSynced { // Attempt to bypass other processes if we're already in a full synced state
+		logger.Info("already fully synced, running sync")
 		if _, err := h.Sync(spanCtx, &servicePb.SyncRequest{TenantId: in.TenantId}); err != nil {
 			err := errors.Wrap(err, "error syncing crm data")
 			logger.Error(err)
 			groupSvc.Rollback() // Haven't really done anything yet, so not handling error
 			return nil, err.AsGRPC()
 		}
+
+		// C&C tenants need a special sync users pass
+		if tenant.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE || tenant.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE_HYBRID {
+			if _, err := h.SyncUsers(spanCtx, &servicePb.SyncRequest{TenantId: in.TenantId, UpdatePersonGroups: true, LicenseType: tenant.LicenseType}); err != nil {
+				err := errors.Wrap(err, "error syncing users for c&c tenant")
+				logger.Error(err)
+				groupSvc.Rollback() // Haven't really done anything yet, so not handling error
+				return nil, err.AsGRPC()
+			}
+		}
+
+		if err := tenantSvc.UpdateGroupSyncState(spanCtx, in.TenantId, tenantPb.GroupSyncStatus_Active); err != nil {
+			err := errors.Wrap(err, "error updating tenant group sync state in sql")
+			logger.Error(err)
+			if err := groupSvc.Rollback(); err != nil {
+				logger.Error(errors.Wrap(err, "error rolling back transaction"))
+			}
+			return nil, err.AsGRPC()
+		}
+
+		if err := tx.Commit(); err != nil {
+			err := errors.Wrap(err, "error committing transaction")
+			logger.Error(err)
+			tx.Rollback()
+			return nil, err.AsGRPC()
+		}
+
 		return &servicePb.ReSyncCRMResponse{Status: tenantPb.GroupSyncStatus_Active}, nil
 	}
+
+	logger.Info("not fully synced, re-syncing")
 
 	// Check to make sure all the tenant's groups are currently delete before resyncing, because apparently that's an issue?
 	groupCount, err := groupSvc.GetTenantGroupCount(spanCtx, in.TenantId)
@@ -138,5 +182,33 @@ func (h *Handlers) ReSyncCRM(ctx context.Context, in *servicePb.ReSyncCRMRequest
 		return nil, err.AsGRPC()
 	}
 
+	// If c&c customer, do another c&c sync run
+	if tenant.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE || tenant.LicenseType == tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE_HYBRID {
+		if _, err := h.Sync(spanCtx, &servicePb.SyncRequest{TenantId: in.TenantId, UpdatePersonGroups: true, LicenseType: tenant.LicenseType}); err != nil {
+			err := errors.Wrap(err, "error syncing C&C crm data")
+			logger.Error(err)
+			return nil, err.AsGRPC()
+		}
+	}
+
 	return &servicePb.ReSyncCRMResponse{Status: tenantPb.GroupSyncStatus_Active}, nil
+}
+
+func parseSyncLicense(in *servicePb.SyncRequest) (tenantID string, license tenantPb.LicenseType) {
+	license = in.LicenseType
+
+	idParts := strings.Split(in.TenantId, "::")
+	tenantID = idParts[0]
+	if len(idParts) > 1 {
+		switch strings.ToLower(idParts[1]) {
+		case "create_and_close":
+			license = tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE
+		case "create_and_close_hybrid":
+			license = tenantPb.LicenseType_LICENSE_TYPE_CREATE_AND_CLOSE_HYBRID
+		default:
+			license = tenantPb.LicenseType_LICENSE_TYPE_COMMIT_STANDALONE
+		}
+	}
+
+	return
 }

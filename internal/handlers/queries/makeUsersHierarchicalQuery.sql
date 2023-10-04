@@ -20,24 +20,26 @@ WITH crm_role_work AS (
 			UPDATE person
 			SET crm_role_ids = CASE WHEN new_role_id IS NULL THEN NULL ELSE ARRAY[new_role_id] END
 			FROM (
-				SELECT DISTINCT person_id, new_role_id FROM (
+				SELECT DISTINCT person_id, new_role_id
+				FROM (
 					SELECT
-					p.id AS person_id,
-					c.id AS new_role_id,
-					p.crm_role_ids AS current_role_ids,
-					ROW_NUMBER() OVER(PARTITION BY p.id, c.outreach_id ORDER BY CASE WHEN c.outreach_id <> c.id THEN 0 ELSE 1 END ASC) AS rn
+						p.id AS person_id,
+						c.id AS new_role_id,
+						p.crm_role_ids AS current_role_ids,
+						ROW_NUMBER() OVER(PARTITION BY p.id, c.outreach_id ORDER BY CASE WHEN c.outreach_id <> c.id THEN 0 ELSE 1 END ASC) AS rn
 					FROM person p
 					INNER JOIN crm_role c ON c.outreach_id = p.outreach_role_id
 					WHERE p.tenant_id = $1 AND c.tenant_id = $1
-				) x WHERE rn = 1 AND (NOT new_role_id = ANY(current_role_ids) OR (current_role_ids IS NULL AND new_role_id IS NOT NULL))
+				) x
+				WHERE rn = 1 AND (NOT new_role_id = ANY(current_role_ids) OR (current_role_ids IS NULL AND new_role_id IS NOT NULL))
 				UNION ALL
 				SELECT
-				p.id AS person_id,
-				NULL AS new_role_id
-				FROM person p WHERE crm_role_ids IS NOT NULL AND outreach_role_id IS NULL AND tenant_id = $1
+					p.id AS person_id,
+					NULL AS new_role_id
+				FROM person p
+				WHERE crm_role_ids IS NOT NULL AND outreach_role_id IS NULL AND tenant_id = $1
 			) AS subquery
-			WHERE person.id = subquery.person_id
-			AND person.tenant_id = $1
+			WHERE person.id = subquery.person_id AND person.tenant_id = $1
 			RETURNING id
 		)
 
