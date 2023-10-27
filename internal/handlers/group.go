@@ -566,6 +566,10 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 		return nil, err.AsGRPC()
 	}
 
+	if in.Group.Id == "" && in.GroupId != "" {
+		in.Group.Id = in.GroupId
+	}
+
 	if in.Group.Id == "" && in.TenantId == "" {
 		err := ErrBadRequest.New("can't update group with empty id")
 		logger.Warn(err.Error())
