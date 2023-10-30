@@ -829,3 +829,25 @@ func (svc *GroupService) GetTenantActiveGroupCount(ctx context.Context, tenantID
 	}
 	return count, nil
 }
+
+const (
+	isDescendantQuery = `SELECT g.group_path @> (SELECT group_path FROM "group" WHERE id = $2) AS is_descendant
+	FROM "group" g
+	WHERE id = $1`
+)
+
+type isDescendantResult struct {
+	IsDescendant bool `json:"is_descendant" db:"is_descendant" sql:"is_descendant" boil:"is_descendant"`
+}
+
+func (svc *GroupService) IsDescendant(ctx context.Context, sourceID string, targetID string) (bool, error) {
+	ctx, span := log.StartSpan(ctx, "Group.IsDescendant")
+	defer span.End()
+	var res isDescendantResult
+	err := queries.Raw(isDescendantQuery, sourceID, targetID).Bind(ctx, svc.GetContextExecutor(), &res)
+	if err != nil {
+		log.WithContext(ctx).WithCustom("query", isDescendantQuery).Error(err)
+		return false, err
+	}
+	return res.IsDescendant, nil
+}

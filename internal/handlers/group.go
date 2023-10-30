@@ -594,6 +594,22 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 
 	svc.SetTransaction(tx)
 
+	// Check to see if the provided parent_id is a descendant of the current group.
+	// If so, then disallow the request.
+	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("parent_id") {
+		isDescendant, err := svc.IsDescendant(ctx, in.Group.Id, in.Group.ParentId)
+		if err != nil {
+			err := errors.Wrap(err, "error checking if new parent is a descendant of the group")
+			logger.Error(err)
+			return nil, err
+		}
+		if isDescendant {
+			err := errors.New("group can't be assigned to its own descendant").WithCode(codes.InvalidArgument)
+			logger.Error(err)
+			return nil, err
+		}
+	}
+
 	var outreachToCommitMapping map[string]string
 	commitToOutreachMapping := map[string]string{}
 
