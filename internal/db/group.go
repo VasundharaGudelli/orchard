@@ -829,24 +829,46 @@ func (svc *GroupService) GetTenantActiveGroupCount(ctx context.Context, tenantID
 	return count, nil
 }
 
+type DescendantCode int
+
 const (
-	isDescendantQuery = `SELECT g.group_path @> (SELECT group_path FROM "group" WHERE id = $2) AS is_descendant
-	FROM "group" g
-	WHERE id = $1`
+	DescendantCode_SOURCE_NOT_EXISTS DescendantCode = iota
+	DescendantCode_TARGET_NOT_EXISTS
+	DescendantCode_TARGET_IS_EMPTY
+	DescendantCode_TARGET_IS_DESCENDANT
+	DescendantCode_TARGET_NOT_DESCENDANT
+)
+
+const (
+	isDescendantQuery = `WITH g AS (
+		SELECT id, group_path
+		FROM "group"
+		WHERE id IN ($1, $2) AND status = 'active'
+	)
+	SELECT
+		CASE
+			WHEN (SELECT id FROM g WHERE id = $1) IS NULL THEN 0
+			WHEN (SELECT id FROM g WHERE id = $2) IS NULL AND $2 <> '' THEN 1
+			WHEN $2 = '' THEN 2
+			WHEN (SELECT group_path FROM g WHERE id = $1) @> (SELECT group_path FROM g WHERE id = $2) THEN 3
+			ELSE 4
+		END AS "code"
+	FROM g
+	WHERE g.id = $1`
 )
 
 type isDescendantResult struct {
-	IsDescendant bool `json:"is_descendant" db:"is_descendant" sql:"is_descendant" boil:"is_descendant"`
+	Code sql.NullInt32 `json:"code" db:"code" sql:"code" boil:"code"`
 }
 
-func (svc *GroupService) IsDescendant(ctx context.Context, sourceID string, targetID string) (bool, error) {
+func (svc *GroupService) IsDescendant(ctx context.Context, sourceID string, targetID string) (DescendantCode, error) {
 	ctx, span := log.StartSpan(ctx, "Group.IsDescendant")
 	defer span.End()
 	var res isDescendantResult
 	err := queries.Raw(isDescendantQuery, sourceID, targetID).Bind(ctx, svc.GetContextExecutor(), &res)
 	if err != nil {
 		log.WithContext(ctx).WithCustom("query", isDescendantQuery).Error(err)
-		return false, err
+		return 0, err
 	}
-	return res.IsDescendant, nil
+	return DescendantCode(res.Code.Int32), nil
 }

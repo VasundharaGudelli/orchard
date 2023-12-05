@@ -588,7 +588,7 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 		in.Group.Id = in.GroupId
 	}
 
-	if in.Group.Id == "" && in.TenantId == "" {
+	if in.Group.Id == "" || in.TenantId == "" {
 		err := ErrBadRequest.New("can't update group with empty id")
 		logger.Warn(err.Error())
 		return nil, err.AsGRPC()
@@ -615,16 +615,29 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 	// Check to see if the provided parent_id is a descendant of the current group.
 	// If so, then disallow the request.
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("parent_id") {
-		isDescendant, err := svc.IsDescendant(ctx, in.Group.Id, in.Group.ParentId)
+		code, err := svc.IsDescendant(ctx, in.Group.Id, in.Group.ParentId)
 		if err != nil {
 			err := errors.Wrap(err, "error checking if new parent is a descendant of the group")
 			logger.Error(err)
 			return nil, err
 		}
-		if isDescendant {
-			err := errors.New("group can't be assigned to its own descendant").WithCode(codes.InvalidArgument)
-			logger.Error(err)
+		switch code {
+		case db.DescendantCode_SOURCE_NOT_EXISTS:
+			err := errors.New("group.id does not exist or is not active").WithCode(codes.InvalidArgument)
+			logger.Warn(err.Error())
 			return nil, err
+		case db.DescendantCode_TARGET_NOT_EXISTS:
+			err := errors.New("parent group id does not exist or is not active").WithCode(codes.InvalidArgument)
+			logger.Warn(err.Error())
+			return nil, err
+		case db.DescendantCode_TARGET_IS_EMPTY:
+			logger.Debug("target parent group is empty, moving group to root")
+		case db.DescendantCode_TARGET_IS_DESCENDANT:
+			err := errors.New("group can't be assigned to its own descendant").WithCode(codes.InvalidArgument)
+			logger.Warn(err.Error())
+			return nil, err
+		case db.DescendantCode_TARGET_NOT_DESCENDANT:
+			logger.Debug("target parent group is not a descendant")
 		}
 	}
 
