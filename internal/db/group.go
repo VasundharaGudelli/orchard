@@ -618,7 +618,7 @@ func (svc *GroupService) RemoveAllGroupMembers(ctx context.Context, tenantID, us
 
 const (
 	isCRMSyncedQuery = `WITH UserCreated AS (
-		SELECT SUM(CASE WHEN created_by <> '00000000-0000-0000-0000-000000000000' THEN 1 ELSE 0 END) as user_created_count
+		SELECT SUM(CASE WHEN created_by NOT IN ('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000000001') THEN 1 ELSE 0 END) as user_created_count
 		FROM "group"
 		WHERE tenant_id = $1
 		GROUP BY tenant_id
