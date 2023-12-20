@@ -71,7 +71,7 @@ WITH
 			"type" = source_type,
 			is_provisioned = x.target_is_provisioned OR x.source_is_provisioned,
 			is_synced = x.source_is_synced,
-			"status" = x.source_status
+			"status" = CASE WHEN x.source_status::TEXT = 'active' OR x.target_status::TEXT = 'active' THEN 'active'::person_status ELSE 'inactive'::person_status END
 		FROM(
 			SELECT
 				source.id AS source_id,
