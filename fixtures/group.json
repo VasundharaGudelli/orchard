@@ -22,6 +22,22 @@
   "TestGetGroups": {},
   "TestGetGroupsWithSearch": {},
   "TestGetGroupsBadRequestEmptyTenantID": {},
+  "TestGetManagerAndParentIDs": {
+    "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
+    "person_id": "0a88733e-cfe5-11ee-9727-2208ed796501"
+  },
+  "TestGetManagerAndParentIDsWithEmptyValues": {
+    "tenant_id": "",
+    "person_id": ""
+  },
+  "TestGetManagerAndParentIDsWithEmptyPersonID": {
+    "tenant_id": "62106dc5-53f6-465b-befc-eef69d0783ce",
+    "person_id": ""
+  },
+  "TestGetManagerAndParentIDsWithEmptyTenantID": {
+    "tenant_id": "",
+    "person_id": "0a88733e-cfe5-11ee-9727-2208ed796501"
+  },
   "TestGetGroupSubTree": {
     "tenant_id": "00000000-0000-0000-0000-000000000000",
     "group_id": "ffa46973-1f28-41d8-9cee-dfadb51eeae2",
