@@ -273,6 +273,37 @@ func buildRootGroupSelectorClause(g string, vg []string) string {
 	`, strings.Join(qArr, "\nOR\n"))
 }
 
+const (
+	GetManagerAndParentIDsQuery = `SELECT p.manager_id, g.parent_id 
+	FROM "person" p 
+	INNER JOIN "group" g ON p.group_id = g.id and g.tenant_id=p.tenant_id 
+	WHERE g.tenant_id =$1 and p.id=$2`
+)
+
+type GetManagerAndParentIDsResult struct {
+	ManagerID string `json:"managerID" boil:"manager_id"`
+	ParentID string `json:"parentID" boil:"parent_id"`
+}
+
+func (svc *GroupService) GetManagerAndParentIDs(ctx context.Context, tenantID, personID string) (managerID, parentID string, err error) {
+	spanCtx, span := log.StartSpan(ctx, "Group.GetManagerAndParentIDs")
+	defer span.End()
+
+	res := GetManagerAndParentIDsResult{}
+
+	err = queries.Raw(GetManagerAndParentIDsQuery, tenantID, personID).Bind(spanCtx, svc.GetContextExecutor(), &res)
+	if err != nil && err != sql.ErrNoRows {
+		log.WithTenantID(tenantID).WithCustom("personId", personID).WithCustom("query", GetManagerAndParentIDsQuery).Error(err)
+		return
+	}
+	if err == sql.ErrNoRows {
+		err = nil
+		return
+	}
+	
+	return res.ManagerID, res.ParentID, nil
+}
+
 func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool, useManagerNames bool, excludeManagerUsers bool, viewableGroups ...string) ([]*GroupTreeNode, error) {
 	spanCtx, span := log.StartSpan(ctx, "Group.GetGroupSubTree")
 	defer span.End()

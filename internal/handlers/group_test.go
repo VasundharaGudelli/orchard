@@ -432,6 +432,204 @@ func TestGetGroupsBadRequestEmptyTenantID(t *testing.T) {
 	}
 }
 
+func TestGetManagerAndParentIDs(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestGetManagerAndParentIDs")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.GetManagerAndParentIDsRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	res, err := testServer.GetManagerAndParentIDs(context.Background(), req)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if res == nil {
+		t.Log("expected result to be non-nil, but got nil")
+		t.Fail()
+		return
+	}
+
+	if res.ManagerId != "outreach_playercoach" {
+		t.Log("expected result id to be 'outreach_playercoach', but got '"+res.ManagerId+"'")
+		t.Fail()
+		return
+	}
+
+	if res.ParentId != "d6f62a1a-1bda-11ec-a6f6-4201ac1f700d" {
+		t.Log("expected result id to be 'd6f62a1a-1bda-11ec-a6f6-4201ac1f700d', but got '"+res.ParentId+"'")
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestGetManagerAndParentIDs.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
+func TestGetManagerAndParentIDsWithEmptyValues(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestGetManagerAndParentIDsWithEmptyValues")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.GetManagerAndParentIDsRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	res, err := testServer.GetManagerAndParentIDs(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
+		t.Fail()
+		return
+	}
+
+	if !strings.Contains(err.Error(), "Bad Request") {
+		t.Log("expected error to contain 'Bad Request', but didn't")
+		t.Fail()
+		return
+	}
+
+	if res != nil {
+		t.Log("expected result to be nil, but got "+res.String())
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestGetManagerAndParentIDs.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
+func TestGetManagerAndParentIDsWithEmptyPersonID(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestGetManagerAndParentIDsWithEmptyPersonID")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.GetManagerAndParentIDsRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	res, err := testServer.GetManagerAndParentIDs(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
+		t.Fail()
+		return
+	}
+
+	if !strings.Contains(err.Error(), "Bad Request") && !strings.Contains(err.Error(), "personId") {
+		t.Log("expected error to contain 'Bad Request' for 'personId', but got " + err.Error())
+		t.Fail()
+		return
+	}
+
+	if res != nil {
+		t.Log("expected result to be nil, but got "+res.String())
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestGetManagerAndParentIDs.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
+func TestGetManagerAndParentIDsWithEmptyTenantID(t *testing.T) {
+	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestGetManagerAndParentIDsWithEmptyTenantID")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	req := &servicePb.GetManagerAndParentIDsRequest{}
+	if err := json.Unmarshal(testData, req); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	res, err := testServer.GetManagerAndParentIDs(context.Background(), req)
+	if err == nil {
+		t.Log("expected server to return an error, but got nil error")
+		t.Fail()
+		return
+	}
+
+	if !strings.Contains(err.Error(), "Bad Request") && !strings.Contains(err.Error(), "tenantId") {
+		t.Log("expected error to contain 'Bad Request' for 'tenantId', but got " + err.Error())
+		t.Fail()
+		return
+	}
+
+	if res != nil {
+		t.Log("expected result to be nil, but got "+res.String())
+		t.Fail()
+		return
+	}
+
+	rawResult, err := json.MarshalIndent(err.Error(), "", "  ")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+
+	if err := fixtures.WriteTestResult("../../fixtures/results/TestGetManagerAndParentIDs.json", rawResult); err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+}
+
 func TestGetGroupSubTree(t *testing.T) {
 	testData, _, _, err := jsonparser.Get(fixtures.Data["group"], "TestGetGroupSubTree")
 	if err != nil {
