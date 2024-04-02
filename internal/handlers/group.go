@@ -248,7 +248,6 @@ func (h *Handlers) GetGroups(spanCtx context.Context, in *servicePb.GetGroupsReq
 		Groups: groups,
 	}, nil
 }
-
 func (h *Handlers) GetManagerAndParentIDs(ctx context.Context, in *servicePb.GetManagerAndParentIDsRequest) (*servicePb.GetManagerAndParentIDsResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "GetManagerAndParentIDs")
 	defer span.End()
@@ -284,7 +283,6 @@ func (h *Handlers) GetManagerAndParentIDs(ctx context.Context, in *servicePb.Get
 		ParentId:  parentID,
 	}, nil
 }
-
 func (h *Handlers) GetGroupSubTree(spanCtx context.Context, in *servicePb.GetGroupSubTreeRequest) (*servicePb.GetGroupSubTreeResponse, error) {
 
 	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
@@ -633,7 +631,7 @@ func (h *Handlers) UpdateGroup(spanCtx context.Context, in *servicePb.UpdateGrou
 	}
 	// If the crm_role_ids changed or the status changed, then make sure to re-calculate/set the tenant's sync state
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Intersects([]string{"crm_role_ids", "status"}) {
-		if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
+		if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, nil); err != nil {
 			return nil, helpers.ErrorHandler(logger, nil, err, "error ensuring tenant group sync state", rollback)
 		}
 	}
