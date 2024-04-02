@@ -13,6 +13,7 @@ import (
 	commonSync "github.com/loupe-co/go-common/sync"
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/db"
+	"github.com/loupe-co/orchard/internal/helpers"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
 	tenantPb "github.com/loupe-co/protos/src/common/tenant"
 	servicePb "github.com/loupe-co/protos/src/services/orchard"
@@ -20,29 +21,21 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (h *Handlers) SyncGroups(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
-	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
+var rollback bool = true
+
+func (h *Handlers) SyncGroups(spanCtx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		err := ErrBadRequest.New("tenantId can't be empty")
-		logger.Warn(err.String())
-		return nil, err.AsGRPC()
+		return nil, helpers.BadRequest(logger, "tenantId can't be empty")
 	}
 
-	tx, err := h.db.NewTransaction(ctx)
-	if err != nil {
-		err := errors.Wrap(err, "error starting transaction for syncing groups")
-		logger.Error(err)
-		return nil, err.AsGRPC()
-	}
 	svc := h.db.NewGroupService()
-	svc.SetTransaction(tx)
 
-	isSynced, err := svc.IsCRMSynced(ctx, in.TenantId)
+	isSynced, err := svc.IsCRMSynced(spanCtx, in.TenantId)
 	if err != nil {
-		err := errors.Wrap(err, "error checking if tenant crm roles are synced with groups")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+		return nil, helpers.ErrorHandler(logger, svc, err, "error error checking if tenant crm roles are synced with groups", false)
 	}
 
 	if !isSynced {
@@ -50,81 +43,54 @@ func (h *Handlers) SyncGroups(ctx context.Context, in *servicePb.SyncRequest) (*
 		return &servicePb.SyncResponse{}, nil
 	}
 
-	if err := svc.SyncGroups(ctx, in.TenantId); err != nil {
-		err := errors.Wrap(err, "error syncing groups with crm roles")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := helpers.CreateTransaction(h.db, logger, spanCtx, svc, "error starting transaction for syncing groups"); err != nil {
+		return nil, err
 	}
 
-	if err := svc.DeleteUnSyncedGroups(ctx, in.TenantId); err != nil {
-		err := errors.Wrap(err, "error deleting unsynced groups")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := svc.SyncGroups(spanCtx, in.TenantId); err != nil {
+		return nil, helpers.ErrorHandler(logger, svc, err, "error syncing groups with crm roles", rollback)
 	}
 
-	if err := svc.UpdateGroupPaths(ctx, in.TenantId); err != nil {
-		err := errors.Wrap(err, "error updating group paths after sync")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := svc.DeleteUnSyncedGroups(spanCtx, in.TenantId); err != nil {
+		return nil, helpers.ErrorHandler(logger, svc, err, "error deleting unsynced groups", rollback)
 	}
 
-	if err := svc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting transaction, rolling back")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
+		return nil, helpers.ErrorHandler(logger, svc, err, "error updating group paths after sync", rollback)
 	}
 
-	return &servicePb.SyncResponse{}, nil
+	return &servicePb.SyncResponse{}, helpers.CommitTransaction(logger, svc, "sync Groups")
 }
 
-func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupRequest) (*servicePb.CreateGroupResponse, error) {
-	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
+func (h *Handlers) CreateGroup(spanCtx context.Context, in *servicePb.CreateGroupRequest) (*servicePb.CreateGroupResponse, error) {
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		err := ErrBadRequest.New("tenantId can't be empty")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
+		return nil, helpers.BadRequest(logger, "tenantId can't be empty")
 	}
 
 	if in.Group == nil {
-		err := ErrBadRequest.New("group can't be nil")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
+		return nil, helpers.BadRequest(logger, "group can't be nil")
 	}
 
 	if in.Group.Id != "" {
-		err := ErrBadRequest.New("can't create new group with existing id")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
+		return nil, helpers.BadRequest(logger, "can't create new group with existing id")
 	}
 
 	in.Group.Id = db.MakeID()
 
-	tx, err := h.db.NewTransaction(ctx)
-	if err != nil {
-		err := errors.Wrap(err, "error getting sql transaction for inserting group")
-		logger.Error(err)
-		return nil, err.AsGRPC()
-	}
-
 	svc := h.db.NewGroupService()
 	crmSVC := h.db.NewCRMRoleService()
 
-	svc.SetTransaction(tx)
-
 	var outreachToCommitMapping map[string]string
 	commitToOutreachMapping := map[string]string{}
+	var err error
 
 	if in.IsOutreach && len(in.Group.CrmRoleIds) > 0 {
-		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByOutreachIDs(ctx, in.TenantId, in.Group.CrmRoleIds...)
+		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByOutreachIDs(spanCtx, in.TenantId, in.Group.CrmRoleIds...)
 		if err != nil {
-			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
-			logger.Error(err)
-			return nil, err.AsGRPC()
+			return nil, helpers.ErrorHandler(logger, nil, err, "error getting getting outreach commit mappings by id", false)
 		}
 		for idx, item := range in.Group.CrmRoleIds {
 			in.Group.CrmRoleIds[idx] = outreachToCommitMapping[item]
@@ -138,50 +104,42 @@ func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupReq
 		insertableGroup.ParentID = null.NewString("", false)
 	}
 
-	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(ctx, in.Group.Id, in.TenantId, in.Group.CrmRoleIds); err != nil {
-		err := errors.Wrap(err, "error checking for duplicate crm_role_ids before write")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(spanCtx, in.Group.Id, in.TenantId, in.Group.CrmRoleIds); err != nil {
+		return nil, helpers.ErrorHandler(logger, nil, err, "error checking for duplicate crm_role_ids before write", false)
+
 	} else if hasDups {
 		err := errors.Error("given group has crm_role_ids that already exist in another group").WithCode(codes.InvalidArgument)
 		logger.Warn(err.Error())
 		return nil, err.AsGRPC()
 	}
 
-	if err := svc.Insert(ctx, insertableGroup); err != nil {
-		err := errors.Wrap(err, "error inserting group into sql")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := helpers.CreateTransaction(h.db, logger, spanCtx, svc, "sql transaction for inserting group"); err != nil {
+		return nil, err
 	}
 
-	if err := svc.UpdateGroupPaths(ctx, in.TenantId); err != nil {
-		err := errors.Wrap(err, "error updating group paths in sql")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := svc.Insert(spanCtx, insertableGroup); err != nil {
+		return nil, helpers.ErrorHandler(logger, nil, err, "error inserting group into sql", rollback)
 	}
 
-	if err := svc.UpdateGroupTypes(ctx, in.TenantId); err != nil {
-		err := errors.Wrap(err, "error updating group types")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
+		return nil, helpers.ErrorHandler(logger, nil, err, "error updating group paths in sql", rollback)
 	}
 
-	if err := h.ensureTenantGroupSyncState(ctx, in.TenantId, svc.GetTransaction()); err != nil {
-		svc.Rollback()
-		err := errors.Wrap(err, "error ensuring tenant group sync state")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
+		return nil, helpers.ErrorHandler(logger, nil, err, "error updating group types", rollback)
+	}
+
+	if err := helpers.CommitTransaction(logger, svc, "create group transaction"); err != nil {
+		return nil, err
+	}
+
+	if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, nil); err != nil {
+		return nil, helpers.ErrorHandler(logger, nil, err, "error ensuring tenant group sync state", rollback)
 	}
 
 	group, err := svc.ToProto(insertableGroup)
 	if err != nil {
-		err := errors.Wrap(err, "error converting group db model to proto")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+		return nil, helpers.ErrorHandler(logger, nil, err, "error converting group db model to proto", rollback)
 	}
 
 	if in.IsOutreach && len(group.CrmRoleIds) > 0 {
@@ -190,27 +148,20 @@ func (h *Handlers) CreateGroup(ctx context.Context, in *servicePb.CreateGroupReq
 		}
 	}
 
-	if err := svc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting transaction for inserting group")
-		logger.Error(err)
-		return nil, err.AsGRPC()
-	}
-
-	return &servicePb.CreateGroupResponse{Group: group}, nil
+	return &servicePb.CreateGroupResponse{Group: group}, helpers.CommitTransaction(logger, svc, "transaction for creating group")
 }
 
-func (h *Handlers) GetGroupById(ctx context.Context, in *servicePb.IdRequest) (*orchardPb.Group, error) {
-	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+func (h *Handlers) GetGroupById(spanCtx context.Context, in *servicePb.IdRequest) (*orchardPb.Group, error) {
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
-		err := ErrBadRequest.New("tenantId and groupId can't be empty")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
+		return nil, helpers.BadRequest(logger, "tenantId and groupId can't be empty")
 	}
 
 	svc := h.db.NewGroupService()
 
-	g, err := svc.GetByID(ctx, in.GroupId, in.TenantId)
+	g, err := svc.GetByID(spanCtx, in.GroupId, in.TenantId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting group by id")
 		logger.Error(err)
@@ -231,7 +182,7 @@ func (h *Handlers) GetGroupById(ctx context.Context, in *servicePb.IdRequest) (*
 	crmSVC := h.db.NewCRMRoleService()
 
 	if in.IsOutreach && len(group.CrmRoleIds) > 0 {
-		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(ctx, in.TenantId, group.CrmRoleIds...)
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(spanCtx, in.TenantId, group.CrmRoleIds...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
 			logger.Error(err)
@@ -245,8 +196,9 @@ func (h *Handlers) GetGroupById(ctx context.Context, in *servicePb.IdRequest) (*
 	return group, nil
 }
 
-func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest) (*servicePb.GetGroupsResponse, error) {
-	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
+func (h *Handlers) GetGroups(spanCtx context.Context, in *servicePb.GetGroupsRequest) (*servicePb.GetGroupsResponse, error) {
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -256,7 +208,7 @@ func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest
 
 	svc := h.db.NewGroupService()
 
-	gs, err := svc.Search(ctx, in.TenantId, in.Search)
+	gs, err := svc.Search(spanCtx, in.TenantId, in.Search)
 	if err != nil {
 		err := errors.Wrap(err, "error getting groups")
 		logger.Error(err)
@@ -279,7 +231,7 @@ func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest
 	crmSVC := h.db.NewCRMRoleService()
 
 	if in.IsOutreach && len(crmRoleIDs) > 0 {
-		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(ctx, in.TenantId, crmRoleIDs...)
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(spanCtx, in.TenantId, crmRoleIDs...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
 			logger.Error(err)
@@ -297,44 +249,9 @@ func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest
 	}, nil
 }
 
-func (h *Handlers) GetManagerAndParentIDs(ctx context.Context, in *servicePb.GetManagerAndParentIDsRequest) (*servicePb.GetManagerAndParentIDsResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "GetManagerAndParentIDs")
-	defer span.End()
+func (h *Handlers) GetGroupSubTree(spanCtx context.Context, in *servicePb.GetGroupSubTreeRequest) (*servicePb.GetGroupSubTreeResponse, error) {
 
-	tenantID := in.GetTenantId()
-	personID := in.GetPersonId()
-
-	logger := log.WithContext(spanCtx).WithTenantID(tenantID).WithCustom("personId", personID)
-
-	if tenantID == "" {
-		err := ErrBadRequest.New("tenantId can't be empty")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
-	}
-
-	if personID == "" {
-		err := ErrBadRequest.New("personId can't be empty")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
-	}
-
-	svc := h.db.NewGroupService()
-
-	managerID, parentID, err := svc.GetManagerAndParentIDs(ctx, tenantID, personID)
-	if err != nil {
-		err := errors.Wrap(err, "error getting manager and parent IDs from sql")
-		logger.Error(err)
-		return nil, err.AsGRPC()
-	}
-
-	return &servicePb.GetManagerAndParentIDsResponse{
-		ManagerId: managerID,
-		ParentId: parentID,
-	}, nil
-}
-
-func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSubTreeRequest) (*servicePb.GetGroupSubTreeResponse, error) {
-	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -344,7 +261,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 
 	svc := h.db.NewGroupService()
 
-	flatGroups, err := svc.GetGroupSubTree(ctx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers, in.Simplify, in.ActiveUsers, in.UseManagerNames, in.ExcludeManagerUsers, in.ViewableGroups...)
+	flatGroups, err := svc.GetGroupSubTree(spanCtx, in.TenantId, in.GroupId, int(in.MaxDepth), in.HydrateUsers, in.Simplify, in.ActiveUsers, in.UseManagerNames, in.ExcludeManagerUsers, in.ViewableGroups...)
 	if err != nil {
 		err := errors.Wrap(err, "error getting group and all subtrees from sql")
 		logger.Error(err)
@@ -352,14 +269,14 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 	}
 
 	// Convert db models to protos
-	parGroup, _ := commonSync.NewWorkerPool(ctx, 10)
+	parGroup, _ := commonSync.NewWorkerPool(spanCtx, 10)
 	flatProtos := make([]*servicePb.GroupWithMembers, len(flatGroups))
 	forceKeepLevelMap := map[string]bool{}
 	for i, g := range flatGroups {
 		if g.ActiveMemberCount > 0 && g.Type == "manager" {
 			forceKeepLevelMap[g.ID] = true
 		}
-		parGroup.Go(h.runGroupTreeProtoConversion(ctx, i, g, flatProtos, in.TenantId, in.HydrateUsers, in.HydrateCrmRoles, in.IsOutreach))
+		parGroup.Go(h.runGroupTreeProtoConversion(spanCtx, i, g, flatProtos, in.TenantId, in.HydrateUsers, in.HydrateCrmRoles, in.IsOutreach))
 	}
 
 	if err := parGroup.Close(); err != nil {
@@ -413,7 +330,7 @@ func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSu
 		crmSVC := h.db.NewCRMRoleService()
 		crmRoleIDs := recursivelyGetCRMRolesStart(finalRoots)
 
-		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(ctx, in.TenantId, crmRoleIDs...)
+		_, commitToOutreachMapping, err := crmSVC.GetOutreachCommitMappingsByCommitIDs(spanCtx, in.TenantId, crmRoleIDs...)
 		if err != nil {
 			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
 			logger.Error(err)
@@ -587,87 +504,41 @@ func max(x, y int) int {
 	return x
 }
 
-func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupRequest) (*servicePb.UpdateGroupResponse, error) {
-	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
+func (h *Handlers) UpdateGroup(spanCtx context.Context, in *servicePb.UpdateGroupRequest) (*servicePb.UpdateGroupResponse, error) {
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
-		err := ErrBadRequest.New("tenantId can't be empty")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
+		return nil, helpers.BadRequest(logger, "tenantId can't be empty")
 	}
 
 	if in.Group == nil {
-		err := ErrBadRequest.New("group is null")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
+		return nil, helpers.BadRequest(logger, "group is null")
 	}
 
 	if in.Group.Id == "" && in.GroupId != "" {
 		in.Group.Id = in.GroupId
 	}
 
-	if in.Group.Id == "" || in.TenantId == "" {
-		err := ErrBadRequest.New("can't update group with empty id")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
+	if in.Group.Id == "" && in.TenantId == "" {
+		return nil, helpers.BadRequest(logger, "can't update group with empty id")
 	}
 
 	if (len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("parent_id")) && in.Group.ParentId == in.Group.Id {
-		err := ErrBadRequest.New("can't use group's id as its parent id")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
-	}
-
-	tx, err := h.db.NewTransaction(ctx)
-	if err != nil {
-		err := errors.Wrap(err, "error getting sql transaction for updating group")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+		return nil, helpers.BadRequest(logger, "can't use group's id as its parent id")
 	}
 
 	svc := h.db.NewGroupService()
 	crmSVC := h.db.NewCRMRoleService()
 
-	svc.SetTransaction(tx)
-
-	// Check to see if the provided parent_id is a descendant of the current group.
-	// If so, then disallow the request.
-	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("parent_id") {
-		code, err := svc.IsDescendant(ctx, in.Group.Id, in.Group.ParentId)
-		if err != nil {
-			err := errors.Wrap(err, "error checking if new parent is a descendant of the group")
-			logger.Error(err)
-			return nil, err
-		}
-		switch code {
-		case db.DescendantCode_SOURCE_NOT_EXISTS:
-			err := errors.New("group.id does not exist or is not active").WithCode(codes.InvalidArgument)
-			logger.Warn(err.Error())
-			return nil, err
-		case db.DescendantCode_TARGET_NOT_EXISTS:
-			err := errors.New("parent group id does not exist or is not active").WithCode(codes.InvalidArgument)
-			logger.Warn(err.Error())
-			return nil, err
-		case db.DescendantCode_TARGET_IS_EMPTY:
-			logger.Debug("target parent group is empty, moving group to root")
-		case db.DescendantCode_TARGET_IS_DESCENDANT:
-			err := errors.New("group can't be assigned to its own descendant").WithCode(codes.InvalidArgument)
-			logger.Warn(err.Error())
-			return nil, err
-		case db.DescendantCode_TARGET_NOT_DESCENDANT:
-			logger.Debug("target parent group is not a descendant")
-		}
-	}
-
 	var outreachToCommitMapping map[string]string
 	commitToOutreachMapping := map[string]string{}
+	var err error
 
 	if in.IsOutreach && len(in.Group.CrmRoleIds) > 0 {
-		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByOutreachIDs(ctx, in.TenantId, in.Group.CrmRoleIds...)
+		outreachToCommitMapping, commitToOutreachMapping, err = crmSVC.GetOutreachCommitMappingsByOutreachIDs(spanCtx, in.TenantId, in.Group.CrmRoleIds...)
 		if err != nil {
-			err := errors.Wrap(err, "error getting getting outreach commit mappings by ids")
-			logger.Error(err)
-			return nil, err.AsGRPC()
+			return nil, helpers.ErrorHandler(logger, nil, err, "error getting getting outreach commit mappings by ids", false)
 		}
 		for idx, item := range in.Group.CrmRoleIds {
 			in.Group.CrmRoleIds[idx] = outreachToCommitMapping[item]
@@ -687,73 +558,57 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 		updateableGroup.TenantID = in.TenantId
 	}
 
-	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(ctx, updateableGroup.ID, in.TenantId, in.Group.CrmRoleIds); err != nil {
-		err := errors.Wrap(err, "error checking for duplicate crm_role_ids before write")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+	if hasDups, err := svc.CheckDuplicateCRMRoleIDs(spanCtx, updateableGroup.ID, in.TenantId, in.Group.CrmRoleIds); err != nil {
+		return nil, helpers.ErrorHandler(logger, nil, err, "error checking for duplicate crm_role_ids before write", false)
 	} else if hasDups {
 		err := errors.Error("given group has crm_role_ids that already exist in another group").WithCode(codes.InvalidArgument)
 		logger.Warn(err.Error())
 		return nil, err.AsGRPC()
 	}
 
-	if err := svc.Update(ctx, updateableGroup, in.OnlyFields); err != nil {
-		err := errors.Wrap(err, "error updating group into sql")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := helpers.CreateTransaction(h.db, logger, spanCtx, svc, "sql transaction for updating group"); err != nil {
+		return nil, err
+	}
+
+	if err := svc.Update(spanCtx, updateableGroup, in.OnlyFields); err != nil {
+		return nil, helpers.ErrorHandler(logger, nil, err, "error updating group into sql", rollback)
 	}
 
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("parent_id") {
-		if err := svc.UpdateGroupPaths(ctx, in.TenantId); err != nil {
-			err := errors.Wrap(err, "error updating group paths in sql")
-			logger.Error(err)
-			svc.Rollback()
-			return nil, err.AsGRPC()
+		if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
+			return nil, helpers.ErrorHandler(logger, nil, err, "error updating group paths in sql", rollback)
 		}
 	}
 
 	// re-sync users into groups if the group's crm_role_ids changed
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("crm_role_ids") {
-		if err := h.updatePersonGroups(ctx, in.TenantId, svc.GetTransaction()); err != nil {
-			err := errors.Wrap(err, "error updating person groups")
-			logger.Error(err)
-			svc.Rollback()
-			return nil, err.AsGRPC()
+		if err := h.updatePersonGroups(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
+			return nil, helpers.ErrorHandler(logger, nil, err, "error updating person groups", rollback)
 		}
 	}
 
 	// Make sure group types are updated correctly
-	if err := svc.UpdateGroupTypes(ctx, in.TenantId); err != nil {
-		err := errors.Wrap(err, "error updating group types")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
+		return nil, helpers.ErrorHandler(logger, nil, err, "error updating group types", rollback)
 	}
 
+	if err := helpers.CommitTransaction(logger, svc, "update group transaction"); err != nil {
+		return nil, err
+	}
 	// If the crm_role_ids changed or the status changed, then make sure to re-calculate/set the tenant's sync state
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Intersects([]string{"crm_role_ids", "status"}) {
-		if err := h.ensureTenantGroupSyncState(ctx, in.TenantId, svc.GetTransaction()); err != nil {
-			svc.Rollback()
-			err := errors.Wrap(err, "error ensuring tenant group sync state")
-			logger.Error(err)
-			return nil, err.AsGRPC()
+		if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
+			return nil, helpers.ErrorHandler(logger, nil, err, "error ensuring tenant group sync state", rollback)
 		}
 	}
 
-	if err := svc.Reload(ctx, updateableGroup); err != nil {
-		err := errors.Wrap(err, "error reloading group from sql")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := svc.Reload(spanCtx, updateableGroup); err != nil {
+		return nil, helpers.ErrorHandler(logger, nil, err, "error reloading group from sql", rollback)
 	}
 
 	group, err := svc.ToProto(updateableGroup)
 	if err != nil {
-		err := errors.Wrap(err, "error converting group db model to proto")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+		return nil, helpers.ErrorHandler(logger, nil, err, "error converting group db model to proto", rollback)
 	}
 
 	if in.IsOutreach && len(group.CrmRoleIds) > 0 {
@@ -762,18 +617,10 @@ func (h *Handlers) UpdateGroup(ctx context.Context, in *servicePb.UpdateGroupReq
 		}
 	}
 
-	if err := svc.Commit(); err != nil {
-		err := errors.Wrap(err, "error commiting transaction for updating group")
-		logger.Error(err)
-		return nil, err.AsGRPC()
-	}
-
-	return &servicePb.UpdateGroupResponse{Group: group}, nil
+	return &servicePb.UpdateGroupResponse{Group: group}, helpers.CommitTransaction(logger, svc, "transaction for updating group")
 }
 
-func (h *Handlers) UpdateGroupTypes(ctx context.Context, in *servicePb.UpdateGroupTypesRequest) (*servicePb.UpdateGroupTypesResponse, error) {
-	spanCtx, span := log.StartSpan(ctx, "UpdateGroupTypes")
-	defer span.End()
+func (h *Handlers) UpdateGroupTypes(spanCtx context.Context, in *servicePb.UpdateGroupTypesRequest) (*servicePb.UpdateGroupTypesResponse, error) {
 
 	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
@@ -794,95 +641,74 @@ func (h *Handlers) UpdateGroupTypes(ctx context.Context, in *servicePb.UpdateGro
 	return &servicePb.UpdateGroupTypesResponse{}, nil
 }
 
-func (h *Handlers) DeleteGroupById(ctx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
-	logger := log.WithContext(ctx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
+func (h *Handlers) DeleteGroupById(spanCtx context.Context, in *servicePb.IdRequest) (*servicePb.Empty, error) {
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
 
 	if in.TenantId == "" || in.GroupId == "" {
-		err := ErrBadRequest.New("tenantId and GroupId can't be empty")
-		logger.Warn(err.Error())
-		return nil, err.AsGRPC()
+		return nil, helpers.BadRequest(logger, "tenantId and GroupId can't be empty")
 	}
 
 	if in.UserId == "" {
 		in.UserId = db.DefaultTenantID
 	}
-
-	tx, err := h.db.NewTransaction(ctx)
-	if err != nil {
-		err := errors.Wrap(err, "error starting delete group transaction")
-		logger.Error(err)
-		return nil, err.AsGRPC()
-	}
-
 	svc := h.db.NewGroupService()
-	svc.SetTransaction(tx)
 
-	if err := svc.SoftDeleteGroupChildren(ctx, in.GroupId, in.TenantId, in.UserId); err != nil {
-		svc.Rollback()
-		err := errors.Wrap(err, "error soft deleting group children groups")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+	if err := helpers.CreateTransaction(h.db, logger, spanCtx, svc, "delete group"); err != nil {
+		return nil, err
 	}
 
-	if err := svc.SoftDeleteByID(ctx, in.GroupId, in.TenantId, in.UserId); err != nil {
-		svc.Rollback()
-		err := errors.Wrap(err, "error soft deleting group by id")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+	if err := svc.SoftDeleteGroupChildren(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
+		return nil, helpers.ErrorHandler(logger, svc, err, "error soft deleting group children groups", rollback)
+	}
+
+	if err := svc.SoftDeleteByID(spanCtx, in.GroupId, in.TenantId, in.UserId); err != nil {
+		return nil, helpers.ErrorHandler(logger, svc, err, "error soft deleting group by id", rollback)
+	}
+
+	if err := helpers.CommitTransaction(logger, svc, "delete group transaction"); err != nil {
+		return nil, err
 	}
 
 	// Check the tenant's remaining group count and reset hierarchy if there are 0 active groups left
-	groupCount, err := svc.GetTenantActiveGroupCount(ctx, in.TenantId)
+	groupCount, err := svc.GetTenantActiveGroupCount(spanCtx, in.TenantId)
 	if err != nil {
-		svc.Rollback()
-		err := errors.Wrap(err, "error getting tenant groups count")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+		return nil, helpers.ErrorHandler(logger, svc, err, "error getting tenant groups count", rollback)
 	}
 	if groupCount == 0 {
-		if err := h.resetHierarchy(ctx, in.TenantId, in.UserId, tx); err != nil {
+		if err := h.resetHierarchy(spanCtx, in.TenantId, in.UserId, nil); err != nil {
 			// resetHierarchy already takes care of commiting/rolling back transaction, so need to handle that here
-			err := errors.Wrap(err, "error resetting tenant hierarchy")
-			logger.Error(err)
-			return nil, err.AsGRPC()
+			return nil, helpers.ErrorHandler(logger, svc, err, "error resetting tenant hierarchy", rollback)
 		}
 		return &servicePb.Empty{}, nil
 	}
 
-	if err := svc.UpdateGroupPaths(ctx, in.TenantId); err != nil {
-		svc.Rollback()
-		err := errors.Wrap(err, "error updating group paths")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+	if err := helpers.CreateTransaction(h.db, logger, spanCtx, svc, "delete group"); err != nil {
+		return nil, err
+	}
+
+	if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
+		return nil, helpers.ErrorHandler(logger, svc, err, "error updating group paths", rollback)
 	}
 
 	// Make sure group types are updated correctly
-	if err := svc.UpdateGroupTypes(ctx, in.TenantId); err != nil {
-		err := errors.Wrap(err, "error updating group types")
-		logger.Error(err)
-		svc.Rollback()
-		return nil, err.AsGRPC()
+	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
+		return nil, helpers.ErrorHandler(logger, svc, err, "error updating group types", rollback)
 	}
 
-	if err := h.ensureTenantGroupSyncState(ctx, in.TenantId, svc.GetTransaction()); err != nil {
-		svc.Rollback()
-		err := errors.Wrap(err, "error ensuring tenant group sync state")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+	if err := helpers.CommitTransaction(logger, svc, "delete group transaction"); err != nil {
+		return nil, err
 	}
 
-	if err := svc.Commit(); err != nil {
-		svc.Rollback()
-		err := errors.Wrap(err, "error commiting delete group transaction")
-		logger.Error(err)
-		return nil, err.AsGRPC()
+	if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, nil); err != nil {
+		return nil, helpers.ErrorHandler(logger, svc, err, "error ensuring tenant group sync state", rollback)
 	}
-
-	return &servicePb.Empty{}, nil
+	return &servicePb.Empty{}, helpers.CommitTransaction(logger, svc, "delete group transaction")
 }
 
-func (h *Handlers) ResetHierarchy(ctx context.Context, in *servicePb.ResetHierarchyRequest) (*servicePb.ResetHierarchyResponse, error) {
-	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
+func (h *Handlers) ResetHierarchy(spanCtx context.Context, in *servicePb.ResetHierarchyRequest) (*servicePb.ResetHierarchyResponse, error) {
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		err := ErrBadRequest.New("tenantId can't be empty")
@@ -890,13 +716,13 @@ func (h *Handlers) ResetHierarchy(ctx context.Context, in *servicePb.ResetHierar
 		return nil, err.AsGRPC()
 	}
 
-	userID := act.GetUserID(ctx)
+	userID := act.GetUserID(spanCtx)
 
 	if userID == "" {
 		userID = db.DefaultTenantID
 	}
 
-	if err := h.resetHierarchy(ctx, in.TenantId, userID, nil); err != nil {
+	if err := h.resetHierarchy(spanCtx, in.TenantId, userID, nil); err != nil {
 		err := errors.Wrap(err, "error resetting tenant hierarchy")
 		logger.Error(err)
 		return nil, err.AsGRPC()
@@ -905,9 +731,7 @@ func (h *Handlers) ResetHierarchy(ctx context.Context, in *servicePb.ResetHierar
 	return &servicePb.ResetHierarchyResponse{}, nil
 }
 
-func (h *Handlers) resetHierarchy(ctx context.Context, tenantID, userID string, tx *sql.Tx) error {
-	spanCtx, span := log.StartSpan(ctx, "resetHierarchy")
-	defer span.End()
+func (h *Handlers) resetHierarchy(spanCtx context.Context, tenantID, userID string, tx *sql.Tx) error {
 
 	if tx == nil {
 		_tx, err := h.db.NewTransaction(spanCtx)
@@ -1010,15 +834,16 @@ func (h *Handlers) ensureTenantGroupSyncState(ctx context.Context, tenantID stri
 	return nil
 }
 
-func (h *Handlers) GetTenantGroupsLastModifiedTS(ctx context.Context, in *servicePb.GetTenantGroupsLastModifiedTSRequest) (*servicePb.GetTenantGroupsLastModifiedTSResponse, error) {
-	logger := log.WithContext(ctx).WithTenantID(in.TenantId)
+func (h *Handlers) GetTenantGroupsLastModifiedTS(spanCtx context.Context, in *servicePb.GetTenantGroupsLastModifiedTSRequest) (*servicePb.GetTenantGroupsLastModifiedTSResponse, error) {
+
+	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
 	if in.TenantId == "" {
 		return nil, ErrBadRequest.New("tenantId is empty")
 	}
 
 	svc := h.db.NewGroupService()
-	ts, err := svc.GetLatestModifiedTS(ctx, in.TenantId)
+	ts, err := svc.GetLatestModifiedTS(spanCtx, in.TenantId)
 	if err != nil {
 		err := errors.Wrap(err, "error getting tenant groups last modified ts")
 		logger.Error(err)
