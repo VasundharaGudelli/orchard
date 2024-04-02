@@ -118,28 +118,32 @@ func (h *Handlers) CreateGroup(spanCtx context.Context, in *servicePb.CreateGrou
 	}
 
 	if err := svc.Insert(spanCtx, insertableGroup); err != nil {
-		return nil, helpers.ErrorHandler(logger, nil, err, "error inserting group into sql", rollback)
+		return nil, helpers.ErrorHandler(logger, svc, err, "error inserting group into sql", rollback)
 	}
 
 	if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
-		return nil, helpers.ErrorHandler(logger, nil, err, "error updating group paths in sql", rollback)
+		return nil, helpers.ErrorHandler(logger, svc, err, "error updating group paths in sql", rollback)
 	}
 
 	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
-		return nil, helpers.ErrorHandler(logger, nil, err, "error updating group types", rollback)
+		return nil, helpers.ErrorHandler(logger, svc, err, "error updating group types", rollback)
 	}
 
 	if err := helpers.CommitTransaction(logger, svc, "create group transaction"); err != nil {
 		return nil, err
 	}
 
-	if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, nil); err != nil {
-		return nil, helpers.ErrorHandler(logger, nil, err, "error ensuring tenant group sync state", rollback)
+	if err := helpers.CreateTransaction(h.db, logger, spanCtx, svc, "sql transaction for creating group"); err != nil {
+		return nil, err
+	}
+
+	if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
+		return nil, helpers.ErrorHandler(logger, svc, err, "error ensuring tenant group sync state", rollback)
 	}
 
 	group, err := svc.ToProto(insertableGroup)
 	if err != nil {
-		return nil, helpers.ErrorHandler(logger, nil, err, "error converting group db model to proto", rollback)
+		return nil, helpers.ErrorHandler(logger, svc, err, "error converting group db model to proto", rollback)
 	}
 
 	if in.IsOutreach && len(group.CrmRoleIds) > 0 {
@@ -605,44 +609,49 @@ func (h *Handlers) UpdateGroup(spanCtx context.Context, in *servicePb.UpdateGrou
 	}
 
 	if err := svc.Update(spanCtx, updateableGroup, in.OnlyFields); err != nil {
-		return nil, helpers.ErrorHandler(logger, nil, err, "error updating group into sql", rollback)
+		return nil, helpers.ErrorHandler(logger, svc, err, "error updating group into sql", rollback)
 	}
 
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("parent_id") {
 		if err := svc.UpdateGroupPaths(spanCtx, in.TenantId); err != nil {
-			return nil, helpers.ErrorHandler(logger, nil, err, "error updating group paths in sql", rollback)
+			return nil, helpers.ErrorHandler(logger, svc, err, "error updating group paths in sql", rollback)
 		}
 	}
 
 	// re-sync users into groups if the group's crm_role_ids changed
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Has("crm_role_ids") {
 		if err := h.updatePersonGroups(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
-			return nil, helpers.ErrorHandler(logger, nil, err, "error updating person groups", rollback)
+			return nil, helpers.ErrorHandler(logger, svc, err, "error updating person groups", rollback)
 		}
 	}
 
 	// Make sure group types are updated correctly
 	if err := svc.UpdateGroupTypes(spanCtx, in.TenantId); err != nil {
-		return nil, helpers.ErrorHandler(logger, nil, err, "error updating group types", rollback)
+		return nil, helpers.ErrorHandler(logger, svc, err, "error updating group types", rollback)
 	}
 
 	if err := helpers.CommitTransaction(logger, svc, "update group transaction"); err != nil {
 		return nil, err
 	}
+
+	if err := helpers.CreateTransaction(h.db, logger, spanCtx, svc, "sql transaction for updating group"); err != nil {
+		return nil, err
+	}
+
 	// If the crm_role_ids changed or the status changed, then make sure to re-calculate/set the tenant's sync state
 	if len(in.OnlyFields) == 0 || strUtils.Strings(in.OnlyFields).Intersects([]string{"crm_role_ids", "status"}) {
-		if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, nil); err != nil {
-			return nil, helpers.ErrorHandler(logger, nil, err, "error ensuring tenant group sync state", rollback)
+		if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
+			return nil, helpers.ErrorHandler(logger, svc, err, "error ensuring tenant group sync state", rollback)
 		}
 	}
 
 	if err := svc.Reload(spanCtx, updateableGroup); err != nil {
-		return nil, helpers.ErrorHandler(logger, nil, err, "error reloading group from sql", rollback)
+		return nil, helpers.ErrorHandler(logger, svc, err, "error reloading group from sql", rollback)
 	}
 
 	group, err := svc.ToProto(updateableGroup)
 	if err != nil {
-		return nil, helpers.ErrorHandler(logger, nil, err, "error converting group db model to proto", rollback)
+		return nil, helpers.ErrorHandler(logger, svc, err, "error converting group db model to proto", rollback)
 	}
 
 	if in.IsOutreach && len(group.CrmRoleIds) > 0 {
@@ -733,8 +742,10 @@ func (h *Handlers) DeleteGroupById(spanCtx context.Context, in *servicePb.IdRequ
 	if err := helpers.CommitTransaction(logger, svc, "delete group transaction"); err != nil {
 		return nil, err
 	}
-
-	if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, nil); err != nil {
+	if err := helpers.CreateTransaction(h.db, logger, spanCtx, svc, "sql transaction for deleting group"); err != nil {
+		return nil, err
+	}
+	if err := h.ensureTenantGroupSyncState(spanCtx, in.TenantId, svc.GetTransaction()); err != nil {
 		return nil, helpers.ErrorHandler(logger, svc, err, "error ensuring tenant group sync state", rollback)
 	}
 	return &servicePb.Empty{}, helpers.CommitTransaction(logger, svc, "delete group transaction")
