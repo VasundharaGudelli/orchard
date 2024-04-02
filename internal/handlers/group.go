@@ -713,15 +713,18 @@ func (h *Handlers) DeleteGroupById(spanCtx context.Context, in *servicePb.IdRequ
 		return nil, err
 	}
 
+	if err := helpers.CreateTransaction(h.db, logger, spanCtx, svc, "delete group"); err != nil {
+		return nil, err
+	}
 	// Check the tenant's remaining group count and reset hierarchy if there are 0 active groups left
 	groupCount, err := svc.GetTenantActiveGroupCount(spanCtx, in.TenantId)
 	if err != nil {
-		return nil, helpers.ErrorHandler(logger, svc, err, "error getting tenant groups count", rollback)
+		return nil, helpers.ErrorHandler(logger, nil, err, "error getting tenant groups count", false)
 	}
 	if groupCount == 0 {
-		if err := h.resetHierarchy(spanCtx, in.TenantId, in.UserId, nil); err != nil {
+		if err := h.resetHierarchy(spanCtx, in.TenantId, in.UserId, svc.GetTransaction()); err != nil {
 			// resetHierarchy already takes care of commiting/rolling back transaction, so need to handle that here
-			return nil, helpers.ErrorHandler(logger, svc, err, "error resetting tenant hierarchy", rollback)
+			return nil, helpers.ErrorHandler(logger, nil, err, "error resetting tenant hierarchy", false)
 		}
 		return &servicePb.Empty{}, nil
 	}
