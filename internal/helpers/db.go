@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 
 	"github.com/loupe-co/go-common/errors"
 	"github.com/loupe-co/go-loupe-logger/log"
@@ -28,6 +29,11 @@ func CreateTransaction(db *db.DB, logger *log.LogChain, spanCtx context.Context,
 
 // Helper function to log error and rollback the transaction based on rollback flag
 func ErrorHandler(logger *log.LogChain, svc *db.GroupService, err error, methodName string, rollback bool) error {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("stacktrace from panic:", string(debug.Stack()), "actual panic error", r)
+		}
+	}()
 	if rollback {
 		svc.Rollback()
 	}
