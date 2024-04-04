@@ -252,6 +252,7 @@ func (h *Handlers) GetGroups(spanCtx context.Context, in *servicePb.GetGroupsReq
 		Groups: groups,
 	}, nil
 }
+
 func (h *Handlers) GetManagerAndParentIDs(ctx context.Context, in *servicePb.GetManagerAndParentIDsRequest) (*servicePb.GetManagerAndParentIDsResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "GetManagerAndParentIDs")
 	defer span.End()
@@ -284,9 +285,10 @@ func (h *Handlers) GetManagerAndParentIDs(ctx context.Context, in *servicePb.Get
 
 	return &servicePb.GetManagerAndParentIDsResponse{
 		ManagerId: managerID,
-		ParentId:  parentID,
+		ParentId: parentID,
 	}, nil
 }
+
 func (h *Handlers) GetGroupSubTree(spanCtx context.Context, in *servicePb.GetGroupSubTreeRequest) (*servicePb.GetGroupSubTreeResponse, error) {
 
 	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId).WithCustom("groupId", in.GroupId)
