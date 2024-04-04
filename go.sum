@@ -376,8 +376,8 @@ github.com/loupe-co/go-common v1.3.7 h1:Xd94hsJmbpFC8fPCrrJM6bhToz/1dOYwbsYDUyKR
 github.com/loupe-co/go-common v1.3.7/go.mod h1:NqIxhDpGHCC7ihXszA6NbY101LeClCmAt6TmbClri9E=
 github.com/loupe-co/go-loupe-logger v1.2.3 h1:pqP/v9p3dSY4KY2yH79Zc3NSyYhvaUOXxm61PtFsNJY=
 github.com/loupe-co/go-loupe-logger v1.2.3/go.mod h1:jMjxfVNHQBr826KGsi+YzgjJYBWL+ZoQYOsP4ycpzIY=
-github.com/loupe-co/protos v1.6.2-0.20240402102456-11330df181f7 h1:YlV5vAPjf3jnmPsElOI7hKY+1BALKFgN0jGrU00sH80=
-github.com/loupe-co/protos v1.6.2-0.20240402102456-11330df181f7/go.mod h1:bvgeSaaJFlICqOwP1jHAE9iCnAZtDl8NhwognROVFS4=
+github.com/loupe-co/protos v1.6.2 h1:+LKSeL9hHxbOiCODD3NiSf8jfVDL542EwGJvLXJW5LU=
+github.com/loupe-co/protos v1.6.2/go.mod h1:bvgeSaaJFlICqOwP1jHAE9iCnAZtDl8NhwognROVFS4=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
 github.com/magiconair/properties v1.8.6/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
 github.com/matryer/is v1.4.0 h1:sosSmIWwkYITGrxZ25ULNDeKiMNzFSr4V/eqBQP0PeE=
