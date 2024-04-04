@@ -281,8 +281,8 @@ const (
 )
 
 type GetManagerAndParentIDsResult struct {
-	ManagerID *string `json:"managerID" boil:"manager_id"`
-	ParentID *string `json:"parentID" boil:"parent_id"`
+	ManagerID sql.NullString `json:"managerID" boil:"manager_id"`
+	ParentID sql.NullString `json:"parentID" boil:"parent_id"`
 }
 
 func (svc *GroupService) GetManagerAndParentIDs(ctx context.Context, tenantID, personID string) (managerID, parentID string, err error) {
@@ -301,12 +301,12 @@ func (svc *GroupService) GetManagerAndParentIDs(ctx context.Context, tenantID, p
 		return
 	}
 	
-	if res.ManagerID != nil {
-		managerID = *res.ManagerID
+	if res.ManagerID.Valid {
+		managerID = res.ManagerID.String
 	}
 
-	if res.ParentID != nil {
-		parentID = *res.ParentID
+	if res.ParentID.Valid {
+		parentID = res.ParentID.String
 	}
 	
 	return
