@@ -309,6 +309,42 @@ func (h *Handlers) GetGroups(ctx context.Context, in *servicePb.GetGroupsRequest
 	}, nil
 }
 
+func (h *Handlers) GetManagerAndParentIDs(ctx context.Context, in *servicePb.GetManagerAndParentIDsRequest) (*servicePb.GetManagerAndParentIDsResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "GetManagerAndParentIDs")
+	defer span.End()
+
+	tenantID := in.GetTenantId()
+	personID := in.GetPersonId()
+
+	logger := log.WithContext(spanCtx).WithTenantID(tenantID).WithCustom("personId", personID)
+
+	if tenantID == "" {
+		err := ErrBadRequest.New("tenantId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	if personID == "" {
+		err := ErrBadRequest.New("personId can't be empty")
+		logger.Warn(err.Error())
+		return nil, err.AsGRPC()
+	}
+
+	svc := h.db.NewGroupService()
+
+	managerID, parentID, err := svc.GetManagerAndParentIDs(ctx, tenantID, personID)
+	if err != nil {
+		err := errors.Wrap(err, "error getting manager and parent IDs from sql")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
+	return &servicePb.GetManagerAndParentIDsResponse{
+		ManagerId: managerID,
+		ParentId: parentID,
+	}, nil
+}
+
 func (h *Handlers) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSubTreeRequest) (*servicePb.GetGroupSubTreeResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "GetGroupSubTree")
 	defer span.End()

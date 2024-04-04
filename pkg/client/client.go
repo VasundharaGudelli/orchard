@@ -216,6 +216,10 @@ func (client *OrchardClient) GetGroups(ctx context.Context, in *servicePb.GetGro
 	return client.client.GetGroups(ctx, in)
 }
 
+func (client *OrchardClient) GetManagerAndParentIDs(ctx context.Context, in *servicePb.GetManagerAndParentIDsRequest) (*servicePb.GetManagerAndParentIDsResponse, error) {
+	return client.client.GetManagerAndParentIDs(ctx, in)
+}
+
 func (client *OrchardClient) GetGroupSubTree(ctx context.Context, in *servicePb.GetGroupSubTreeRequest) (*servicePb.GetGroupSubTreeResponse, error) {
 	return client.client.GetGroupSubTree(ctx, in)
 }
