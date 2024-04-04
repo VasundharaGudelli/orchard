@@ -281,8 +281,8 @@ const (
 )
 
 type GetManagerAndParentIDsResult struct {
-	ManagerID string `json:"managerID" boil:"manager_id"`
-	ParentID string `json:"parentID" boil:"parent_id"`
+	ManagerID *string `json:"managerID" boil:"manager_id"`
+	ParentID *string `json:"parentID" boil:"parent_id"`
 }
 
 func (svc *GroupService) GetManagerAndParentIDs(ctx context.Context, tenantID, personID string) (managerID, parentID string, err error) {
@@ -301,7 +301,15 @@ func (svc *GroupService) GetManagerAndParentIDs(ctx context.Context, tenantID, p
 		return
 	}
 	
-	return res.ManagerID, res.ParentID, nil
+	if res.ManagerID != nil {
+		managerID = *res.ManagerID
+	}
+
+	if res.ParentID != nil {
+		parentID = *res.ParentID
+	}
+	
+	return
 }
 
 func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID string, maxDepth int, hydrateUsers bool, simplify bool, activeUsers bool, useManagerNames bool, excludeManagerUsers bool, viewableGroups ...string) ([]*GroupTreeNode, error) {
