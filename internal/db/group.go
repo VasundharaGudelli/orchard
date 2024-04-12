@@ -274,7 +274,7 @@ func buildRootGroupSelectorClause(g string, vg []string) string {
 }
 
 const (
-	GetManagerAndParentIDsQuery = `SELECT p.manager_id, g.parent_id 
+	GetManagerAndParentIDsQuery = `SELECT p.manager_id, g.id AS parent_id
 	FROM "person" p 
 	INNER JOIN "group" g ON p.group_id = g.id and g.tenant_id=p.tenant_id 
 	WHERE g.tenant_id =$1 and p.id=$2`
