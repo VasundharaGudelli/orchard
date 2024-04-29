@@ -605,6 +605,9 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		if len(in.OnlyFields) > 0 {
 			in.OnlyFields = append(in.OnlyFields, "is_synced")
 		}
+
+		in.OnlyFields = append(in.OnlyFields, "manager_id")
+		in.Person.ManagerId = ""
 	}
 
 	if in.Person.CreatedBy != "" {
