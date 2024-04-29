@@ -21,6 +21,10 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+const (
+	playerCoachValue = "outreach_playercoach"
+)
+
 func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonRequest) (*servicePb.CreatePersonResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "CreatePerson")
 	defer span.End()
@@ -616,7 +620,7 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		}
 		
 		if in.GetPerson().GetGroupId() != existingPerson.GroupID.String &&
-		 existingPerson.ManagerID.String == "" {
+		 existingPerson.ManagerID.String == playerCoachValue {
 			if !strUtil.Strings(in.OnlyFields).Has("manager_id") {
 				in.OnlyFields = append(in.OnlyFields, "manager_id")
 			}
