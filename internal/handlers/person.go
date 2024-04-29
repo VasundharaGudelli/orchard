@@ -574,6 +574,15 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		in.Person.UpdatedBy = db.DefaultTenantID
 	}
 
+	svc := h.db.NewPersonService()
+	existingPerson, err := svc.GetByID(ctx, in.GetPerson().GetId(), in.GetTenantId())
+	if err != nil {
+		err := errors.Wrap(err, "error getting person record in update person")
+		logger.Error(err)
+		
+		return nil, err.AsGRPC()
+	}
+
 	// Check if we are updating a person's provisioning
 	changeProvisioning := strUtil.Strings(in.OnlyFields).Has("is_provisioned")
 
@@ -605,9 +614,15 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		if len(in.OnlyFields) > 0 {
 			in.OnlyFields = append(in.OnlyFields, "is_synced")
 		}
+		
+		if in.GetPerson().GetGroupId() != existingPerson.GroupID.String &&
+		 existingPerson.ManagerID.String == "" {
+			if !strUtil.Strings(in.OnlyFields).Has("manager_id") {
+				in.OnlyFields = append(in.OnlyFields, "manager_id")
+			}
 
-		in.OnlyFields = append(in.OnlyFields, "manager_id")
-		in.Person.ManagerId = ""
+			in.Person.ManagerId = ""
+		}
 	}
 
 	if in.Person.CreatedBy != "" {
@@ -635,7 +650,6 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		return nil, err.AsGRPC()
 	}
 
-	svc := h.db.NewPersonService()
 	svc.SetTransaction(tx)
 
 	updatePerson := svc.FromProto(in.Person)
