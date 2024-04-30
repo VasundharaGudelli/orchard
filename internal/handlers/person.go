@@ -579,11 +579,18 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	}
 
 	svc := h.db.NewPersonService()
-	existingPerson, err := svc.GetByID(ctx, in.GetPerson().GetId(), in.GetTenantId())
+	p, err := svc.GetByID(ctx, in.GetPerson().GetId(), in.GetTenantId())
 	if err != nil {
 		err := errors.Wrap(err, "error getting person record by Id in update person")
 		logger.Error(err)
 
+		return nil, err.AsGRPC()
+	}
+
+	existingPerson, err := svc.ToProto(p)
+	if err != nil {
+		err := errors.Wrap(err, "error converting person db model to proto")
+		logger.Error(err)
 		return nil, err.AsGRPC()
 	}
 
@@ -619,20 +626,33 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 			in.OnlyFields = append(in.OnlyFields, "is_synced")
 		}
 
-		if in.GetPerson().GetGroupId() != existingPerson.GroupID.String &&
-			existingPerson.ManagerID.String == playerCoachValue {
-			if group, err := h.db.NewGroupService().GetByID(ctx, in.GetPerson().GetGroupId(), in.GetTenantId()); err != nil {
+		if in.GetPerson().GetGroupId() != existingPerson.GetGroupId() &&
+			existingPerson.GetManagerId() == playerCoachValue {
+			groupService := h.db.NewGroupService()
+			g, err := groupService.GetByID(ctx, in.GetPerson().GetGroupId(), in.GetTenantId())
+			if err != nil {
 				err := errors.Wrap(err, "error getting group record by Id in update person")
 				logger.Error(err)
 
 				return nil, err.AsGRPC()
-			} else if (group != nil && group.Type != orchardPb.SystemRoleType_IC.String()) ||
-				existingPerson.Type != orchardPb.SystemRoleType_IC.String() {
-				if !strUtil.Strings(in.OnlyFields).Has("manager_id") {
-					in.OnlyFields = append(in.OnlyFields, "manager_id")
+			}
+
+			if g != nil {
+				group, err := groupService.ToProto(g)
+				if err != nil {
+					err := errors.Wrap(err, "error converting group db model to proto")
+					logger.Error(err)
+					return nil, err.AsGRPC()
 				}
 
-				in.Person.ManagerId = ""
+				if group.GetType() != orchardPb.SystemRoleType_IC ||
+					strings.ToUpper(existingPerson.GetType()) != orchardPb.SystemRoleType_IC.String() {
+					if !strUtil.Strings(in.OnlyFields).Has("manager_id") {
+						in.OnlyFields = append(in.OnlyFields, "manager_id")
+					}
+
+					in.Person.ManagerId = ""
+				}
 			}
 		}
 	}
