@@ -560,9 +560,9 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 	svc := h.db.NewPersonService()
 	existingPerson, err := svc.GetByID(ctx, in.GetPerson().GetId(), in.GetTenantId())
 	if err != nil {
-		err := errors.Wrap(err, "error getting person record in update person")
+		err := errors.Wrap(err, "error getting person record by Id in update person")
 		logger.Error(err)
-		
+
 		return nil, err.AsGRPC()
 	}
 
@@ -597,14 +597,22 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		if len(in.OnlyFields) > 0 {
 			in.OnlyFields = append(in.OnlyFields, "is_synced")
 		}
-		
-		if in.GetPerson().GetGroupId() != existingPerson.GroupID.String &&
-		 existingPerson.ManagerID.String == playerCoachValue {
-			if !strUtil.Strings(in.OnlyFields).Has("manager_id") {
-				in.OnlyFields = append(in.OnlyFields, "manager_id")
-			}
 
-			in.Person.ManagerId = ""
+		if in.GetPerson().GetGroupId() != existingPerson.GroupID.String &&
+			existingPerson.ManagerID.String == playerCoachValue {
+			if group, err := h.db.NewGroupService().GetByID(ctx, in.GetPerson().GetGroupId(), in.GetTenantId()); err != nil {
+				err := errors.Wrap(err, "error getting group record by Id in update person")
+				logger.Error(err)
+
+				return nil, err.AsGRPC()
+			} else if (group != nil && group.Type != orchardPb.SystemRoleType_IC.String()) ||
+				existingPerson.Type != orchardPb.SystemRoleType_IC.String() {
+				if !strUtil.Strings(in.OnlyFields).Has("manager_id") {
+					in.OnlyFields = append(in.OnlyFields, "manager_id")
+				}
+
+				in.Person.ManagerId = ""
+			}
 		}
 	}
 
