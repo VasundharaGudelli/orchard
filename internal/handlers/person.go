@@ -21,6 +21,10 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+const (
+	playerCoachValue = "outreach_playercoach"
+)
+
 func (h *Handlers) CreatePerson(ctx context.Context, in *servicePb.CreatePersonRequest) (*servicePb.CreatePersonResponse, error) {
 	spanCtx, span := log.StartSpan(ctx, "CreatePerson")
 	defer span.End()
@@ -574,6 +578,22 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		in.Person.UpdatedBy = db.DefaultTenantID
 	}
 
+	svc := h.db.NewPersonService()
+	p, err := svc.GetByID(ctx, in.GetPerson().GetId(), in.GetTenantId())
+	if err != nil {
+		err := errors.Wrap(err, "error getting person record by Id in update person")
+		logger.Error(err)
+
+		return nil, err.AsGRPC()
+	}
+
+	existingPerson, err := svc.ToProto(p)
+	if err != nil {
+		err := errors.Wrap(err, "error converting person db model to proto")
+		logger.Error(err)
+		return nil, err.AsGRPC()
+	}
+
 	// Check if we are updating a person's provisioning
 	changeProvisioning := strUtil.Strings(in.OnlyFields).Has("is_provisioned")
 
@@ -605,6 +625,36 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		if len(in.OnlyFields) > 0 {
 			in.OnlyFields = append(in.OnlyFields, "is_synced")
 		}
+
+		if in.GetPerson().GetGroupId() != existingPerson.GetGroupId() &&
+			existingPerson.GetManagerId() == playerCoachValue {
+			groupService := h.db.NewGroupService()
+			g, err := groupService.GetByID(ctx, in.GetPerson().GetGroupId(), in.GetTenantId())
+			if err != nil {
+				err := errors.Wrap(err, "error getting group record by Id in update person")
+				logger.Error(err)
+
+				return nil, err.AsGRPC()
+			}
+
+			if g != nil {
+				group, err := groupService.ToProto(g)
+				if err != nil {
+					err := errors.Wrap(err, "error converting group db model to proto")
+					logger.Error(err)
+					return nil, err.AsGRPC()
+				}
+
+				if group.GetType() != orchardPb.SystemRoleType_IC ||
+					strings.ToUpper(existingPerson.GetType()) != orchardPb.SystemRoleType_IC.String() {
+					if !strUtil.Strings(in.OnlyFields).Has("manager_id") {
+						in.OnlyFields = append(in.OnlyFields, "manager_id")
+					}
+
+					in.Person.ManagerId = ""
+				}
+			}
+		}
 	}
 
 	if in.Person.CreatedBy != "" {
@@ -632,7 +682,6 @@ func (h *Handlers) UpdatePerson(ctx context.Context, in *servicePb.UpdatePersonR
 		return nil, err.AsGRPC()
 	}
 
-	svc := h.db.NewPersonService()
 	svc.SetTransaction(tx)
 
 	updatePerson := svc.FromProto(in.Person)
