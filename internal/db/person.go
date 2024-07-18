@@ -123,6 +123,20 @@ ON CONFLICT (tenant_id, id) DO
 	crm_role_ids = EXCLUDED.crm_role_ids, is_provisioned = EXCLUDED.is_provisioned,
 	is_synced = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' THEN person.is_synced ELSE EXCLUDED.is_synced END,
 	status = EXCLUDED.status, updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by;`
+
+	personUpsertAllQueryNew = `INSERT INTO person (id, tenant_id, "name", first_name, last_name, email, photo_url, group_id, role_ids, crm_role_ids, is_provisioned, is_synced, status, created_at, created_by, updated_at, updated_by) VALUES
+	{SUBS}
+ON CONFLICT (tenant_id, id) DO
+	UPDATE SET
+	name = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' OR COALESCE(person.outreach_guid, '') <> '' THEN person.name ELSE EXCLUDED.name END,
+	first_name = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' OR COALESCE(person.outreach_guid, '') <> '' THEN person.first_name ELSE EXCLUDED.first_name END,
+	last_name = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' OR COALESCE(person.outreach_guid, '') <> '' THEN person.last_name ELSE EXCLUDED.last_name END,
+	email = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' OR COALESCE(person.outreach_guid, '') <> '' THEN person.email ELSE EXCLUDED.email END,
+	photo_url = EXCLUDED.photo_url, group_id = EXCLUDED.group_id,
+	role_ids = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' THEN person.role_ids ELSE EXCLUDED.role_ids END,
+	crm_role_ids = EXCLUDED.crm_role_ids, is_provisioned = EXCLUDED.is_provisioned,
+	is_synced = CASE WHEN person.created_by = '00000000-0000-0000-0000-000000000001' THEN person.is_synced ELSE EXCLUDED.is_synced END,
+	updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by;`
 )
 
 func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person) error {
@@ -131,6 +145,11 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 
 	subs := []string{}
 	vals := []interface{}{}
+	userSyncNewFlow := true
+	/*
+		##TODO
+		Fetch flag value to check if tenant is with new flow for user sync
+	*/
 
 	paramIdx := 1
 	for _, p := range people {
@@ -147,15 +166,27 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 			),
 		)
 		paramIdx += 17
-		vals = append(vals, p.ID, p.TenantID, p.Name, p.FirstName, p.LastName, p.Email, p.PhotoURL, p.GroupID, p.RoleIds, p.CRMRoleIds, p.IsProvisioned, p.IsSynced, p.Status, p.CreatedAt, p.CreatedBy, p.UpdatedAt, p.UpdatedBy)
+		if userSyncNewFlow {
+			status := "InActive" // person status always "InActive" when  it gets synced from CRM
+			vals = append(vals, p.ID, p.TenantID, p.Name, p.FirstName, p.LastName, p.Email, p.PhotoURL, p.GroupID, p.RoleIds, p.CRMRoleIds, p.IsProvisioned, p.IsSynced, status, p.CreatedAt, p.CreatedBy, p.UpdatedAt, p.UpdatedBy)
+		} else {
+			vals = append(vals, p.ID, p.TenantID, p.Name, p.FirstName, p.LastName, p.Email, p.PhotoURL, p.GroupID, p.RoleIds, p.CRMRoleIds, p.IsProvisioned, p.IsSynced, p.Status, p.CreatedAt, p.CreatedBy, p.UpdatedAt, p.UpdatedBy)
+		}
+
 	}
 
 	// Check both just in case, neither is valid
 	if len(vals) == 0 || len(subs) == 0 {
 		return nil
 	}
+	var query string
 
-	query := strings.ReplaceAll(personUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
+	if userSyncNewFlow {
+		query = strings.ReplaceAll(personUpsertAllQueryNew, "{SUBS}", strings.Join(subs, ",\n"))
+	} else {
+		query = strings.ReplaceAll(personUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
+	}
+	log.WithCustom("query", query).Info("orchard person UpsertAll")
 
 	_, err := queries.Raw(query, vals...).ExecContext(spanCtx, svc.GetContextExecutor())
 	if err != nil {
