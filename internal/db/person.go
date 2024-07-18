@@ -187,6 +187,9 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 		query = strings.ReplaceAll(personUpsertAllQuery, "{SUBS}", strings.Join(subs, ",\n"))
 	}
 	log.WithCustom("query", query).Info("orchard person UpsertAll")
+	s1 := fmt.Sprintf("orchard person UpsertAll: %v", string(query))
+	log.Info(s1)
+	log.Debug(s1)
 
 	_, err := queries.Raw(query, vals...).ExecContext(spanCtx, svc.GetContextExecutor())
 	if err != nil {
