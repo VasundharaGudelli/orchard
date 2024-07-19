@@ -73,9 +73,9 @@ func (x *TenantClient) IsOutreachSyncEnabled(ctx context.Context, tenantData *te
 			return false, err
 		}
 		if dataSyncSettings != nil {
-			if isMulticurrency, ok := dataSyncSettings["IsOutreachSyncEnabled"].(bool); ok {
-				log.WithTenantID(tenantData.Id).Infof("IsOutreachSyncEnabled from tenant-service: %v, id: %v", isMulticurrency, tenantData.Id)
-				return isMulticurrency, nil
+			if isOutreachSyncEnabled, ok := dataSyncSettings["IsOutreachSyncEnabled"].(bool); ok {
+				log.WithTenantID(tenantData.Id).Infof("IsOutreachSyncEnabled from tenant-service: %v, id: %v", isOutreachSyncEnabled, tenantData.Id)
+				return isOutreachSyncEnabled, nil
 			}
 			log.WithTenantID(tenantData.Id).Warnf("IsOutreachSyncEnabled from tenant-service not present id: %v", tenantData.Id)
 		}
