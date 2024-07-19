@@ -2,10 +2,12 @@ package clients
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/loupe-co/go-loupe-logger/log"
 	"github.com/loupe-co/orchard/internal/config"
 	orchardPb "github.com/loupe-co/protos/src/common/orchard"
+	"github.com/loupe-co/protos/src/common/tenant"
 	servicePb "github.com/loupe-co/protos/src/services/tenant"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -52,4 +54,31 @@ func (client *TenantClient) GetTenantLastFullDataSync(ctx context.Context, tenan
 		return nil, err
 	}
 	return res.LastSync, nil
+}
+
+func (x *TenantClient) GetTenantByID(ctx context.Context, tenantID string) (*tenant.Tenant, error) {
+	res, err := x.client.GetTenantById(ctx, &servicePb.GetTenantByIdRequest{TenantId: tenantID})
+	if err != nil {
+		return nil, nil
+	}
+	return res.Tenant, nil
+}
+
+func (x *TenantClient) IsOutreachSyncEnabled(ctx context.Context, tenantData *tenant.Tenant) (bool, error) {
+	if tenantData != nil {
+		dataSyncSettingsBytes := tenantData.DataSyncSettings
+		var dataSyncSettings map[string]interface{}
+		err := json.Unmarshal(dataSyncSettingsBytes, &dataSyncSettings)
+		if err != nil {
+			return false, err
+		}
+		if dataSyncSettings != nil {
+			if isMulticurrency, ok := dataSyncSettings["IsOutreachSyncEnabled"].(bool); ok {
+				log.WithTenantID(tenantData.Id).Infof("IsOutreachSyncEnabled from tenant-service: %v, id: %v", isMulticurrency, tenantData.Id)
+				return isMulticurrency, nil
+			}
+			log.WithTenantID(tenantData.Id).Warnf("IsOutreachSyncEnabled from tenant-service not present id: %v", tenantData.Id)
+		}
+	}
+	return false, nil
 }
