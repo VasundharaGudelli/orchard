@@ -64,7 +64,7 @@ func (client *TenantClient) GetTenantByID(ctx context.Context, tenantID string) 
 	return res.Tenant, nil
 }
 
-func (client *TenantClient) IsOutreachSyncEnabled(ctx context.Context, tenantData *tenant.Tenant) (bool, error) {
+func (client *TenantClient) IsOutreachUserSyncEnabled(ctx context.Context, tenantData *tenant.Tenant) (bool, error) {
 	if tenantData != nil {
 		dataSyncSettingsBytes := tenantData.DataSyncSettings
 		var dataSyncSettings map[string]interface{}
@@ -73,11 +73,11 @@ func (client *TenantClient) IsOutreachSyncEnabled(ctx context.Context, tenantDat
 			return false, err
 		}
 		if dataSyncSettings != nil {
-			if isOutreachSyncEnabled, ok := dataSyncSettings["IsOutreachSyncEnabled"].(bool); ok {
-				log.WithTenantID(tenantData.Id).Infof("IsOutreachSyncEnabled from tenant-service: %v, id: %v", isOutreachSyncEnabled, tenantData.Id)
-				return isOutreachSyncEnabled, nil
+			if isOutreachUserSyncEnabled, ok := dataSyncSettings["IsOutreachUserSyncEnabled"].(bool); ok {
+				log.WithTenantID(tenantData.Id).Infof("IsOutreachUserSyncEnabled from tenant-service: %v, id: %v", isOutreachUserSyncEnabled, tenantData.Id)
+				return isOutreachUserSyncEnabled, nil
 			}
-			log.WithTenantID(tenantData.Id).Warnf("IsOutreachSyncEnabled from tenant-service not present id: %v", tenantData.Id)
+			log.WithTenantID(tenantData.Id).Warnf("IsOutreachUserSyncEnabled from tenant-service not present id: %v", tenantData.Id)
 		}
 	}
 	return false, nil
