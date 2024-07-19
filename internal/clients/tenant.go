@@ -56,15 +56,15 @@ func (client *TenantClient) GetTenantLastFullDataSync(ctx context.Context, tenan
 	return res.LastSync, nil
 }
 
-func (x *TenantClient) GetTenantByID(ctx context.Context, tenantID string) (*tenant.Tenant, error) {
-	res, err := x.client.GetTenantById(ctx, &servicePb.GetTenantByIdRequest{TenantId: tenantID})
+func (client *TenantClient) GetTenantByID(ctx context.Context, tenantID string) (*tenant.Tenant, error) {
+	res, err := client.client.GetTenantById(ctx, &servicePb.GetTenantByIdRequest{TenantId: tenantID})
 	if err != nil {
 		return nil, nil
 	}
 	return res.Tenant, nil
 }
 
-func (x *TenantClient) IsOutreachSyncEnabled(ctx context.Context, tenantData *tenant.Tenant) (bool, error) {
+func (client *TenantClient) IsOutreachSyncEnabled(ctx context.Context, tenantData *tenant.Tenant) (bool, error) {
 	if tenantData != nil {
 		dataSyncSettingsBytes := tenantData.DataSyncSettings
 		var dataSyncSettings map[string]interface{}
