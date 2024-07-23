@@ -167,7 +167,7 @@ func (svc *PersonService) UpsertAll(ctx context.Context, people []*models.Person
 		)
 		paramIdx += 17
 		if userSyncNewFlow {
-			status := "InActive" // person status always "InActive" when  it gets synced from CRM
+			status := "inactive" // person status always "inactive" when  it gets synced from CRM
 			vals = append(vals, p.ID, p.TenantID, p.Name, p.FirstName, p.LastName, p.Email, p.PhotoURL, p.GroupID, p.RoleIds, p.CRMRoleIds, p.IsProvisioned, p.IsSynced, status, p.CreatedAt, p.CreatedBy, p.UpdatedAt, p.UpdatedBy)
 		} else {
 			vals = append(vals, p.ID, p.TenantID, p.Name, p.FirstName, p.LastName, p.Email, p.PhotoURL, p.GroupID, p.RoleIds, p.CRMRoleIds, p.IsProvisioned, p.IsSynced, p.Status, p.CreatedAt, p.CreatedBy, p.UpdatedAt, p.UpdatedBy)
