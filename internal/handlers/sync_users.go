@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -78,6 +80,9 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 			logger.Error(err)
 			return nil, err.Clean().AsGRPC()
 		}
+		data, _ := json.Marshal(latestCRMUsers)
+		s1 := fmt.Sprintf("latestCRMUsers, Data: %v, total: %v", string(data), total)
+		logger.WithTenantID(in.TenantId).Info(s1)
 
 		if len(latestCRMUsers) == 0 {
 			break
@@ -89,6 +94,9 @@ func (h *Handlers) SyncUsers(ctx context.Context, in *servicePb.SyncRequest) (*s
 			logger.Error(err)
 			return nil, err.Clean().AsGRPC()
 		}
+		data, _ = json.Marshal(batch)
+		s1 = fmt.Sprintf("batch, Data: %v", string(data))
+		logger.WithTenantID(in.TenantId).Info(s1)
 
 		if err := h.batchUpsertUsers(ctx, batch); err != nil {
 			err := errors.Wrap(err, "error upserting batch users")
@@ -148,6 +156,9 @@ func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, peopl
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting existing person records from sql")
 	}
+	data, _ := json.Marshal(currentPeople)
+	s1 := fmt.Sprintf("currentPeople, Data: %v", string(data))
+	log.WithTenantID(tenantID).Info(s1)
 
 	existingPeople := make(map[string]*models.Person, len(currentPeople))
 	for _, person := range currentPeople {
@@ -157,6 +168,11 @@ func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, peopl
 	batch := make([]*models.Person, len(people))
 	for i, person := range people {
 		p := svc.FromProto(person)
+
+		data, _ := json.Marshal(p)
+		s1 := fmt.Sprintf("range people1, Data: %v", string(data))
+		log.WithTenantID(tenantID).Info(s1)
+
 		p.TenantID = tenantID
 		p.UpdatedBy = db.DefaultTenantID
 		p.UpdatedAt = time.Now().UTC()
@@ -182,6 +198,10 @@ func (h *Handlers) createPeopleBatch(ctx context.Context, tenantID string, peopl
 			p.IsProvisioned = false
 			p.Email = null.String{String: "", Valid: false}
 		}
+
+		data, _ = json.Marshal(p)
+		s1 = fmt.Sprintf("range people1 processed, Data: %v", string(data))
+		log.WithTenantID(tenantID).Info(s1)
 		batch[i] = p
 	}
 

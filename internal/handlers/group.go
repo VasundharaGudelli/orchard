@@ -23,7 +23,9 @@ import (
 
 var rollback bool = true
 
-func (h *Handlers) SyncGroups(spanCtx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
+func (h *Handlers) SyncGroups(ctx context.Context, in *servicePb.SyncRequest) (*servicePb.SyncResponse, error) {
+	spanCtx, span := log.StartSpan(ctx, "SyncGroups")
+	defer span.End()
 
 	logger := log.WithContext(spanCtx).WithTenantID(in.TenantId)
 
