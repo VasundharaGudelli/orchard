@@ -38,7 +38,7 @@ func (h *Handlers) SyncGroups(spanCtx context.Context, in *servicePb.SyncRequest
 		return nil, helpers.ErrorHandler(logger, svc, err, "error error checking if tenant crm roles are synced with groups", false)
 	}
 
-	if isSynced {
+	if !isSynced {
 		logger.Info("tenant crm roles are not synced with groups, skipping group sync.")
 		return &servicePb.SyncResponse{}, nil
 	}
@@ -285,7 +285,7 @@ func (h *Handlers) GetManagerAndParentIDs(ctx context.Context, in *servicePb.Get
 
 	return &servicePb.GetManagerAndParentIDsResponse{
 		ManagerId: managerID,
-		ParentId: parentID,
+		ParentId:  parentID,
 	}, nil
 }
 
