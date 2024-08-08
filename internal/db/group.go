@@ -282,7 +282,7 @@ const (
 
 type GetManagerAndParentIDsResult struct {
 	ManagerID sql.NullString `json:"managerID" boil:"manager_id"`
-	ParentID sql.NullString `json:"parentID" boil:"parent_id"`
+	ParentID  sql.NullString `json:"parentID" boil:"parent_id"`
 }
 
 func (svc *GroupService) GetManagerAndParentIDs(ctx context.Context, tenantID, personID string) (managerID, parentID string, err error) {
@@ -300,7 +300,7 @@ func (svc *GroupService) GetManagerAndParentIDs(ctx context.Context, tenantID, p
 		err = nil
 		return
 	}
-	
+
 	if res.ManagerID.Valid {
 		managerID = res.ManagerID.String
 	}
@@ -308,7 +308,7 @@ func (svc *GroupService) GetManagerAndParentIDs(ctx context.Context, tenantID, p
 	if res.ParentID.Valid {
 		parentID = res.ParentID.String
 	}
-	
+
 	return
 }
 
@@ -364,6 +364,7 @@ func (svc *GroupService) GetGroupSubTree(ctx context.Context, tenantID, groupID 
 	if useManagerNames {
 		query = strings.ReplaceAll(simplieHierarchyWrapperQuery, "{INNER_QUERY}", query)
 	}
+	log.WithTenantID(tenantID).WithCustom("groupId", groupID).WithCustom("maxDepth", maxDepth).WithCustom("hydrateUsers", hydrateUsers).WithCustom("query", query).Debug("getGroupSubTree")
 
 	results := []*GroupTreeNode{}
 	if err := queries.Raw(query, params...).Bind(spanCtx, svc.GetContextExecutor(), &results); err != nil {
